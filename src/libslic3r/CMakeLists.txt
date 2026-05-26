@@ -178,6 +178,11 @@ set(lisbslic3r_sources
     FullSpectrumDither.hpp
     AutoProfile.cpp
     AutoProfile.hpp
+    WaveOverhangs/AndersonsGenerator.cpp
+    WaveOverhangs/AndersonsGenerator.hpp
+    WaveOverhangs/IGenerator.hpp
+    WaveOverhangs/WaveOverhangs.cpp
+    WaveOverhangs/WaveOverhangs.hpp
     Format/3mf.cpp
     Format/3mf.hpp
     Format/AMF.cpp

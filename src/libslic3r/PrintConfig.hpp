@@ -64,6 +64,29 @@ enum AuthorizationType {
     atKeyPassword, atUserPassword
 };
 
+// LeanSpectrum: enums ported from dennisklappe/OrcaSlicer-WaveOverhangs
+// (itself a port of stmcculloch/PrusaSlicer-WaveOverhangs). Algorithm by
+// Janis A. Andersons. AGPL-3.0. These are used by
+// src/libslic3r/WaveOverhangs/ but the rest of the slicer integration
+// (config keys, hooks) is not landed yet — see
+// doc/leanspectrum/PORT_WAVE_OVERHANGS.md for the staged plan.
+enum WaveOverhangSpacingMode {
+    wosmUniform,
+    wosmProgressive
+};
+
+enum WaveOverhangSeamMode {
+    woseAlternating,
+    woseAligned,
+    woseRandom
+};
+
+enum class WaveOverhangPattern : int {
+    Monotonic,
+    ZigZag,
+    Smart
+};
+
 enum InfillPattern : int {
     ipMonotonic, ipMonotonicLine,
     ipRectilinear, ipAlignedRectilinear, ipZigZag, ipCrossZag, ipLockedZag,

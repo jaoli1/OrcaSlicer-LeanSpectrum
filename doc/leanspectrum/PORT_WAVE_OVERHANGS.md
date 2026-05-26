@@ -1,6 +1,7 @@
 # Porting plan — Wave Overhangs
 
-Status: **planning / not started**.
+Status: **Phase 1 landed (algorithm module isolated; not yet hooked
+into the slicer pipeline)**.
 Source: [dennisklappe/OrcaSlicer-WaveOverhangs](https://github.com/dennisklappe/OrcaSlicer-WaveOverhangs)
 (itself a port of stmcculloch/PrusaSlicer-WaveOverhangs).
 Research basis: [Wavefront support-free overhang algorithm pre-print](https://doi.org/10.2139/ssrn.6640458).
@@ -93,10 +94,15 @@ Plater) for attribution and validation strings.
 ## Porting steps (revised)
 
 1. **Land the new module first** (`WaveOverhangs/` directory) as a
-   self-contained unit. The 5 files there have *no* upstream
-   dependencies — they're new C++ that can land without touching
-   any existing path. Add to `CMakeLists.txt` but don't call from
-   anywhere yet.
+   self-contained unit. ✅ **Phase 1 landed.** The 5 files copied from
+   dennisklappe/OrcaSlicer-WaveOverhangs HEAD (f6853e5a8d) into
+   `src/libslic3r/WaveOverhangs/`. PrintConfig.hpp got the three
+   helper enums (`WaveOverhangSpacingMode`, `WaveOverhangSeamMode`,
+   `WaveOverhangPattern`). ExtrusionEntity.hpp got the four
+   `wave_overhang*` annotation fields. CMakeLists.txt wires the new
+   .cpp files. No upstream code calls anything in `WaveOverhangs::`
+   yet — the module exists, compiles, and links into libslic3r as
+   dead code, ready for the Phase 2 hookup.
 2. **Add the 20+ config keys** in `PrintConfig.cpp/hpp` defaulted to
    off / 0. Master toggle: `wave_overhangs_enable = false`. This
    commit is a no-op behaviorally but makes every existing test

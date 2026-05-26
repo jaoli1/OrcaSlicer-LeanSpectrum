@@ -158,6 +158,15 @@ public:
     // Height of the extrusion, used for visualization purposes.
     float height;
 
+    // LeanSpectrum: Wave-Overhang annotations carried through to the
+    // G-code stage so it can apply wave-overhang-specific speed and fan
+    // overrides on these segments. All default to false; only the
+    // WaveOverhangs subsystem sets them.
+    bool wave_overhang                = false; // wave perimeter ring
+    bool wave_overhang_floor          = false; // Hilbert solid infill above the wave
+    bool wave_overhang_perimeter      = false; // wall on a wave-overhang layer
+    bool wave_overhang_floor_perimeter = false; // wall on the floor above the wave
+
     ExtrusionPath() : mm3_per_mm(-1), width(-1), height(-1), m_role(erNone), m_no_extrusion(false) {}
     ExtrusionPath(ExtrusionRole role) : mm3_per_mm(-1), width(-1), height(-1), m_role(role), m_no_extrusion(false) {}
     ExtrusionPath(ExtrusionRole role, double mm3_per_mm, float width, float height, bool no_extrusion = false) : mm3_per_mm(mm3_per_mm), width(width), height(height), m_role(role), m_no_extrusion(no_extrusion) {}

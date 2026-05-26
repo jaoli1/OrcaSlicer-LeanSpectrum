@@ -215,3 +215,76 @@ TEST_CASE("Pass 4: bridge segments are never reduced", "[FilamentEconomy]")
     REQUIRE(stats.segments_scaled == 0);
     REQUIRE(stats.extrusion_saved_mm == 0.0);
 }
+
+TEST_CASE("Pass 2: shrinks the purge inside a CP TOOLCHANGE block", "[FilamentEconomy]")
+{
+    // Build a synthetic file with: T0 extrusion, then a TOOLCHANGE block
+    // targeting T1 a few seconds later (recent idle -> max shrink), then
+    // back to T0. The purge inside the block has 4 positive-E moves we
+    // expect to be scaled by (1 - 30%) = 0.7 each.
+    const std::string gcode =
+        "M83\n"
+        "T0\n"
+        "G1 X10 Y0  E1.000 F1200\n"   // T0 extrudes
+        "G1 X20 Y0  E1.000 F1200\n"
+        "; CP TOOLCHANGE START\n"
+        "T1\n"
+        "G1 E-2 F1800\n"               // retract — should NOT be touched
+        "G1 X40 Y10 E2.000 F1500\n"    // purge starts here
+        "G1 X50 Y10 E2.000 F1500\n"
+        "G1 X60 Y10 E2.000 F1500\n"
+        "G1 X70 Y10 E2.000 F1500\n"
+        "G1 E2 F1800\n"                // unretract — no XY move, kept
+        "; CP TOOLCHANGE END\n"
+        "G1 X80 Y20 E1.000 F1200\n";   // back to printing
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.shrink_purge      = true;
+    s.shrink_purge_pct  = 30;
+    s.force_m83         = false; // already M83 in fixture
+    s.curvature_lh      = false; // isolate Pass 2 in this test
+    s.remove_noop_swaps = false; // T0->T1 is a real swap, not a no-op
+    Stats stats = process(gc.path.string(), s);
+
+    REQUIRE(stats.purges_shrunk == 1);
+    // 4 purge segments * 2.0 * 0.3 = 2.4 mm saved (recent idle, max shrink).
+    REQUIRE(stats.extrusion_saved_mm > 2.0);
+    REQUIRE(stats.extrusion_saved_mm < 2.5);
+    REQUIRE(stats.modified == true);
+
+    // Retract / unretract values should still be present verbatim.
+    const std::string out = gc.read();
+    REQUIRE_THAT(out, Catch::Matchers::Contains("E-2"));
+}
+
+TEST_CASE("Pass 2: skipped when shrink_purge disabled", "[FilamentEconomy]")
+{
+    const std::string gcode =
+        "M83\n"
+        "; CP TOOLCHANGE START\n"
+        "T1\n"
+        "G1 X10 Y0 E2 F1200\n"
+        "; CP TOOLCHANGE END\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.shrink_purge = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.purges_shrunk == 0);
+}
+
+TEST_CASE("Pass 2: 0 percent is a no-op", "[FilamentEconomy]")
+{
+    const std::string gcode =
+        "M83\n"
+        "; CP TOOLCHANGE START\n"
+        "T1\n"
+        "G1 X10 Y0 E2 F1200\n"
+        "; CP TOOLCHANGE END\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.shrink_purge     = true;
+    s.shrink_purge_pct = 0;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.purges_shrunk == 0);
+    REQUIRE(stats.extrusion_saved_mm == 0.0);
+}

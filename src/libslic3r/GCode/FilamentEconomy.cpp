@@ -553,10 +553,175 @@ size_t pass_curvature_lh(Parsed &p, Stats &stats, const Settings &s)
     return scaled;
 }
 
-// Pass 2 — placeholder, see PASS_2_SHRINK_PURGE.md.
-size_t pass_shrink_purge(Parsed & /*p*/, Stats & /*stats*/, int /*max_pct*/)
+// ---------------------------------------------------------------------------
+// Pass 2 — shrink wipe-tower purges based on extruder idle time.
+// See doc/filament-economy/PASS_2_SHRINK_PURGE.md for the full design.
+//
+// The wipe tower brackets every tool change in Snapmaker_Orca / Bambu-derived
+// G-code with explicit markers:
+//
+//     ; CP TOOLCHANGE START
+//     T<n>
+//     ... motion + extrusion (this is the purge we want to shrink) ...
+//     ; CP TOOLCHANGE END
+//
+// The slicer sized that purge assuming the target nozzle had cooled for the
+// worst-case idle. When FullSpectrum alternates filaments layer-by-layer,
+// each tool's actual idle time is far shorter and the purge is oversized.
+// We multiply every positive E inside the block by a ratio that grows from
+// `min_ratio` (recent use, lots of savings) to 1.0 (long idle, no change).
+//
+// Retracts (negative E) and unretracts (positive E with zero XY motion) are
+// intentionally left untouched: they must balance to keep the extruder
+// primed correctly.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// Estimate wall-clock time consumed by a single G1 motion line using the
+// modal feedrate carried alongside it (mm/min). We do not model
+// acceleration; the resulting clock is rough but consistent across the file,
+// which is all Pass 2's ratio computation needs.
+double estimate_line_duration_s(const Line &l, double modal_feedrate_mm_min)
 {
-    return 0;
+    const double f = (l.has_f && l.f > 0.0) ? l.f : modal_feedrate_mm_min;
+    if (f <= 0.0)
+        return 0.0;
+    // Distance traveled in mm. For pure E moves use |delta_e| as a proxy.
+    double dist = l.length_xy;
+    if (dist < 1e-6 && l.has_e && std::fabs(l.e) > 1e-6)
+        dist = std::fabs(l.e);
+    if (dist < 1e-6)
+        return 0.0;
+    return dist * 60.0 / f; // mm / (mm/min) -> seconds
+}
+
+bool line_starts_toolchange_block(const std::string &raw)
+{
+    return raw.find("CP TOOLCHANGE START") != std::string::npos
+        || raw.find("WIPE_TOWER_START")    != std::string::npos
+        || raw.find("WIPE_START")          != std::string::npos;
+}
+
+bool line_ends_toolchange_block(const std::string &raw)
+{
+    return raw.find("CP TOOLCHANGE END") != std::string::npos
+        || raw.find("WIPE_TOWER_END")    != std::string::npos
+        || raw.find("WIPE_END")          != std::string::npos;
+}
+
+constexpr size_t kMaxExtruders = 16;
+
+} // namespace
+
+size_t pass_shrink_purge(Parsed &p, Stats &stats, int max_pct)
+{
+    if (!stats.verification_ok)
+        return 0;
+    // Absolute-extrusion files are not supported in this pass — scaling per
+    // segment would desynchronise the cumulative counter. Pass 5 normally
+    // converts to M83 first; if that did not run, log and skip.
+    if (p.absolute_e) {
+        stats.notes.emplace_back("Pass 2 skipped: file still uses M82 absolute extrusion.");
+        return 0;
+    }
+
+    const double saturation_s = 600.0; // 10 min idle = treat as fully cooled.
+    const double clamp_pct    = std::clamp(max_pct, 0, 100);
+    const double min_ratio    = 1.0 - clamp_pct / 100.0;
+    if (clamp_pct == 0)
+        return 0;
+
+    // Phase 1 - walk the file once to build:
+    //   per_line_clock[i] = estimated wall-clock when line i is reached
+    //   ex_last_use[t]    = clock at which tool t last extruded
+    std::vector<double> per_line_clock(p.lines.size(), 0.0);
+    std::array<double, kMaxExtruders> ex_last_use;
+    ex_last_use.fill(-std::numeric_limits<double>::infinity());
+    double clock_s    = 0.0;
+    int    active_tool = 0;
+    double modal_f    = 1200.0;
+    for (size_t i = 0; i < p.lines.size(); ++i) {
+        const Line &l = p.lines[i];
+        per_line_clock[i] = clock_s;
+        if (l.is_tool_change && l.tool >= 0 &&
+            static_cast<size_t>(l.tool) < kMaxExtruders)
+        {
+            active_tool = l.tool;
+            continue;
+        }
+        if (!l.is_g1)
+            continue;
+        if (l.has_f && l.f > 0.0)
+            modal_f = l.f;
+        clock_s += estimate_line_duration_s(l, modal_f);
+        if (l.is_extrusion && static_cast<size_t>(active_tool) < kMaxExtruders)
+            ex_last_use[active_tool] = clock_s;
+    }
+
+    // Phase 2 - find every TOOLCHANGE block and scale the E values inside.
+    size_t blocks_shrunk = 0;
+    double total_saved   = 0.0;
+    for (size_t i = 0; i < p.lines.size(); ++i) {
+        if (!line_starts_toolchange_block(p.lines[i].raw))
+            continue;
+        // Find the matching END marker.
+        size_t end = i + 1;
+        while (end < p.lines.size() && !line_ends_toolchange_block(p.lines[end].raw))
+            ++end;
+        if (end >= p.lines.size())
+            continue;
+
+        // Identify target tool from the first T<n> line inside the block.
+        int target = -1;
+        for (size_t k = i + 1; k < end; ++k) {
+            if (p.lines[k].is_tool_change && p.lines[k].tool >= 0) {
+                target = p.lines[k].tool;
+                break;
+            }
+        }
+        if (target < 0 || static_cast<size_t>(target) >= kMaxExtruders) {
+            i = end;
+            continue;
+        }
+
+        // Idle time = now - last_use.
+        const double now  = per_line_clock[i];
+        const double last = ex_last_use[target];
+        const double idle = (std::isfinite(last)) ? std::max(0.0, now - last)
+                                                  : std::numeric_limits<double>::infinity();
+        const double sat  = std::clamp(idle / saturation_s, 0.0, 1.0);
+        const double r    = min_ratio + sat * (1.0 - min_ratio);
+        // r close to 1.0 -> nothing to gain; skip the rewrite to keep the
+        // file diff minimal.
+        if (r >= 0.999) {
+            i = end;
+            continue;
+        }
+
+        // Rewrite every positive E inside the block. Retracts (negative E)
+        // and pure unretracts (positive E with no XY motion) are kept.
+        size_t scaled_here = 0;
+        double saved_here  = 0.0;
+        for (size_t k = i + 1; k < end; ++k) {
+            Line &l = p.lines[k];
+            if (!l.is_g1 || !l.has_e || l.e <= 0.0 || !l.is_extrusion)
+                continue;
+            const double e_new = l.e * r;
+            saved_here += (l.e - e_new);
+            l.e = e_new;
+            rewrite_e_token(l.raw, e_new);
+            ++scaled_here;
+        }
+        if (scaled_here > 0) {
+            ++blocks_shrunk;
+            total_saved += saved_here;
+        }
+        i = end;
+    }
+    stats.purges_shrunk      += blocks_shrunk;
+    stats.extrusion_saved_mm += total_saved;
+    return blocks_shrunk;
 }
 
 // Pass 3 — placeholder, see PASS_3_MERGE_TRAVEL.md.

@@ -20392,8 +20392,13 @@ bool Plater::convert_bambu_to_u1()
     // rows so the slicer actually uses them — without this, the recipe
     // is just metadata sitting in the project config and the U1 keeps
     // printing with the 4 physicals only.
-    wxGetApp().preset_bundle->mixed_filaments.load_bambu_convert_recipe(
-        recipe.str(), new_colors);
+    auto &mgr = wxGetApp().preset_bundle->mixed_filaments;
+    mgr.load_bambu_convert_recipe(recipe.str(), new_colors);
+    // Persist via the existing mixed_filament_definitions path so the
+    // custom rows survive .3mf save / load (PresetBundle's load flow
+    // already round-trips this key through load_custom_entries).
+    project_config.set_key_value("mixed_filament_definitions",
+        new ConfigOptionString(mgr.serialize_custom_entries()));
 
     // Refresh the GUI.
     on_filaments_change(result.physical_count);

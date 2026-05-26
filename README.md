@@ -1,14 +1,56 @@
 
 <h1> <p "font-size:200px;"> LeanSpectrum</p> </h1>
 
-### A Snapmaker Orca FullSpectrum fork with post-slicing filament economy
+### A Snapmaker Orca FullSpectrum fork — less expertise required, less filament wasted
 
 [![Build all](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/actions/workflows/build_all.yml/badge.svg?branch=main)](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/actions/workflows/build_all.yml)
+[![SDS Importer](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/actions/workflows/build_sds_importer.yml/badge.svg)](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/actions/workflows/build_sds_importer.yml)
 
 > **LeanSpectrum** extends [Snapmaker Orca FullSpectrum](https://github.com/ratdoux/OrcaSlicer-FullSpectrum)
-> with a native C++ post-slicing module that reduces filament waste on the Snapmaker U1
-> when printing with FullSpectrum mixed-color filaments. See
-> [doc/filament-economy/ARCHITECTURE.md](doc/filament-economy/ARCHITECTURE.md) for the design.
+> with three compounding pillars for the Snapmaker U1 multi-color FFF printer.
+
+## Three pillars
+
+### 1. Post-slicing filament economy (5-pass G-code optimiser)
+
+Rewrites the slicer's output G-code to drop wasted filament without changing
+the visible print. Five passes — no-op tool swap removal, wipe-tower purge
+shrinking, retract collapse, curvature-aware E scaling, mass-conservation gate
+with rollback on failure. Based on
+[Al-Juboori 2026](https://doi.org/10.1007/s44444-026-00109-y) (CC-BY 4.0).
+See [`doc/filament-economy/ARCHITECTURE.md`](doc/filament-economy/ARCHITECTURE.md).
+
+### 2. BambuConvert — Bambu .3mf → U1 palette mapper
+
+Native bl2u1 port without the 4-color hardware cap. Imports a Bambu Lab .3mf
+with any number of colors, maps the heavy-usage ones to the U1's 4 physical
+extruders, and synthesises FullSpectrum virtual filaments for the overflow.
+Three selection strategies (Usage / Chromatic / Balanced) over a 19-ratio
+mixing grid plus Floyd-Steinberg dither at runtime. CIEDE2000 perceptual
+matching against Sharma 2005 reference values.
+
+**File → Convert Bambu palette to Snapmaker U1...**
+See [`doc/filament-economy/BL2U1_NATIVE_PORT.md`](doc/filament-economy/BL2U1_NATIVE_PORT.md).
+
+### 3. Auto-Profile — one-click intent-driven settings
+
+Five intents (Draft / Standard / High quality / Strength / Decorative) crossed
+with nine polymer families (PLA / PETG / ABS / PC / PA / TPU / HIPS / PP /
+Unknown) give 45 sensible configuration bundles tuned to the Snapmaker U1
+official wiki spec — max volumetric 32 mm³/s ceiling, 0.5-3 mm retract for the
+direct-drive head, 40-60 mm³ target purge volume, polymer-aware fan and scarf
+seam settings.
+
+**File → Auto-generate profile...** No surveyed OrcaSlicer fork ships an equivalent.
+
+## Companion app — SDS / TDS Importer
+
+A separate Tauri desktop app under [`tools/sds-importer/`](tools/sds-importer/)
+turns a filament Safety Data Sheet or Technical Data Sheet PDF into a
+Snapmaker_Orca filament profile JSON ready for import. Validated against
+1600+ real vendor PDFs across 50+ brands. Three input modes (single PDF /
+vendor catalog crawler / local corpus browser), bilingual FR / EN, optional
+OCR. Cross-platform releases on the Releases page.
 
 ---
 

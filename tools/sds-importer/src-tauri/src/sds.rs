@@ -24,7 +24,8 @@ static URL_RX: Lazy<Regex> = Lazy::new(|| {
 
 static BARE_DOMAIN_RX: Lazy<Regex> = Lazy::new(|| {
     // Catches "www.example.com" or "example.com/path" without a scheme.
-    Regex::new(r"\b(?:www\.)?[a-zA-Z0-9-]+\.(?:com|net|org|io|eu|fr|de|cn|uk|us|info|co)\b(?:/[A-Za-z0-9._/-]*)?").unwrap()
+    // Added: .pl (ROSA3D / Polish vendors), and a few common EU TLDs.
+    Regex::new(r"\b(?:www\.)?[a-zA-Z0-9-]+\.(?:com|net|org|io|eu|fr|de|cn|uk|us|info|co|pl|it|es|be|ch|at|se|no|dk|pt|nl|jp|kr|ca|au|cz|hu|ro|tr|biz)\b(?:/[A-Za-z0-9._/-]*)?").unwrap()
 });
 
 static DATE_RX: Lazy<Regex> = Lazy::new(|| {
@@ -48,12 +49,15 @@ static DENSITY_VALUE_RX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static PRODUCT_NAME_LINE_RX: Lazy<Regex> = Lazy::new(|| {
-    // "Product Name: <value>" or "Nom du produit : <value>"
-    Regex::new(r"(?im)^\s*(?:product\s*name|nom\s+du\s+produit|nom\s+commercial)\s*[:\-]\s*(.+?)\s*$").unwrap()
+    // "Product Name: <value>", "1.1 Product identification  <value>",
+    // "Trade Name: <value>", "Nom du produit : <value>".
+    Regex::new(r"(?im)^\s*(?:\d+\.\d+\s+)?(?:product\s*(?:name|identification|identifier)|trade\s*name|nom\s+du\s+produit|nom\s+commercial|nom\s+du\s+m[ée]lange)\s*[:\-]?\s+(\S.{1,80}?)\s*$").unwrap()
 });
 
 static MANUFACTURER_SUFFIX_RX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)\b(?:Co[.,;\s]{0,3}Ltd|GmbH|S\.A\.|S\.A\.S|S\.L\.|S\.R\.L|Inc\.?|LLC|Corp\.?|Limited|B\.V\.|N\.V\.|Pty\.?\s*Ltd|AG|KG|Oy|AB|AS|sp\.?z\.?o\.?o)\b").unwrap()
+    // Polish "Sp. z o.o" with optional spaces and dots between each char,
+    // alongside the global legal-form set already supported.
+    Regex::new(r"(?i)\b(?:Co[.,;\s]{0,3}Ltd|GmbH|S\.A\.S?|S\.L\.|S\.R\.L|Inc\.?|LLC|Corp\.?|Limited|B\.V\.|N\.V\.|Pty\.?\s*Ltd|AG|KG|Oy|AB|A/S|Sp\.?\s*z\.?\s*o\.?\s*o\.?|s\.r\.o\.?)\b").unwrap()
 });
 
 #[derive(Debug, Default)]
@@ -114,38 +118,61 @@ fn next_non_empty_line<'a>(lines: &mut std::str::Lines<'a>) -> Option<&'a str> {
     lines.by_ref().map(|l| l.trim()).find(|l| !l.is_empty())
 }
 
+/// Trim trailing generic markers that don't belong in a profile name:
+/// "Filament", "1.75mm", "2.85mm", "Spool", "Refill", etc.
+fn strip_trailing_noise(s: &str) -> String {
+    static TRAIL: Lazy<Regex> = Lazy::new(|| {
+        Regex::new(r"(?i)\s*(?:filament|1[,.]75\s*mm|2[,.]85\s*mm|3\s*mm|spool|refill|\d+\s*kg|1kg)+\s*$").unwrap()
+    });
+    let cleaned = TRAIL.replace(s, "").trim().to_string();
+    if cleaned.is_empty() { s.to_string() } else { cleaned }
+}
+
 fn parse_section_1(text: &str, out: &mut ExtractedFilament) {
-    // Product name via labelled regex (preferred).
+    // Product name via labelled regex (preferred). Strip trailing
+    // "filament" / "1.75mm" noise so the saved profile carries a clean
+    // name.
     if let Some(c) = PRODUCT_NAME_LINE_RX.captures(text) {
         if let Some(m) = c.get(1) {
             let v = m.as_str().trim().to_string();
             if !v.is_empty() {
-                out.product_name = Some(v);
+                out.product_name = Some(strip_trailing_noise(&v));
             }
         }
     }
 
-    // Manufacturer: lines that contain a company-suffix anywhere, OR the
-    // line immediately after a "Manufacture..." / "Fabricant" label.
+    // Manufacturer extraction. Three patterns we accept, in order:
+    //   1. A line containing one of the known legal suffixes (Co Ltd, GmbH,
+    //      Sp. z o.o, …). Highest precedence — most likely the full name.
+    //   2. A "Supplier:" / "Manufacturer:" / "Fabricant:" labelled line with
+    //      a non-empty value AFTER the colon (same line). No suffix required
+    //      because real-world supplier values often lack the suffix word.
+    //   3. The same labelled line but with the value on the NEXT non-empty
+    //      line.
     let mut lines = text.lines();
     while let Some(line) = lines.next() {
         if MANUFACTURER_SUFFIX_RX.is_match(line) {
             out.manufacturer = Some(line.trim().to_string());
             break;
         }
-        let lower = line.to_ascii_lowercase();
-        if lower.contains("manufactur") || lower.contains("fabricant")
-            || lower.contains("supplier")  || lower.contains("fournisseur")
-        {
-            // Strip any value after a colon on the same line.
-            if let Some((_, after)) = line.split_once(':') {
+        let trimmed = line.trim();
+        let lower_trim = trimmed.to_ascii_lowercase();
+        // Only treat lines that START with a known label as field labels.
+        // Subsection headers like "1.3 Details of the supplier of …" must
+        // not be confused with the actual "Supplier:" line below them.
+        let is_label_line =
+            lower_trim.starts_with("manufactur") ||
+            lower_trim.starts_with("supplier")   ||
+            lower_trim.starts_with("fabricant")  ||
+            lower_trim.starts_with("fournisseur");
+        if is_label_line {
+            if let Some((_, after)) = trimmed.split_once(':') {
                 let after = after.trim();
-                if !after.is_empty() && MANUFACTURER_SUFFIX_RX.is_match(after) {
+                if !after.is_empty() {
                     out.manufacturer = Some(after.to_string());
                     break;
                 }
             }
-            // Otherwise look at the next non-empty line.
             if let Some(next) = next_non_empty_line(&mut lines) {
                 out.manufacturer = Some(next.to_string());
                 break;
@@ -307,5 +334,59 @@ Density at 25 : 1.05G/cm3
         let sds = "1. Identification\nNom du produit : eFlex TPU bleu\n";
         let r = parse(sds);
         assert_eq!(r.product_name.as_deref(), Some("eFlex TPU bleu"));
+    }
+
+    /// ROSA3D MSDS layout — labels and values are on the same line with
+    /// many spaces between them, subsection headings precede the actual
+    /// "Supplier:" line, the URL is a bare .pl domain, and the product
+    /// name carries trailing "Filament" / "1.75mm" noise.
+    #[test]
+    fn parses_rosa3d_msds_layout() {
+        let sds = r#"
+MATERIAL SAFETY DATA SHEET
+          PLA Plus ProSpeed
+
+Made on: 18/02/2021         Updated on:
+
+SECTION 1: Product and Company identification
+
+1.1 Product identification  PLA Plus ProSpeed Filament
+                            FILAMENT 3D PLA Plus ProSpeed 1,75mm
+  Product Name:
+ Trade Name:
+
+1.2 Relevant identified uses of the substance or mixture and uses advised against
+
+Identified uses:            Thermal processing of 3D printing
+
+1.3 Details of the supplier of the safety data sheet
+
+Supplier:                   Przedsibiorstwo Handlowo-Produkcyjne
+                            ,,Rosa" Alicja Sakowicz-Soldatke
+                            ul. Hipolitowska 102, 05-074 Halinów-Hipolitów
+                            tel.: +48 22 783 62 62, www.rosa3d.pl
+
+SECTION 3: Composition/information on ingredients
+
+PLA (Polylactide Resin) - >85% CAS: 9051-89-2
+
+SECTION 9: Physical and chemical properties
+
+Density: Not determined
+Decomposition temperature: Not determined
+Melting point: Not determined
+"#;
+        let r = parse(sds);
+        assert_eq!(r.polymer, Some(Polymer::Pla));
+        // strip_trailing_noise removes "Filament" from the captured name.
+        assert_eq!(r.product_name.as_deref(), Some("PLA Plus ProSpeed"));
+        // Subsection header "1.3 Details of the supplier..." must NOT win
+        // over the "Supplier:" line below it.
+        assert_eq!(
+            r.manufacturer.as_deref(),
+            Some("Przedsibiorstwo Handlowo-Produkcyjne"),
+        );
+        // .pl TLD is supported and the bare-domain URL is promoted to https.
+        assert_eq!(r.manufacturer_url.as_deref(), Some("https://rosa3d.pl"));
     }
 }

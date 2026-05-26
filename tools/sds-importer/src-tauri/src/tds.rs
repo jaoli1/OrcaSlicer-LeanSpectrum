@@ -93,27 +93,43 @@ fn first_range_with_unit_check(window: &str, expect_c: bool) -> Option<(f64, f64
 }
 
 fn scan_range_after(text: &str, labels: &[&str], expect_c: bool) -> (Option<f64>, Option<f64>) {
+    scan_range_with_hint(text, labels, expect_c, None)
+}
+
+/// Like `scan_range_after` but with an optional `expected_min` plausibility
+/// floor. If the forward window produces a range whose lower bound is BELOW
+/// the floor (e.g. PLA nozzle at 40-60 °C, which is obviously the bed), the
+/// function falls back to a backward window scan. This handles vendor TDS
+/// where pdftotext extracted the value column ahead of the label column.
+fn scan_range_with_hint(
+    text: &str,
+    labels: &[&str],
+    expect_c: bool,
+    expected_min: Option<f64>,
+) -> (Option<f64>, Option<f64>) {
     let lower = text.to_ascii_lowercase();
     for label in labels {
         if let Some(idx) = lower.find(&label.to_ascii_lowercase()) {
-            // Forward window of 200 chars covers normal "label  ...  value"
-            // layouts.
             let forward = &text[idx + label.len()..text.len().min(idx + label.len() + 200)];
-            if let Some((lo, hi)) = first_range_with_unit_check(forward, expect_c) {
-                return (Some(lo), Some(hi));
-            }
-            // Backward search is intentionally only attempted when the
-            // forward window has NO numeric range at all. Some vendor PDFs
-            // (notably ones whose tables pdftotext extracts column-first)
-            // place values above labels — but several adjacent labels then
-            // share the same backward window, and a naive backward read
-            // would map the wrong value to each label. Requiring a fully
-            // empty forward window catches the "single-label-with-no-value"
-            // edge while avoiding the multi-label cross-talk.
-            if !RANGE_RX.is_match(forward) {
+            let forward_result = first_range_with_unit_check(forward, expect_c);
+
+            let try_backward = match forward_result {
+                None => !RANGE_RX.is_match(forward),
+                Some((lo, _)) => expected_min.map(|m| lo < m).unwrap_or(false),
+            };
+
+            if try_backward {
                 let before_start = idx.saturating_sub(200);
                 let backward = &text[before_start..idx];
                 if let Some((lo, hi)) = first_range_with_unit_check(backward, expect_c) {
+                    if expected_min.map(|m| lo >= m).unwrap_or(true) {
+                        return (Some(lo), Some(hi));
+                    }
+                }
+            }
+
+            if let Some((lo, hi)) = forward_result {
+                if expected_min.map(|m| lo >= m).unwrap_or(true) {
                     return (Some(lo), Some(hi));
                 }
             }
@@ -255,12 +271,22 @@ pub fn parse(text: &str) -> ExtractedFilament {
     out.product_name = scan_product_name(text, out.manufacturer.as_deref());
     out.glass_transition_c = scan_glass_transition(text);
 
-    let (n_lo, n_hi) = scan_range_after(
+    // Polymer-aware sanity floors. These come from the family's default
+    // nozzle/bed ranges (see polymer.rs). With them, a forward scan that
+    // returns 40-60 for a PLA nozzle is recognised as the bed value
+    // (probably a reverse-column table) and we retry backward.
+    let nozzle_min = out.polymer.and_then(|p| p.default_nozzle_range_c())
+        .map(|(lo, _)| (lo - 30.0).max(120.0)); // 30 °C below family minimum, floored at 120
+    let bed_max = out.polymer.and_then(|p| p.default_bed_range_c())
+        .map(|(_, hi)| hi + 20.0);
+
+    let (n_lo, n_hi) = scan_range_with_hint(
         text,
         &["nozzle temperature", "print temperature", "extruder temperature",
           "bottom printing temperature", "température buse", "température d'impression",
-          "printing temperature"],
+          "printing temperature", "3d printing temperature"],
         true,
+        nozzle_min,
     );
     out.nozzle_temp_min_c = n_lo;
     out.nozzle_temp_max_c = n_hi;
@@ -274,8 +300,9 @@ pub fn parse(text: &str) -> ExtractedFilament {
           "température plateau", "plateau chauffant", "base plate"],
         true,
     );
-    out.bed_temp_min_c = b_lo;
-    out.bed_temp_max_c = b_hi;
+    // Reject implausible bed values that look more like a nozzle reading.
+    out.bed_temp_min_c = b_lo.filter(|&v| bed_max.map(|m| v <= m).unwrap_or(true));
+    out.bed_temp_max_c = b_hi.filter(|&v| bed_max.map(|m| v <= m + 10.0).unwrap_or(true));
 
     let (s_lo, s_hi) = scan_print_speed(text);
     out.print_speed_min_mm_s = s_lo;
@@ -370,5 +397,41 @@ Vicat Softening Temperature( C) ASTM D1525 (ISO 306 GB/T 1633)                54
         assert_eq!(pick_brand("Shenzhen Eryone Technology Co.,Ltd").as_deref(), Some("Eryone"));
         assert_eq!(pick_brand("Berlin Polymaker GmbH").as_deref(),               Some("Polymaker"));
         assert_eq!(pick_brand("FormFutura B.V.").as_deref(),                     Some("FormFutura"));
+    }
+
+    /// ROSA3D PLA Speed TDS layout — pdftotext extracted the VALUE column
+    /// ahead of the PARAMETER column, so the forward window for the nozzle
+    /// label "3D printing temperature" carries 40-60 (the bed value), and
+    /// 220-250 (the real nozzle value) sits BEFORE the label. The
+    /// polymer-aware sanity floor catches this and triggers a backward
+    /// scan.
+    #[test]
+    fn parses_rosa3d_reverse_column_layout() {
+        let tds = r#"
+                                         TECHNICAL DATA SHEET
+
+                                                            FILAMENT 3D PLA Speed Matt
+
+RECOMMENDED PRINTING PARAMETERS                                      VALUE
+                                                                    220-250
+                          PARAMETER
+              3D printing temperature [C]                            40-60
+                                                                     70-100
+                        Heated bed [C]
+                        Cooling fan [%]                                 no
+                       Closed chamber                                 50/4
+                  Drying conditions [C/h]
+"#;
+        let r = parse(tds);
+        assert_eq!(r.polymer, Some(Polymer::Pla));
+        // Forward scan finds 40-60 first; PLA expected_min (160) rejects it
+        // and the backward scan returns 220-250.
+        assert_eq!(r.nozzle_temp_min_c, Some(220.0));
+        assert_eq!(r.nozzle_temp_max_c, Some(250.0));
+        // Bed is found by the conservative backward scan (forward window
+        // is empty of ranges) and accepted because 40-60 is within the PLA
+        // bed window.
+        assert_eq!(r.bed_temp_min_c, Some(40.0));
+        assert_eq!(r.bed_temp_max_c, Some(60.0));
     }
 }

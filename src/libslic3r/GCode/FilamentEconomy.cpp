@@ -724,10 +724,81 @@ size_t pass_shrink_purge(Parsed &p, Stats &stats, int max_pct)
     return blocks_shrunk;
 }
 
-// Pass 3 — placeholder, see PASS_3_MERGE_TRAVEL.md.
-size_t pass_merge_travel(Parsed & /*p*/, Stats & /*stats*/)
+// ---------------------------------------------------------------------------
+// Pass 3 — collapse redundant back-to-back retract / un-retract pairs.
+// See doc/filament-economy/PASS_3_MERGE_TRAVEL.md for the broader design.
+//
+// This v0.1 implementation handles only the safest sub-case: a retract that
+// is immediately followed by an un-retract of the same magnitude, with no
+// XY motion in between. Such pairs are functionally a no-op (they prime
+// the filament back to where it started) and are common when two close
+// extrusion segments use the same tool but the slicer emitted a retract
+// "just in case". Removing them saves a handful of milliseconds and a tiny
+// amount of nozzle ooze per occurrence.
+//
+// Out of scope for this pass:
+//   - travel merging (collapsing two consecutive G1 travels into one
+//     diagonal) — needs the gap-distance and gap-time analysis from the
+//     design doc, and is much more sensitive to seam quality;
+//   - retract pairs around tool changes — touches Pass 1's removed swaps;
+//   - retract pairs separated by other extrusion lines — those represent
+//     real geometry intent.
+// ---------------------------------------------------------------------------
+
+size_t pass_merge_travel(Parsed &p, Stats &stats)
 {
-    return 0;
+    if (!stats.verification_ok)
+        return 0;
+
+    size_t removed = 0;
+    for (size_t i = 0; i + 1 < p.lines.size(); ++i) {
+        const Line &a = p.lines[i];
+        if (!a.is_retract || !a.has_e)
+            continue;
+
+        // Find the next G1 line, skipping comments / blank lines / M codes
+        // that don't perturb the toolhead state.
+        size_t j = i + 1;
+        bool   abort = false;
+        while (j < p.lines.size()) {
+            const Line &lj = p.lines[j];
+            if (lj.is_g1) break;
+            // A custom G-code or M-code between retract and unretract may
+            // have side effects (temp change, fan speed, beep, …). Bail out.
+            if (!lj.raw.empty() && lj.raw[0] != ';') { abort = true; break; }
+            ++j;
+        }
+        if (abort || j >= p.lines.size())
+            continue;
+        const Line &b = p.lines[j];
+        if (!b.is_unretract || !b.has_e)
+            continue;
+        // Conservative: require zero XY motion between i and j (inclusive
+        // of both endpoints — a retract usually carries no XY, an
+        // unretract by definition carries none).
+        bool any_xy = (a.length_xy > 1e-6) || (b.length_xy > 1e-6);
+        for (size_t k = i + 1; !any_xy && k < j; ++k) {
+            if (p.lines[k].length_xy > 1e-6) { any_xy = true; }
+        }
+        if (any_xy)
+            continue;
+        // Magnitudes must cancel within tolerance.
+        if (std::fabs(a.e + b.e) > 1e-4)
+            continue;
+
+        char note[96];
+        std::snprintf(note, sizeof(note),
+                      "; LeanSpectrum: collapsed redundant retract %+.3f / un-retract %+.3f",
+                      a.e, b.e);
+        p.lines[i].raw = note;
+        p.lines[j].raw = "; LeanSpectrum: (un-retract removed by collapse above)";
+        p.lines[i].is_retract   = false;
+        p.lines[j].is_unretract = false;
+        removed += 2;
+        i = j;
+    }
+    stats.lines_removed += removed;
+    return removed;
 }
 
 } // namespace

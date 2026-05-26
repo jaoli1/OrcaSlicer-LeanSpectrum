@@ -288,3 +288,59 @@ TEST_CASE("Pass 2: 0 percent is a no-op", "[FilamentEconomy]")
     REQUIRE(stats.purges_shrunk == 0);
     REQUIRE(stats.extrusion_saved_mm == 0.0);
 }
+
+TEST_CASE("Pass 3: back-to-back retract+unretract is collapsed", "[FilamentEconomy]")
+{
+    // No XY motion between the two — they cancel out exactly.
+    const std::string gcode =
+        "M83\n"
+        "G1 X10 Y0 E1 F1200\n"
+        "G1 E-2 F1800\n"     // retract
+        "G1 E2 F1800\n"      // un-retract immediately after, no XY
+        "G1 X20 Y0 E1 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.merge_travel      = true;
+    s.remove_noop_swaps = false;
+    s.curvature_lh      = false;
+    s.shrink_purge      = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.lines_removed == 2);
+    REQUIRE(stats.modified == true);
+    REQUIRE_THAT(gc.read(),
+                 Catch::Matchers::Contains("LeanSpectrum: collapsed redundant retract"));
+}
+
+TEST_CASE("Pass 3: retract+travel+unretract is preserved", "[FilamentEconomy]")
+{
+    // A travel move sits between the retract and the un-retract — this is
+    // a legitimate avoid-string pattern and must not be collapsed.
+    const std::string gcode =
+        "M83\n"
+        "G1 X10 Y0 E1 F1200\n"
+        "G1 E-2 F1800\n"
+        "G1 X40 Y40 F9000\n"  // travel — preserves the retract's purpose
+        "G1 E2 F1800\n"
+        "G1 X50 Y40 E0.5 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.merge_travel = true;
+    s.remove_noop_swaps = false;
+    s.curvature_lh = false;
+    s.shrink_purge = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.lines_removed == 0);
+}
+
+TEST_CASE("Pass 3: disabled flag respects setting", "[FilamentEconomy]")
+{
+    const std::string gcode =
+        "M83\n"
+        "G1 E-2 F1800\n"
+        "G1 E2 F1800\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.merge_travel = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.lines_removed == 0);
+}

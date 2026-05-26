@@ -553,17 +553,39 @@ void median_filter(std::vector<double> &v, int window)
 }
 
 // Pass 4 — curvature-aware adaptive E scaling.
+//
+// First-layer guard: segments at Z within one modal layer-height of the
+// build plate are excluded entirely. The first layer is the only one
+// where reduced extrusion would meaningfully hurt adhesion, and the
+// paper's caps were derived for non-first layers.
+//
+// Mass-conservation guard: after the rewrite, we check that the
+// realised extrusion ratio (Σ E_new / Σ E_old over the touched
+// segments) lies within [1 - max_red - tol, 1]. If it doesn't, that
+// almost certainly indicates a parser bug — we rollback the segment-
+// level E rewrites and report verification_ok = false rather than
+// silently shipping an over- or under-extruded file.
 size_t pass_curvature_lh(Parsed &p, Stats &stats, const Settings &s)
 {
     if (!stats.verification_ok)
         return 0;
 
+    const double first_layer_z =
+        p.layer_height_modal > 1e-6 ? p.layer_height_modal + 1e-3 : 0.5;
+
     std::vector<size_t> idx;
     idx.reserve(p.lines.size() / 8);
     for (size_t i = 0; i < p.lines.size(); ++i) {
         const Line &l = p.lines[i];
-        if (l.is_extrusion && l.length_xy > 1e-6)
-            idx.push_back(i);
+        if (!l.is_extrusion || l.length_xy <= 1e-6)
+            continue;
+        // Skip the first layer to preserve bed adhesion. We use the modal Z
+        // populated by reconstruct_modal — `l.z == 0` means no Z move has
+        // been observed yet (synthetic tests, or pre-first-Z preamble),
+        // which we deliberately don't filter so unit tests stay simple.
+        if (l.z > 0.0 && l.z <= first_layer_z)
+            continue;
+        idx.push_back(i);
     }
     if (idx.size() < 3)
         return 0;
@@ -596,21 +618,52 @@ size_t pass_curvature_lh(Parsed &p, Stats &stats, const Settings &s)
 
     median_filter(ratios, s.curvature_filter_window);
 
+    // First pass: snapshot the original E values for the segments we'll
+    // touch, so we can rollback if the conservation check fails.
+    struct OriginalE { size_t idx; double e; std::string raw; };
+    std::vector<OriginalE> originals;
+    originals.reserve(idx.size());
+
     size_t scaled = 0;
-    double saved  = 0.0;
+    double saved   = 0.0;
+    double e_total = 0.0;
     for (size_t k = 0; k < idx.size(); ++k) {
         Line &l = p.lines[idx[k]];
         if (!l.has_e || l.e <= 0.0)
             continue;
+        e_total += l.e;
         const double r = ratios[k];
         if (r >= 0.999)
             continue;
+        originals.push_back({ idx[k], l.e, l.raw });
         const double e_new = l.e * r;
         saved   += (l.e - e_new);
         l.e      = e_new;
         l.e_ratio = r;
         rewrite_e_token(l.raw, e_new);
         ++scaled;
+    }
+
+    // Conservation check: saved must be no more than max_red * e_total
+    // (with a 1% slack for floating-point and rounding from the median
+    // filter). A larger reduction means the parser scaled something it
+    // shouldn't have — roll back the segment-level rewrites and reject.
+    if (e_total > 0.0) {
+        const double observed_red = saved / e_total;
+        if (observed_red > max_red + 0.01) {
+            for (const OriginalE &o : originals) {
+                Line &l = p.lines[o.idx];
+                l.e     = o.e;
+                l.raw   = o.raw;
+                l.e_ratio = 1.0;
+            }
+            stats.verification_ok = false;
+            stats.notes.emplace_back(
+                "pass4: mass-conservation guard tripped (observed " +
+                std::to_string(observed_red) + " > cap " +
+                std::to_string(max_red + 0.01) + "); changes reverted");
+            return 0;
+        }
     }
 
     stats.segments_scaled    += scaled;

@@ -231,6 +231,50 @@ TEST_CASE("Pass 4: straight line is reduced, sharp corner is preserved", "[Filam
     REQUIRE(stats.modified == true);
 }
 
+TEST_CASE("Pass 4: first layer is preserved (bed adhesion)", "[FilamentEconomy]")
+{
+    // Z=0.2 throughout — entirely within the modal first-layer band.
+    // Pass 4 must not reduce extrusion here even on long straight runs.
+    const std::string gcode =
+        ";TYPE:Sparse infill\n"
+        "M83\n"
+        "G1 X0 Y0  Z0.2 F600\n"
+        "G1 X10 Y0      E1.000 F1200\n"
+        "G1 X20 Y0      E1.000 F1200\n"
+        "G1 X30 Y0      E1.000 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.curvature_lh           = true;
+    s.curvature_filter_window= 1;
+    s.force_m83              = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.segments_scaled == 0);
+    REQUIRE(stats.extrusion_saved_mm == 0.0);
+}
+
+TEST_CASE("Pass 4: layers above the first are reduced normally", "[FilamentEconomy]")
+{
+    // Same straight run as the previous test, but the Z hop puts the
+    // extruder well above the first-layer band — Pass 4 must engage.
+    const std::string gcode =
+        ";TYPE:Sparse infill\n"
+        "M83\n"
+        "G1 X0 Y0  Z2.0 F600\n"
+        "G1 X10 Y0      E1.000 F1200\n"
+        "G1 X20 Y0      E1.000 F1200\n"
+        "G1 X30 Y0      E1.000 F1200\n"
+        "G1 X30 Y10     E1.000 F1200\n"
+        "G1 X30 Y20     E1.000 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.curvature_lh           = true;
+    s.curvature_filter_window= 1;
+    s.force_m83              = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.segments_scaled > 0);
+    REQUIRE(stats.extrusion_saved_mm > 0.0);
+}
+
 TEST_CASE("Pass 4: bridge segments are never reduced", "[FilamentEconomy]")
 {
     const std::string gcode =

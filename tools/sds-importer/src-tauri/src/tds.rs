@@ -17,11 +17,13 @@ static SPEED_UNIT_RX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static DENSITY_VALUE_RX: Lazy<Regex> = Lazy::new(|| {
-    // Match a plausible density value (0.5 .. 1.8 g/cm^3) anywhere within the
-    // configurable window around the label. Many vendor data sheets use a
-    // tabular layout with tens of whitespace characters between the label and
-    // the value.
-    Regex::new(r"(0\.[5-9]\d?|1\.[0-7]\d?)\s*(?:g/cm|kg/m)?").unwrap()
+    Regex::new(r"(0\.[5-9]\d?|1\.[0-7]\d?)").unwrap()
+});
+static DENSITY_VALUE_WITH_UNIT_AFTER_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(0\.[5-9]\d?|1\.[0-7]\d?)\s*(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)").unwrap()
+});
+static DENSITY_VALUE_WITH_UNIT_BEFORE_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)\s*[^\d\n]{0,40}(0\.[5-9]\d?|1\.[0-7]\d?)").unwrap()
 });
 
 static MANUFACTURER_RX: Lazy<Regex> = Lazy::new(|| {
@@ -35,6 +37,11 @@ static PRODUCT_LINE_RX: Lazy<Regex> = Lazy::new(|| {
     // After a heading like "TDS" or "Technical Data Sheet" the next line is
     // usually the short product name. We don't require an exact format.
     Regex::new(r"(?im)^\s*(PLA\+?|PETG\+?|ABS\+?|ASA|PC\+?|TPU\+?|HIPS|PP|PA\s?\d+|Nylon\s?\d*|[A-Z][A-Z0-9\-]+\s*(?:PLA|PETG|ABS|TPU|PA))\s*$").unwrap()
+});
+
+static LABELLED_PRODUCT_NAME_RX: Lazy<Regex> = Lazy::new(|| {
+    // "Product Name: <value>" / "PRODUCT NAME:  <value>" / "Nom du produit : ..."
+    Regex::new(r"(?im)^\s*(?:\d+\.\d+\s+)?(?:product\s*(?:name|identification|identifier)|trade\s*name|nom\s+du\s+produit|nom\s+commercial)\s*[:\-]?\s+(\S.{1,80}?)\s*$").unwrap()
 });
 
 pub fn looks_like_tds(text: &str) -> bool {
@@ -138,13 +145,33 @@ fn scan_range_with_hint(
     (None, None)
 }
 
+fn density_pull(window: &str, rx: &Regex) -> Option<f64> {
+    rx.captures(window)
+        .and_then(|c| c.get(1).and_then(|m| m.as_str().parse().ok()))
+}
+
 fn scan_density(text: &str) -> Option<f64> {
     let lower = text.to_ascii_lowercase();
     let idx = lower.find("density").or_else(|| lower.find("densit"))?;
-    // Some sheets put the value 50-150 chars after the label.
-    let window = &text[idx..text.len().min(idx + 200)];
-    DENSITY_VALUE_RX.captures(window)
-        .and_then(|c| c.get(1).and_then(|m| m.as_str().parse().ok()))
+    // 200 forward / 400 backward. The wider backward window covers SUNLU's
+    // official TDS where the 1.23 value sits ~270 chars above the label
+    // because pdftotext extracts the data column ahead of the property
+    // column.
+    let forward = &text[idx..text.len().min(idx + 200)];
+    let before_start = idx.saturating_sub(400);
+    let backward = &text[before_start..idx];
+
+    // Prefer unit-aware matches (g/cm, kg/m). Rejects false-friends like
+    // "1.5 mm" (thickness) and "1.51 ohm-cm" (resistivity) that share the
+    // plausible-density numeric range.
+    density_pull(forward,  &DENSITY_VALUE_WITH_UNIT_AFTER_RX)
+        .or_else(|| density_pull(forward,  &DENSITY_VALUE_WITH_UNIT_BEFORE_RX))
+        .or_else(|| density_pull(backward, &DENSITY_VALUE_WITH_UNIT_AFTER_RX))
+        .or_else(|| density_pull(backward, &DENSITY_VALUE_WITH_UNIT_BEFORE_RX))
+        // Last resort: bare value scan (only when no unit was found in the
+        // surrounding window at all).
+        .or_else(|| density_pull(forward,  &DENSITY_VALUE_RX))
+        .or_else(|| density_pull(backward, &DENSITY_VALUE_RX))
 }
 
 fn scan_manufacturer(text: &str) -> Option<String> {
@@ -181,8 +208,39 @@ fn pick_brand(manufacturer: &str) -> Option<String> {
         .map(|w| w.trim_end_matches(|c: char| !c.is_alphanumeric()).to_string())
 }
 
+/// Trim trailing generic markers that don't belong in a profile name:
+/// "Filament", "1.75mm", "Spool", "Refill" …
+fn strip_trailing_noise(s: &str) -> String {
+    static TRAIL: Lazy<Regex> = Lazy::new(|| {
+        Regex::new(r"(?i)\s*(?:filament|1[,.]75\s*mm|2[,.]85\s*mm|3\s*mm|spool|refill|matt|\d+\s*kg|1kg|3d)+\s*$").unwrap()
+    });
+    let cleaned = TRAIL.replace(s, "").trim().to_string();
+    if cleaned.is_empty() { s.to_string() } else { cleaned }
+}
+
 fn scan_product_name(text: &str, manufacturer: Option<&str>) -> Option<String> {
-    let head = &text[..text.len().min(800)];
+    let head = &text[..text.len().min(1200)];
+
+    // Labelled form ("Product Name: PLA", "PRODUCT NAME:  FILAMENT 3D PLA Speed Matt")
+    // takes precedence — it carries the explicit value.
+    if let Some(c) = LABELLED_PRODUCT_NAME_RX.captures(head) {
+        if let Some(m) = c.get(1) {
+            let raw = m.as_str().trim().to_string();
+            let cleaned = strip_trailing_noise(&raw);
+            if !cleaned.is_empty() && cleaned.len() <= 60 {
+                if let Some(mfr) = manufacturer {
+                    if let Some(brand) = pick_brand(mfr) {
+                        if !cleaned.to_ascii_lowercase().contains(&brand.to_ascii_lowercase()) {
+                            return Some(format!("{} {}", brand, cleaned));
+                        }
+                    }
+                }
+                return Some(cleaned);
+            }
+        }
+    }
+
+    // Fallback: a short polymer-name-only line ("PLA+", "PETG" on its own row).
     if let Some(c) = PRODUCT_LINE_RX.captures(head) {
         if let Some(m) = c.get(1) {
             let candidate = m.as_str().trim().to_string();
@@ -397,6 +455,66 @@ Vicat Softening Temperature( C) ASTM D1525 (ISO 306 GB/T 1633)                54
         assert_eq!(pick_brand("Shenzhen Eryone Technology Co.,Ltd").as_deref(), Some("Eryone"));
         assert_eq!(pick_brand("Berlin Polymaker GmbH").as_deref(),               Some("Polymaker"));
         assert_eq!(pick_brand("FormFutura B.V.").as_deref(),                     Some("FormFutura"));
+    }
+
+    /// Official SUNLU PLA TDS — uses a "Product Name: PLA" labelled line
+    /// (not a polymer-only line) and the density value sits BEFORE the
+    /// "Density" label because pdftotext extracted the data column ahead
+    /// of the property column.
+    #[test]
+    fn parses_sunlu_official_tds_layout() {
+        let tds = r#"
+TECHNICAL DATA SHEET ISO                                 Number                     SL-TE-WI-077
+
+Product Name: PLA
+
+Properties                               Test Method    Test Condition S.I. Units Typical Values
+
+Thermal                                                              %             54
+(X-Y) Heat Distortion (HDT)                                                        164
+Glass Transition (Tg)                       ISO 306                              %  54
+Melting Temperature                         ISO 294
+@5%Decomposition Temp.                   ISO 11359-2                          0.1-0.3
+Vicat Softening Temp.                                                          101
+Moulding Shrinkage                         ISO 1133
+Coefficient of Thermal Exp.                ISO 1183     190/2.16 kg         g/10 min    6.9
+                                          IEC 60093          23              g/cm3      1.23
+Others                                    IEC 60250
+                                                             1 kHz          ohm-cm      1.51
+Melt Mass-flow Rate                          UL 94                                       HB
+Density                                                     1.5 mm            Class
+Volume Resistivity
+
+Recommended Printing Parameters
+
+Parameters                                    Range
+
+                                 Temperature                                                    Speed
+
+Nozzle Temp.                                                                                    mm/s
+                                 200-210                                                        50-100
+                                 210-240                                                        100-200
+
+Plate Temp.                                   60-70
+
+Plate Material                   Textured PEI Build Plate
+
+Cooling Fan                          Open/Close
+
+Drying Temp.                                  50
+"#;
+        let r = parse(tds);
+        assert_eq!(r.polymer, Some(Polymer::Pla));
+        // Labelled "Product Name: PLA" form is now accepted in TDS scan.
+        assert_eq!(r.product_name.as_deref(), Some("PLA"));
+        // Density 1.23 sits BEFORE the "Density" label; backward fallback wins.
+        assert_eq!(r.density_g_cm3, Some(1.23));
+        // First Nozzle Temp row (200-210) is fine — second row (210-240)
+        // is the high-speed variant we choose not to chase.
+        assert_eq!(r.nozzle_temp_min_c, Some(200.0));
+        assert_eq!(r.nozzle_temp_max_c, Some(210.0));
+        assert_eq!(r.bed_temp_min_c,    Some(60.0));
+        assert_eq!(r.bed_temp_max_c,    Some(70.0));
     }
 
     /// ROSA3D PLA Speed TDS layout — pdftotext extracted the VALUE column

@@ -114,14 +114,39 @@ fn parse_temp_range(text: &str) -> (Option<f64>, Option<f64>) {
     parse_temp_range_with_floor(text, 50.0, 500.0)
 }
 
+static DENSITY_VALUE_WITH_UNIT_AFTER_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(0\.[5-9]\d?|1\.[0-7]\d?)\s*(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)").unwrap()
+});
+static DENSITY_VALUE_WITH_UNIT_BEFORE_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)\s*[^\d\n]{0,40}(0\.[5-9]\d?|1\.[0-7]\d?)").unwrap()
+});
+
+fn density_pull(window: &str, rx: &Regex) -> Option<f64> {
+    rx.captures(window)
+        .and_then(|c| c.get(1).and_then(|m| m.as_str().parse().ok()))
+}
+
 fn parse_density(text: &str) -> Option<f64> {
-    // Scan for "density" / "densité" in the section and pull the first
-    // plausible density value within a 200-char window.
     let lower = text.to_ascii_lowercase();
     let idx = lower.find("density").or_else(|| lower.find("densit"))?;
-    let window = &text[idx..text.len().min(idx + 200)];
-    DENSITY_VALUE_RX.captures(window)
-        .and_then(|c| c.get(1).and_then(|m| m.as_str().parse().ok()))
+    // Forward window stays at 200 chars (most SDS print density on the
+    // same line as the label). Backward window is wider (400 chars) for
+    // reverse-column TDS layouts where the value sits several lines
+    // above the label.
+    let forward = &text[idx..text.len().min(idx + 200)];
+    let before_start = idx.saturating_sub(400);
+    let backward = &text[before_start..idx];
+
+    // Prefer unit-aware matches (g/cm, kg/m). They reject false friends
+    // like "1.5 mm" (thickness) or "1.51 ohm-cm" (resistivity) that share
+    // the plausible-density numeric range.
+    density_pull(forward,  &DENSITY_VALUE_WITH_UNIT_AFTER_RX)
+        .or_else(|| density_pull(forward,  &DENSITY_VALUE_WITH_UNIT_BEFORE_RX))
+        .or_else(|| density_pull(backward, &DENSITY_VALUE_WITH_UNIT_AFTER_RX))
+        .or_else(|| density_pull(backward, &DENSITY_VALUE_WITH_UNIT_BEFORE_RX))
+        // Fallback: bare value scan (only when no unit is anywhere nearby).
+        .or_else(|| density_pull(forward,  &DENSITY_VALUE_RX))
+        .or_else(|| density_pull(backward, &DENSITY_VALUE_RX))
 }
 
 fn next_non_empty_line<'a>(lines: &mut std::str::Lines<'a>) -> Option<&'a str> {

@@ -20394,6 +20394,16 @@ bool Plater::convert_bambu_to_u1()
     // printing with the 4 physicals only.
     auto &mgr = wxGetApp().preset_bundle->mixed_filaments;
     mgr.load_bambu_convert_recipe(recipe.str(), new_colors);
+    // Activate the dither path so the new custom rows actually drive
+    // layer-by-layer A/B choice at slicing time. apply_gradient_settings
+    // is the only API that flips m_advanced_dithering; we keep
+    // gradient_mode = 0 (layer cycle) and reuse the project's bounds
+    // (defaults are sensible).
+    mgr.apply_gradient_settings(/*gradient_mode=*/0,
+                                /*lower_bound=*/0.04f,
+                                /*upper_bound=*/0.16f,
+                                /*advanced_dithering=*/true);
+    mgr.set_dither_mode(MixedFilamentManager::DitherMode::FloydSteinberg);
     // Persist via the existing mixed_filament_definitions path so the
     // custom rows survive .3mf save / load (PresetBundle's load flow
     // already round-trips this key through load_custom_entries).

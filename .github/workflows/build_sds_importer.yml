@@ -154,7 +154,9 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: SDS Importer ${{ github.ref_name }}
+          body_path: tools/sds-importer/CHANGELOG.md
           generate_release_notes: true
+          append_body: true
           draft: false
           prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
           files: release-assets/*

@@ -187,6 +187,36 @@ public:
                                  float upper_bound,
                                  bool  advanced_dithering = false);
 
+    // ---- FullSpectrum F1/F2 dithering (opt-in) --------------------------
+    //
+    // The default behavior (DitherMode::Ordered) keeps the existing
+    // rotated-Bresenham dither used since the original FullSpectrum
+    // fork. Switching to FloydSteinberg routes the per-layer A/B
+    // decision through Slic3r::FullSpectrumDither — 1D error
+    // diffusion with optional curvature-coupled gain. See
+    // doc/filament-economy/FULLSPECTRUM_OPTIMIZATIONS.md.
+    //
+    // The dither_mode setter is independent of m_advanced_dithering:
+    // dithering must still be enabled via advanced_dithering = true on
+    // apply_gradient_settings() for any non-trivial mode to take effect.
+    enum class DitherMode : uint8_t {
+        Ordered       = 0, // existing rotated-Bresenham (default)
+        FloydSteinberg = 1,
+    };
+
+    void       set_dither_mode(DitherMode mode) { m_dither_mode = mode; }
+    DitherMode dither_mode() const              { return m_dither_mode; }
+
+    // Per-layer curvature gain in [-1, +1]. Positive gain biases the
+    // dither toward more transitions in that layer (useful in
+    // detail-dense Z slabs); negative gain biases toward longer runs.
+    // Only consulted when dither_mode is FloydSteinberg. The vector
+    // is indexed by layer_index; layers beyond its size use gain = 0.
+    void set_layer_curvature_field(std::vector<float> gains)
+        { m_layer_curvature = std::move(gains); }
+    void clear_layer_curvature_field() { m_layer_curvature.clear(); }
+    const std::vector<float> &layer_curvature_field() const { return m_layer_curvature; }
+
     // Persist mixed rows, including auto/deleted state, into the compact
     // project-settings string.
     std::string serialize_custom_entries();
@@ -303,6 +333,8 @@ private:
     float                      m_height_lower_bound  = 0.04f;
     float                      m_height_upper_bound  = 0.16f;
     bool                       m_advanced_dithering  = false;
+    DitherMode                 m_dither_mode         = DitherMode::Ordered;
+    std::vector<float>         m_layer_curvature;
     uint64_t                   m_next_stable_id      = 1;
     MixedFilamentDisplayContext m_display_context;
 };

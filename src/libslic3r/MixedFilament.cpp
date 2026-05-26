@@ -1,4 +1,5 @@
 #include "MixedFilament.hpp"
+#include "FullSpectrumDither.hpp"
 #include "filament_mixer.h"
 
 #include <algorithm>
@@ -1980,8 +1981,25 @@ unsigned int MixedFilamentManager::resolve(unsigned int filament_id,
     if (cycle <= 0)
         return mf.component_a;
 
-    if (m_gradient_mode == 0 && m_advanced_dithering && mf.custom)
+    if (m_gradient_mode == 0 && m_advanced_dithering && mf.custom) {
+        // FullSpectrum F2: route the per-layer A/B decision through 1D
+        // Floyd-Steinberg error diffusion when the user has opted into
+        // DitherMode::FloydSteinberg. A per-layer curvature gain (F1)
+        // is applied on top when the curvature field has been set.
+        if (m_dither_mode == DitherMode::FloydSteinberg) {
+            const bool has_curvature = !m_layer_curvature.empty()
+                && layer_index >= 0
+                && static_cast<size_t>(layer_index) < m_layer_curvature.size();
+            const bool pick_b = has_curvature
+                ? FullSpectrumDither::use_component_b_curvature_dither(
+                      layer_index, mf.ratio_a, mf.ratio_b,
+                      static_cast<double>(m_layer_curvature[layer_index]))
+                : FullSpectrumDither::use_component_b_floyd_steinberg(
+                      layer_index, mf.ratio_a, mf.ratio_b);
+            return pick_b ? mf.component_b : mf.component_a;
+        }
         return use_component_b_advanced_dither(layer_index, mf.ratio_a, mf.ratio_b) ? mf.component_b : mf.component_a;
+    }
 
     const int pos = ((layer_index % cycle) + cycle) % cycle; // safe modulo for negatives
     return (pos < mf.ratio_a) ? mf.component_a : mf.component_b;

@@ -1,0 +1,19 @@
+{
+  "name": "leanspectrum-sds-importer",
+  "version": "0.1.0",
+  "description": "Companion app that turns filament SDS/TDS PDFs into Snapmaker_Orca filament profiles",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0"
+  }
+}

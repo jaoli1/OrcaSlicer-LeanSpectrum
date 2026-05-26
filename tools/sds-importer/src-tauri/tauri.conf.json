@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "LeanSpectrum SDS Importer",
+  "version": "0.1.0",
+  "identifier": "fork.leanspectrum.sds-importer",
+  "build": {
+    "frontendDist": "../frontend",
+    "devUrl": "http://localhost:1430",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "LeanSpectrum SDS Importer",
+        "width": 920,
+        "height": 680,
+        "minWidth": 720,
+        "minHeight": 540,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png"
+    ],
+    "category": "DeveloperTool",
+    "shortDescription": "Filament SDS/TDS -> Snapmaker_Orca profile",
+    "longDescription": "Reads a manufacturer Safety or Technical Data Sheet PDF, extracts the relevant chemistry and printing parameters, and writes a ready-to-use filament profile into the Snapmaker_Orca user directory."
+  },
+  "plugins": {}
+}

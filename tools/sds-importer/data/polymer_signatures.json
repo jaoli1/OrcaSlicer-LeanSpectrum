@@ -1,0 +1,15 @@
+{
+  "_comment": "Reference table — the authoritative copy lives in src-tauri/src/polymer.rs. This JSON is for downstream tooling that wants the same signatures without depending on the Rust crate.",
+  "polymers": [
+    { "id": "PLA",       "cas": ["9051-89-2", "26100-51-6", "33135-50-1"], "names": ["polylact", "PLA", "acide polylactique"] },
+    { "id": "PETG",      "cas": ["25640-14-6", "30965-26-5"],              "names": ["PETG", "PET-G", "polyethylene terephthalate glycol"] },
+    { "id": "ABS",       "cas": ["9003-56-9"],                             "names": ["acrylonitrile butadiene styrene", "ABS"] },
+    { "id": "ASA",       "cas": ["26299-47-8"],                            "names": ["acrylonitrile styrene acrylate", "ASA"] },
+    { "id": "PC",        "cas": ["24936-68-3", "25037-45-0"],              "names": ["polycarbonate", "PC "] },
+    { "id": "TPU",       "cas": ["75880-72-1", "9009-54-5"],               "names": ["thermoplastic polyurethane", "TPU"] },
+    { "id": "PA6",       "cas": ["32131-17-2", "25038-54-4"],              "names": ["polyamide 6", "polyamide-6", "PA6", "PA 6", "nylon 6"] },
+    { "id": "PA12",      "cas": ["32954-72-4", "25038-74-8"],              "names": ["polyamide 12", "polyamide-12", "PA12", "PA 12", "nylon 12"] },
+    { "id": "HIPS",      "cas": ["9003-55-8"],                             "names": ["high impact polystyrene", "HIPS"] },
+    { "id": "PP",        "cas": ["9003-07-0"],                             "names": ["polypropylene", "polypropylène", "PP "] }
+  ]
+}

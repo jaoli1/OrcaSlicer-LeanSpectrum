@@ -12,7 +12,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::{polymer::Polymer, Error, ExtractedFilament, Result};
+use crate::{polymer::{Polymer, ScarfSettings}, Error, ExtractedFilament, Result};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FilamentProfile(pub Value);
@@ -124,19 +124,23 @@ fn snapmaker_orca_user_dir() -> Option<PathBuf> {
     best.map(|(_, p)| p)
 }
 
+/// Choose the closest stock Snapmaker_Orca filament profile to inherit from.
+/// We prefer the U1-tuned Snapmaker variant when one exists for the polymer
+/// family (it carries U1 cooling / retract / pressure-advance tunings), and
+/// fall back to the universal "Generic" profile otherwise.
 fn inherit_stub_for(polymer: Polymer) -> &'static str {
     match polymer {
         Polymer::Pla       => "Snapmaker PLA SnapSpeed @U1",
-        Polymer::Petg      => "Snapmaker PETG HF",
-        Polymer::Abs       => "Generic ABS",
-        Polymer::Asa       => "Generic ASA",
-        Polymer::Pc        => "Generic PC",
-        Polymer::Tpu       => "Generic TPU",
-        Polymer::NylonPa6  => "Generic PA6",
-        Polymer::NylonPa12 => "Generic PA12",
-        Polymer::Hips      => "Generic HIPS",
-        Polymer::Pp        => "Generic PP",
-        Polymer::Other     => "Generic PLA",
+        Polymer::Petg      => "Snapmaker PETG HF @U1",
+        Polymer::Abs       => "Generic ABS @U1",
+        Polymer::Asa       => "Generic ASA @U1",
+        Polymer::Pc        => "Generic PC @U1",
+        Polymer::Tpu       => "Generic TPU @U1",
+        Polymer::NylonPa6  => "Generic PA @U1",
+        Polymer::NylonPa12 => "Generic PA @U1",
+        Polymer::Hips      => "Generic HIPS @U1",
+        Polymer::Pp        => "Generic PP @U1",
+        Polymer::Other     => "Generic PLA @U1",
     }
 }
 
@@ -157,6 +161,31 @@ pub fn build_and_save(
         _ => json!([""]),
     };
 
+    // The three settings the user singled out as having the biggest impact
+    // on print success: extrusion temperature, bed temperature, and the
+    // maximum volumetric speed. For each we use the extracted value if any,
+    // otherwise the polymer family default. We track which fields were
+    // backfilled in `estimated_fields` so the UI can flag them for review.
+    let mut estimated_fields = ef.estimated_fields.clone();
+
+    let max_flow = ef.max_flow_mm3_s
+        .filter(|v| v.is_finite() && *v > 0.0)
+        .or_else(|| {
+            let v = polymer.default_max_flow_mm3_s();
+            if v.is_some() {
+                estimated_fields.push("filament_max_volumetric_speed".into());
+                log.push(format!(
+                    "Used polymer-family default max volumetric speed ({} mm^3/s) — vendor sheet did not provide one.",
+                    v.unwrap_or(0.0)
+                ));
+            }
+            v
+        });
+
+    // Scarf-joint seam settings tuned per polymer (cf. polymer::default_scarf_settings).
+    let scarf = polymer.default_scarf_settings();
+    let scarf_value = build_scarf_value(&scarf);
+
     let profile = json!({
         "name":     display,
         "from":     "User",
@@ -164,21 +193,41 @@ pub fn build_and_save(
         "inherits": inherit_stub_for(polymer),
         "filament_type":      [polymer.as_str()],
         "filament_vendor":    [manufacturer],
+
+        // Highest-impact fields, set explicitly even when inheriting.
         "nozzle_temperature":             to_string_array(ef.nozzle_temp_recommended_c),
         "nozzle_temperature_range_low":   to_string_array(ef.nozzle_temp_min_c),
         "nozzle_temperature_range_high":  to_string_array(ef.nozzle_temp_max_c),
+        "nozzle_temperature_initial_layer": to_string_array(ef.nozzle_temp_recommended_c),
         "hot_plate_temp":                 to_string_array(ef.bed_temp_min_c),
         "hot_plate_temp_initial_layer":   to_string_array(ef.bed_temp_min_c),
         "filament_density":               to_string_array(ef.density_g_cm3),
-        "filament_max_volumetric_speed":  to_string_array(ef.max_flow_mm3_s),
+        "filament_max_volumetric_speed":  to_string_array(max_flow),
+
+        // Scarf-seam fields. Merged into the JSON so the user can drop the
+        // profile into Snapmaker_Orca and immediately get hidden seams on
+        // appropriate geometry. Per-polymer values (see polymer.rs).
+        "seam_position":               [scarf_value["seam_position"].as_str().unwrap_or("back")],
+        "seam_slope_type":             [if scarf.enable_scarf { "external" } else { "none" }],
+        "seam_slope_conditional":      [if scarf.enable_scarf { "1" } else { "0" }],
+        "seam_slope_min_length":       [format!("{:.1}",   scarf.scarf_length_mm)],
+        "seam_slope_steps":            [scarf.scarf_steps.to_string()],
+        "seam_slope_entire_loop":      ["0"],
+        "seam_slope_inner_walls":      ["0"],
+        "scarf_angle_threshold":       [format!("{}",      scarf.scarf_angle_deg)],
+        "scarf_joint_speed":           [format!("{}%",     scarf.scarf_joint_speed_pct)],
+        "scarf_joint_flow_ratio":      [format!("{}%",     scarf.scarf_flow_ratio_pct)],
+
         "_leanspectrum_metadata": {
             "source":           "SDS/TDS importer",
             "polymer":          polymer.as_str(),
             "extracted_at":     Utc::now().to_rfc3339(),
-            "estimated_fields": ef.estimated_fields,
+            "estimated_fields": estimated_fields,
             "needs_review":     ef.needs_review,
             "source_files":     ef.source_files,
             "revision_date":    ef.revision_date,
+            "scarf_settings":   scarf_value,
+            "inherit_target":   inherit_stub_for(polymer),
         }
     });
 
@@ -217,6 +266,18 @@ fn sanitize(s: &str) -> String {
     s.chars()
         .map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' || c == '.' { c } else { '_' })
         .collect()
+}
+
+fn build_scarf_value(s: &ScarfSettings) -> Value {
+    json!({
+        "enable_scarf":         s.enable_scarf,
+        "scarf_joint_speed_pct": s.scarf_joint_speed_pct,
+        "scarf_length_mm":      s.scarf_length_mm,
+        "scarf_steps":          s.scarf_steps,
+        "scarf_flow_ratio_pct": s.scarf_flow_ratio_pct,
+        "scarf_angle_deg":      s.scarf_angle_deg,
+        "seam_position":        s.seam_position,
+    })
 }
 
 fn recommend_process(_user_dir: &Path, _polymer: Polymer) -> Option<RecommendedProcess> {

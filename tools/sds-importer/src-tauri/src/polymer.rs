@@ -89,6 +89,116 @@ impl Polymer {
             Polymer::Other     => return None,
         })
     }
+
+    /// Conservative default maximum volumetric speed (mm³/s) for the polymer
+    /// family. These are the values that most affect print success when a
+    /// vendor TDS does not provide an explicit flow limit. Tuned for a
+    /// standard 0.4 mm nozzle on a non-volcano hotend; high-flow setups
+    /// (volcano, CHT) can typically run 1.5-2× higher.
+    pub fn default_max_flow_mm3_s(&self) -> Option<f64> {
+        Some(match self {
+            Polymer::Pla       => 12.0,
+            Polymer::Petg      =>  9.0,
+            Polymer::Abs       =>  9.0,
+            Polymer::Asa       =>  9.0,
+            Polymer::Pc        =>  7.0,
+            Polymer::Tpu       =>  4.0,
+            Polymer::NylonPa6  =>  8.0,
+            Polymer::NylonPa12 =>  8.0,
+            Polymer::Hips      =>  9.0,
+            Polymer::Pp        =>  7.0,
+            Polymer::Other     => return None,
+        })
+    }
+
+    /// Recommended scarf-joint seam settings per polymer family. These are
+    /// the OrcaSlicer fields that hide the Z-seam line; values come from
+    /// the OrcaSlicer wiki defaults + community guides
+    /// (orcaslicer.com/wiki/print_settings/quality/quality_settings_seam,
+    ///  Obico OrcaSlicer Seam Settings guide).
+    ///
+    /// PLA: the friendliest material for scarf seams — defaults work as-is.
+    /// PETG: needs slower scarf speed to limit stringing across the ramp.
+    /// ABS/ASA/PC: similar speed cap to PETG, slightly tighter angle
+    ///   threshold so the conditional scarf only fires on smoother sections.
+    /// TPU: skip the scarf entirely (rubbery polymer doesn't ramp cleanly);
+    ///   fall back to aligned seam + manual paint.
+    /// Nylon: same as PETG family for processing reasons.
+    pub fn default_scarf_settings(&self) -> ScarfSettings {
+        match self {
+            Polymer::Pla => ScarfSettings {
+                enable_scarf:         true,
+                scarf_joint_speed_pct: 50,   // % of outer wall speed
+                scarf_length_mm:      20.0,
+                scarf_steps:          10,
+                scarf_flow_ratio_pct: 100,
+                scarf_angle_deg:      155,
+                seam_position:        "back".into(),
+            },
+            Polymer::Petg | Polymer::Hips => ScarfSettings {
+                enable_scarf:         true,
+                scarf_joint_speed_pct: 40,
+                scarf_length_mm:      20.0,
+                scarf_steps:          12,
+                scarf_flow_ratio_pct: 100,
+                scarf_angle_deg:      150,
+                seam_position:        "back".into(),
+            },
+            Polymer::Abs | Polymer::Asa | Polymer::Pc => ScarfSettings {
+                enable_scarf:         true,
+                scarf_joint_speed_pct: 40,
+                scarf_length_mm:      18.0,
+                scarf_steps:          12,
+                scarf_flow_ratio_pct: 100,
+                scarf_angle_deg:      150,
+                seam_position:        "back".into(),
+            },
+            Polymer::NylonPa6 | Polymer::NylonPa12 | Polymer::Pp => ScarfSettings {
+                enable_scarf:         true,
+                scarf_joint_speed_pct: 35,
+                scarf_length_mm:      18.0,
+                scarf_steps:          12,
+                scarf_flow_ratio_pct: 100,
+                scarf_angle_deg:      150,
+                seam_position:        "back".into(),
+            },
+            Polymer::Tpu => ScarfSettings {
+                enable_scarf:         false,
+                scarf_joint_speed_pct: 0,
+                scarf_length_mm:      0.0,
+                scarf_steps:          0,
+                scarf_flow_ratio_pct: 100,
+                scarf_angle_deg:      0,
+                seam_position:        "aligned".into(),
+            },
+            Polymer::Other => ScarfSettings::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ScarfSettings {
+    pub enable_scarf:         bool,
+    pub scarf_joint_speed_pct: u32,   // % of outer wall speed
+    pub scarf_length_mm:      f64,
+    pub scarf_steps:          u32,
+    pub scarf_flow_ratio_pct: u32,
+    pub scarf_angle_deg:      u32,
+    pub seam_position:        String, // "back" | "aligned" | "nearest" | "random"
+}
+
+impl Default for ScarfSettings {
+    fn default() -> Self {
+        ScarfSettings {
+            enable_scarf:         true,
+            scarf_joint_speed_pct: 50,
+            scarf_length_mm:      20.0,
+            scarf_steps:          10,
+            scarf_flow_ratio_pct: 100,
+            scarf_angle_deg:      155,
+            seam_position:        "back".into(),
+        }
+    }
 }
 
 struct Signature {

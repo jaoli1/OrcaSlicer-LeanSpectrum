@@ -49,25 +49,67 @@ companion Tauri app:
   no slicer modification is needed for import
 - can be replaced or removed without touching the slicer
 
-## Building
+## Installing the prebuilt binary
+
+Releases are published as GitHub assets when a tag matching
+`sds-importer-v*` is pushed to the parent repo. See
+[Releases](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases?q=sds-importer)
+for the latest version.
+
+| OS         | Artifact                                     |
+|------------|----------------------------------------------|
+| Linux      | `.AppImage`, `.deb`, `.rpm`                  |
+| macOS      | `.dmg` (separate arm64 and Intel builds)     |
+| Windows    | `.msi` (recommended), `.exe` (NSIS)          |
+
+Tesseract is required for OCR fallback on scanned PDFs. The app does
+**not** bundle it; install it via your system package manager:
+
+- macOS: `brew install tesseract tesseract-lang`
+- Windows: `winget install UB-Mannheim.TesseractOCR`
+- Linux: `apt install tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng`
+
+If Tesseract is missing, only born-digital PDFs (which is most vendor
+SDS/TDS) will work; scanned documents will produce an error message
+pointing back to the install instructions.
+
+## Building from source
 
 You need:
 
 - Rust 1.75+ (`rustup default stable`)
-- Node 18+ and `pnpm` (any package manager works, examples use pnpm)
-- Tesseract 5+ installed system-wide (the app calls the binary; we do
-  not bundle it to respect each distro's preferred install)
-  - macOS: `brew install tesseract tesseract-lang`
-  - Windows: `winget install UB-Mannheim.TesseractOCR`
-  - Linux: `apt install tesseract-ocr tesseract-ocr-fra tesseract-ocr-eng`
+- The system WebView libraries that Tauri 2 depends on (Linux only —
+  macOS/Windows ship them by default):
+  ```bash
+  sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev \
+                   librsvg2-dev patchelf libssl-dev libsoup-3.0-dev \
+                   libgtk-3-dev libayatana-appindicator3-dev
+  ```
+- Tauri CLI: `cargo install tauri-cli --version "^2.0.0" --locked`
 
 Then from this directory:
 
 ```bash
-pnpm install
-pnpm tauri dev      # development run
-pnpm tauri build    # release bundle
+cargo tauri dev      # development run (auto-rebuild on change)
+cargo tauri build    # release bundle in src-tauri/target/release/bundle/
 ```
+
+The frontend uses `withGlobalTauri: true`, so no Node / pnpm / npm is
+required — `cargo tauri` handles everything.
+
+If you replace the placeholder app icon, regenerate platform-specific
+variants with:
+
+```bash
+cargo tauri icon path/to/your-source.png
+```
+
+## Continuous integration
+
+`.github/workflows/build_sds_importer.yml` runs `cargo test` on every
+push touching this folder. Pushing a tag matching `sds-importer-v*`
+also triggers cross-platform release builds and publishes the
+binaries as a GitHub Release.
 
 ## Project layout
 

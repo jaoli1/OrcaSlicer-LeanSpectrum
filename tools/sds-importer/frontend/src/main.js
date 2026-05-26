@@ -1,4 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
+// Use the global Tauri API exposed via `withGlobalTauri: true` in
+// tauri.conf.json. Avoids the need for a JS bundler.
+const { invoke } = window.__TAURI__.core;
 
 // ----- tabs -----
 document.querySelectorAll(".tab").forEach(t => {

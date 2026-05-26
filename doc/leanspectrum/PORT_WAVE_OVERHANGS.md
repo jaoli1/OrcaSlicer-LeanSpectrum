@@ -53,31 +53,93 @@ Grouped under a `wave_overhangs_enable` master toggle (off by default):
 The exact key names should mirror dennisklappe's verbatim so future
 upstream sync is mechanical.
 
-## Porting steps
+## Verified file scope (clone + diff vs upstream OrcaSlicer)
 
-1. **Clone dennisklappe's fork locally** and diff against its
-   upstream-merge tag (the README mentions ongoing rebase against
-   SoftFever/OrcaSlicer main).
-2. **Identify changed files**. Expected scope from the README:
-   - `src/libslic3r/PerimeterGenerator.cpp` — new wavefront emitter
-   - `src/libslic3r/PrintConfig.cpp` — config key definitions
-   - `src/slic3r/GUI/Tab.cpp` — new "Wave overhangs" settings tab
-   - `src/libslic3r/Layer*.cpp` — possibly seed-layer detection
-   - Tests under `tests/libslic3r/`
-3. **Sequence the import** as a series of small commits in this order
-   so each step keeps the tree compilable:
-   1. Add config keys (defaulted to off / 0).
-   2. Add the perimeter-generator hook stub (no-op when disabled).
-   3. Port the algorithm body and unit tests.
-   4. Add the GUI tab (last, since it's wxWidgets and slowest to test).
-4. **Adapt to FullSpectrum**: wave overhangs touch perimeter
-   generation, FullSpectrum cadence touches *which* extruder a layer
-   uses. They commute. No conflict expected, but spot-check Pass 1's
-   no-op tool change detection against the new perimeter markers.
-5. **Run our economy passes after**: Wave Overhangs emits more total
-   line segments than a stock perimeter (smaller turns), so Pass 4
-   (curvature E scaling) has more work to do — exactly the kind of
-   regression test we want to add.
+Cloned dennisklappe/OrcaSlicer-WaveOverhangs and diffed against the
+merge base with OrcaSlicer/OrcaSlicer main. Numbers below are precise
+as of dennisklappe HEAD f6853e5a8d (May 2026):
+
+**Total**: 3008 lines added, 32 removed, across 26 files in
+`src/libslic3r/`.
+
+| File | Δ lines | Role |
+|---|---:|---|
+| `WaveOverhangs/WaveOverhangs.cpp` | +916 | Main algorithm — wavefront propagation, pattern modes (Smart / Monotonic / ZigZag), narrow-region split, corner reinforcement |
+| `WaveOverhangs/WaveOverhangs.hpp` | +50 | Public API |
+| `WaveOverhangs/AndersonsGenerator.cpp` | +55 | Andersons reference impl |
+| `WaveOverhangs/AndersonsGenerator.hpp` | +25 | |
+| `WaveOverhangs/IGenerator.hpp` | +71 | Generator interface |
+| `PrintConfig.cpp` | +489 | ~20 setting definitions (Detection, Pattern, Motion, Cooling, Floor, Debug) |
+| `PrintConfig.hpp` | +61 | Setting struct fields + accessor declarations |
+| `PerimeterGenerator.cpp` | +379 | Hook — carve wall_loops out of wave-covered regions, emit waves |
+| `PerimeterGenerator.hpp` | +15 | API extension |
+| `PrintObject.cpp` | +343 | Pipeline integration — detect overhang seed layers |
+| `GCode.cpp` | +267 | Emit wave markers + fan boost |
+| `Fill/Fill.cpp` | +78 | Hilbert-curve floor over wave regions; preserve solid infill above stacked waves |
+| `GCode/CoolingBuffer.cpp` | +84 | Aux fan override for wave regions |
+| `Support/TreeSupport.cpp` | +36 | Skip tree supports inside wave-covered regions |
+| `Support/SupportMaterial.cpp` | +21 | Same for ordinary supports |
+| `GCodeWriter.cpp` | +24 | End-of-line retraction in wave segments |
+| `Layer.hpp` | +24 | Layer-level wave region annotations |
+| `Preset.cpp` | +18 | Round-trip the new keys |
+| `LayerRegion.cpp` | +11 | Invoke wave generator from region |
+| `Print.hpp` | +13 | Forward decls |
+| `GCode.hpp` | +8 | API |
+| `GCodeWriter.hpp` | +4 | API |
+
+Plus 4 lines of GUI touch (AboutDialog, ConfigManipulation, GUI_App,
+Plater) for attribution and validation strings.
+
+## Porting steps (revised)
+
+1. **Land the new module first** (`WaveOverhangs/` directory) as a
+   self-contained unit. The 5 files there have *no* upstream
+   dependencies — they're new C++ that can land without touching
+   any existing path. Add to `CMakeLists.txt` but don't call from
+   anywhere yet.
+2. **Add the 20+ config keys** in `PrintConfig.cpp/hpp` defaulted to
+   off / 0. Master toggle: `wave_overhangs_enable = false`. This
+   commit is a no-op behaviorally but makes every existing test
+   keep passing.
+3. **Hook into `PerimeterGenerator`** — the +379-line diff is the
+   most delicate change. Cherry-pick PR-by-PR following dennisklappe's
+   own history (he stages each feature behind its own PR: e.g. PR #29
+   "corner-aware spacing taper", PR #34 "Hilbert-curve floor", etc).
+4. **Layer regions + pipeline integration** (`LayerRegion.cpp`,
+   `PrintObject.cpp`) — these are tested by re-running the wave
+   regression file from dennisklappe's repo.
+5. **Support material exclusions** (`Support*.cpp`) — defensive,
+   ensures no double-supporting where waves cover.
+6. **G-code emission** (`GCode.cpp/hpp`, `GCodeWriter.cpp/hpp`,
+   `CoolingBuffer.cpp`) — markers + retraction + fan.
+7. **GUI** (`AboutDialog.cpp`, `ConfigManipulation.cpp`, `GUI_App.cpp`,
+   `Plater.cpp`) — last, since the algorithm is testable without it.
+
+## Compatibility with our existing passes
+
+- **Pass 1 (no-op tool swap removal)** — operates on `T<n>` lines in
+  the final G-code, blind to perimeter origin. No conflict.
+- **Pass 2 (purge shrink)** — operates on `CP TOOLCHANGE` blocks.
+  Wave Overhangs doesn't generate those. No conflict.
+- **Pass 3 (retract collapse)** — Wave Overhangs adds end-of-line
+  retracts in wave segments (PR #28). Pass 3 only collapses
+  *back-to-back* retract+unretract — wave retracts have travel in
+  between, so they pass through untouched. Verify with a wave
+  regression file once ported.
+- **Pass 4 (curvature E scaling)** — Wave Overhangs produces curved
+  segments with high local curvature by design. Our Pass 4 already
+  protects via the `feature_cap` per-region table — verify that
+  wave segments get a Bridge-style cap (0 % reduction) so we don't
+  thin the supportless overhangs. **This is a real interaction —
+  add a new `FeatureType::WaveOverhang` enum value and feature_cap
+  entry as part of step 6.**
+- **Pass 5 (verification)** — mass conservation across the wave
+  rewrites. Already accounts for `stats.extrusion_saved_mm`. Should
+  pass without changes.
+- **FullSpectrum + BambuConvert** — wave overhangs touch *where*
+  plastic goes, FullSpectrum touches *which physical extruder* is
+  active per layer. They commute. The chromatic / balanced strategy
+  picks aren't affected.
 
 ## License + attribution
 

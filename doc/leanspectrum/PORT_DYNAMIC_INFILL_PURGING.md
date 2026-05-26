@@ -1,9 +1,64 @@
 # Porting plan — Dynamic Infill Purging (DIP)
 
-Status: **planning / not started**.
-Source: community forks (search "OrcaSlicer dynamic infill purging").
-Concept origin: PrusaSlicer "Purge into Object Infill" feature
-(2023+), since reworked by several community forks.
+Status: **mostly moot — feature is already mainline OrcaSlicer**.
+Discovered 2026-05-27 by grepping `repo/src/libslic3r/PrintConfig.cpp`.
+The "community fork doing DIP" the initial survey pointed at appears
+to have been hyping existing upstream functionality.
+
+## What's already in OrcaSlicer
+
+Three config keys plus the underlying scheduler:
+
+| Key | Default | Behavior |
+|---|---|---|
+| `flush_into_infill` | **false** | Purge after filament change is routed into the active object's sparse infill instead of the wipe tower. Reduces both waste and print time. Caveat: visible through transparent walls. |
+| `flush_into_support` | **true** | Purge routed into support material. Generally safe. |
+| `flush_into_objects` | **false** | Purge routed into the object itself (any region, not just infill). Aggressive — mixes colors at the surface. |
+
+All three are gated behind the prime tower being enabled.
+
+## What LeanSpectrum changes
+
+Just the defaults. AutoProfile now sets `flush_into_infill = true`
+and `flush_into_support = true` as part of every intent, because on
+the Snapmaker U1's multi-color workflow we always want to reduce
+wipe-tower volume — that's the entire point of the LeanSpectrum
+filament-economy story.
+
+Users who print with transparent walls can flip `flush_into_infill`
+back off from the Multi-material settings tab — the value is
+preserved in the project preset.
+
+## Sequencing with Pass 2 (shrink purge)
+
+Pass 2 sees only the residual purge that wasn't routed into infill.
+The shrink ratio in Pass 2 already accounts for actual purge volume
+left after upstream routing, so:
+
+  Order: OrcaSlicer's flush-into-infill scheduler  →  Pass 2 shrink
+  Effect: stacks multiplicatively — DIP reroutes 60-80% of purge
+          into infill, then Pass 2 shrinks the residual another
+          0-30% depending on idle time.
+
+Pass 5's mass-conservation invariant already absorbs both rewrites
+because each one updates `stats.extrusion_saved_mm` independently.
+
+## What's NOT here
+
+True opacity-aware DIP — modulating purge density per filament's
+optical opacity so transparent walls don't show the mixed-color
+infill underneath — is NOT in mainline. PrusaSlicer doesn't have
+it either. Would be a real feature port, but the user benefit is
+narrow (only transparent / translucent filaments) and the
+implementation is heavy. Defer until users ask.
+
+---
+
+## Original (pre-discovery) port sketch — superseded by the above
+
+The section below was written before the audit revealed mainline
+already has DIP. Kept for the algorithmic intuition only; the
+actual integration plan is the AutoProfile change documented above.
 
 ## What it does
 

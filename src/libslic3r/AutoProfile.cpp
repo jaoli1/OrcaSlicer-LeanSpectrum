@@ -296,6 +296,24 @@ std::vector<std::string> apply(DynamicPrintConfig &config,
     set_int (config, "fan_max_speed", mr.fan_max_speed_pct, notes, " %");
     set_int (config, "fan_min_speed", mr.fan_min_speed_pct, notes, " %");
 
+    // --- multi-color: enable flush-into-infill + support by default.
+    // OrcaSlicer ships these as off (infill) / on (support) but on a
+    // U1 multi-color print they're both safe to leave on — wasted
+    // wipe-tower volume is a real cost. The user can still flip them
+    // off in the Multi-material tab if they print transparent walls.
+    if (auto *opt = config.option<ConfigOptionBool>("flush_into_infill")) {
+        if (!opt->value) {
+            opt->value = true;
+            notes.emplace_back("flush_into_infill -> true (DIP on, less wipe tower)");
+        }
+    }
+    if (auto *opt = config.option<ConfigOptionBool>("flush_into_support")) {
+        if (!opt->value) {
+            opt->value = true;
+            notes.emplace_back("flush_into_support -> true (purge into support)");
+        }
+    }
+
     return notes;
 }
 

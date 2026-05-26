@@ -41,6 +41,11 @@ DynamicPrintConfig make_seeded_config()
     c.set_key_value("filament_retraction_speed",
                     new ConfigOptionFloats{40.0});
 
+    // DIP / flush options — OrcaSlicer ships flush_into_infill=false by
+    // default; AutoProfile should flip it on.
+    c.set_key_value("flush_into_infill",  new ConfigOptionBool(false));
+    c.set_key_value("flush_into_support", new ConfigOptionBool(false));
+
     std::vector<std::string> types{"PLA"};
     c.set_key_value("filament_type", new ConfigOptionStrings(types));
     return c;
@@ -171,6 +176,15 @@ TEST_CASE("max_volumetric_speed respects U1 ceiling (32 mm^3/s)",
     apply(c, Intent::Standard, Polymer::TPU);
     REQUIRE(c.option<ConfigOptionFloats>("filament_max_volumetric_speed")->values.at(0)
             < 10.0);
+}
+
+TEST_CASE("AutoProfile enables DIP flush-into-infill + support",
+          "[AutoProfile][DIP]")
+{
+    DynamicPrintConfig c = make_seeded_config();
+    apply(c, Intent::Standard, Polymer::PLA);
+    REQUIRE(c.option<ConfigOptionBool>("flush_into_infill")->value);
+    REQUIRE(c.option<ConfigOptionBool>("flush_into_support")->value);
 }
 
 TEST_CASE("retraction tuned for direct-drive on U1", "[AutoProfile][U1]")

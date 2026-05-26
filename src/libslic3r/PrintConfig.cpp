@@ -4400,6 +4400,20 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionString(""));
 
+    def = this->add("bambu_convert_recipe", coString);
+    def->label = L("Bambu conversion virtual filament recipes");
+    def->tooltip = L("Compact serialised recipes for the FullSpectrum virtual filaments "
+                     "produced when converting a Bambu Lab .3mf with more than 4 colors "
+                     "to the Snapmaker U1's 4-physical-extruder layout. Populated by "
+                     "apply_bambu_to_u1_conversion(); empty by default. Format: one "
+                     "recipe per ';'-separated entry — "
+                     "'target=#RRGGBB,a=<slot>,b=<slot>,ratio_a=<float>,"
+                     "achieved=#RRGGBB,de=<float>'.");
+    def->gui_flags = "serialized";
+    def->mode = comAdvanced;
+    def->cli = ConfigOptionDef::nocli;
+    def->set_default_value(new ConfigOptionString(""));
+
     def = this->add("dithering_z_step_size", coFloat);
     def->label = L("Dithering Z step size");
     def->category = L("Others");

@@ -167,6 +167,106 @@ fn crawl_catalog(url: String) -> std::result::Result<CrawlResult, Error> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorpusPdf {
+    pub filename:      String,
+    pub absolute_path: String,
+    pub size_bytes:    u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorpusBrand {
+    pub brand: String,
+    pub pdfs:  Vec<CorpusPdf>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorpusIndex {
+    pub root:     String,
+    pub brands:   Vec<CorpusBrand>,
+    pub pdf_count: usize,
+}
+
+/// Default corpus root: <user_downloads>/filament-corpus/. The frontend can
+/// override.
+fn default_corpus_root() -> Option<PathBuf> {
+    let dl = dirs::download_dir().or_else(|| dirs::home_dir().map(|h| h.join("Downloads")))?;
+    Some(dl.join("filament-corpus"))
+}
+
+#[tauri::command]
+fn corpus_default_path() -> std::result::Result<String, Error> {
+    default_corpus_root()
+        .map(|p| p.display().to_string())
+        .ok_or_else(|| Error::Other("Could not determine the user's Downloads directory.".into()))
+}
+
+#[tauri::command]
+fn scan_corpus(path: String) -> std::result::Result<CorpusIndex, Error> {
+    let root = PathBuf::from(&path);
+    if !root.is_dir() {
+        return Err(Error::Other(format!("Not a directory: {}", root.display())));
+    }
+    let mut brands: Vec<CorpusBrand> = Vec::new();
+    let mut total = 0usize;
+    for entry in std::fs::read_dir(&root)? {
+        let entry = match entry { Ok(e) => e, Err(_) => continue };
+        let p = entry.path();
+        if !p.is_dir() { continue; }
+        let brand_name = p.file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_string();
+        if brand_name.is_empty() || brand_name.starts_with('_') || brand_name.starts_with('.') {
+            // Skip hidden / underscore-prefixed admin folders (_collection.log etc.)
+            continue;
+        }
+        let mut pdfs: Vec<CorpusPdf> = Vec::new();
+        if let Ok(dir) = std::fs::read_dir(&p) {
+            collect_pdfs_into(dir, &mut pdfs);
+        }
+        if !pdfs.is_empty() {
+            pdfs.sort_by(|a, b| a.filename.cmp(&b.filename));
+            total += pdfs.len();
+            brands.push(CorpusBrand { brand: brand_name, pdfs });
+        }
+    }
+    brands.sort_by(|a, b| a.brand.cmp(&b.brand));
+    Ok(CorpusIndex { root: root.display().to_string(), brands, pdf_count: total })
+}
+
+fn collect_pdfs_into(dir: std::fs::ReadDir, out: &mut Vec<CorpusPdf>) {
+    for entry in dir.flatten() {
+        let p = entry.path();
+        if p.is_dir() {
+            // One level of nesting (SUNLU-style: brand/product/*.pdf).
+            if let Ok(sub) = std::fs::read_dir(&p) {
+                for e2 in sub.flatten() {
+                    let p2 = e2.path();
+                    if p2.is_file() && p2.extension().map_or(false, |e| e.eq_ignore_ascii_case("pdf")) {
+                        push_pdf(&p2, out);
+                    }
+                }
+            }
+            continue;
+        }
+        if p.extension().map_or(false, |e| e.eq_ignore_ascii_case("pdf")) {
+            push_pdf(&p, out);
+        }
+    }
+}
+
+fn push_pdf(path: &std::path::Path, out: &mut Vec<CorpusPdf>) {
+    let filename = path.file_name().and_then(|s| s.to_str()).unwrap_or("").to_string();
+    if filename.is_empty() { return; }
+    let size_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    out.push(CorpusPdf {
+        filename,
+        absolute_path: path.display().to_string(),
+        size_bytes,
+    });
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BatchImportRequest {
     pub urls:         Vec<String>,
     pub fetch_online: bool,
@@ -222,7 +322,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .invoke_handler(tauri::generate_handler![import_pdf, pick_pdf, crawl_catalog, import_from_urls])
+        .invoke_handler(tauri::generate_handler![
+            import_pdf, pick_pdf, crawl_catalog, import_from_urls,
+            corpus_default_path, scan_corpus
+        ])
         .setup(|app| {
             log::info!("LeanSpectrum SDS Importer starting; main window id = {}", app.get_webview_window("main").map(|_| "main").unwrap_or("?"));
             Ok(())

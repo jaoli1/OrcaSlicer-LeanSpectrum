@@ -1,14 +1,19 @@
-// Use the global Tauri API exposed via `withGlobalTauri: true` in
-// tauri.conf.json. Avoids the need for a JS bundler.
+// Tauri global (exposed via withGlobalTauri: true).
 const { invoke } = window.__TAURI__.core;
+// i18n helpers loaded from i18n.js (window.leanspectrumI18n.t / setLang).
+const t = (key, vars) => window.leanspectrumI18n.t(key, vars);
 
 // ----- tabs -----
-document.querySelectorAll(".tab").forEach(t => {
-  t.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === t));
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === tab));
     document.querySelectorAll(".tab-panel").forEach(p => {
-      p.classList.toggle("active", p.id === `tab-${t.dataset.tab}`);
+      p.classList.toggle("active", p.id === `tab-${tab.dataset.tab}`);
     });
+    if (tab.dataset.tab === "database" && !corpusInitialised) {
+      corpusInitialised = true;
+      initCorpusPath();
+    }
   });
 });
 
@@ -35,7 +40,7 @@ drop.addEventListener("click", async () => {
   try {
     const p = await invoke("pick_pdf");
     if (p) setChosen(p);
-  } catch (e) { status.textContent = `Picker error: ${e}`; }
+  } catch (e) { status.textContent = `${t("err_picker")}: ${e}`; }
 });
 ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => {
   e.preventDefault(); drop.classList.add("hover");
@@ -48,51 +53,52 @@ drop.addEventListener("drop", e => {
   if (path) setChosen(path);
 });
 
-runBtn.addEventListener("click", async () => {
-  if (!chosenPath) return;
-  runBtn.disabled = true;
-  status.textContent = "Working…";
-  result.style.display = "none";
-  logPanel.style.display = "none";
+runBtn.addEventListener("click", () => importPdfAndShow(chosenPath, fetchOnline.checked, result, status, logPanel, logEl, runBtn));
+
+async function importPdfAndShow(path, online, resultEl, statusEl, logPanelEl, logElEl, runButton) {
+  if (!path) return;
+  if (runButton) runButton.disabled = true;
+  statusEl.textContent = t("status_working");
+  resultEl.style.display = "none";
+  if (logPanelEl) logPanelEl.style.display = "none";
   try {
-    const r = await invoke("import_pdf", {
-      req: { pdfPath: chosenPath, fetchOnline: fetchOnline.checked }
-    });
-    renderResult(r);
+    const r = await invoke("import_pdf", { req: { pdfPath: path, fetchOnline: online } });
+    renderResult(r, resultEl, statusEl, logPanelEl, logElEl);
   } catch (e) {
-    status.textContent = `Error: ${e}`;
+    statusEl.textContent = `${t("err_picker")}: ${e}`;
   } finally {
-    runBtn.disabled = false;
+    if (runButton) runButton.disabled = false;
   }
-});
+}
 
 function field(label, value) {
   if (value === null || value === undefined || value === "") return "";
   return `<div class="field"><span>${label}</span><span>${value}</span></div>`;
 }
-function renderResult(r) {
+function renderResult(r, resultEl, statusEl, logPanelEl, logElEl) {
   const e = r.extracted;
   const badge = e.needs_review
-    ? `<span class="badge review">Needs review</span>`
-    : `<span class="badge ok">Ready</span>`;
-  result.innerHTML = `
+    ? `<span class="badge review">${t("needs_review_badge")}</span>`
+    : `<span class="badge ok">${t("ready_badge")}</span>`;
+  resultEl.innerHTML = `
     <h2 style="margin-top:0;">${e.product_name ?? "Imported filament"} ${badge}</h2>
     <div class="sub">${e.manufacturer ?? "Unknown manufacturer"} — ${e.polymer ?? "Unknown polymer"}</div>
-    ${field("Density (g/cm³)", e.density_g_cm3)}
-    ${field("Glass transition (°C)", e.glass_transition_c)}
-    ${field("Melting range (°C)", e.melt_temp_min_c && e.melt_temp_max_c ? `${e.melt_temp_min_c} – ${e.melt_temp_max_c}` : null)}
-    ${field("Decomposition (°C)", e.decomposition_c)}
-    ${field("Nozzle range (°C)", e.nozzle_temp_min_c && e.nozzle_temp_max_c ? `${e.nozzle_temp_min_c} – ${e.nozzle_temp_max_c}` : null)}
-    ${field("Bed range (°C)", e.bed_temp_min_c && e.bed_temp_max_c ? `${e.bed_temp_min_c} – ${e.bed_temp_max_c}` : null)}
-    ${field("Profile written to", r.profile_path ?? "(not saved)")}
-    ${e.estimated_fields?.length ? `<div class="sub">Estimated fields: ${e.estimated_fields.join(", ")}</div>` : ""}
+    ${field(t("field_density"), e.density_g_cm3)}
+    ${field(t("field_glass"), e.glass_transition_c)}
+    ${field(t("field_melt"), e.melt_temp_min_c && e.melt_temp_max_c ? `${e.melt_temp_min_c} – ${e.melt_temp_max_c}` : null)}
+    ${field(t("field_decomp"), e.decomposition_c)}
+    ${field(t("field_nozzle"), e.nozzle_temp_min_c && e.nozzle_temp_max_c ? `${e.nozzle_temp_min_c} – ${e.nozzle_temp_max_c}` : null)}
+    ${field(t("field_bed"), e.bed_temp_min_c && e.bed_temp_max_c ? `${e.bed_temp_min_c} – ${e.bed_temp_max_c}` : null)}
+    ${field(t("field_max_flow"), e.max_flow_mm3_s)}
+    ${field(t("field_profile_saved"), r.profile_path ?? "(not saved)")}
+    ${e.estimated_fields?.length ? `<div class="sub">${t("estimated_fields")}: ${e.estimated_fields.join(", ")}</div>` : ""}
   `;
-  result.style.display = "block";
-  if (r.log?.length) {
-    logEl.innerHTML = r.log.map(l => `<div>${escapeHtml(l)}</div>`).join("");
-    logPanel.style.display = "block";
+  resultEl.style.display = "block";
+  if (logPanelEl && r.log?.length) {
+    logElEl.innerHTML = r.log.map(l => `<div>${escapeHtml(l)}</div>`).join("");
+    logPanelEl.style.display = "block";
   }
-  status.textContent = r.profile_path ? "Done — open Snapmaker_Orca to see the new filament." : "Done.";
+  statusEl.textContent = r.profile_path ? t("open_orca") : t("status_done");
 }
 
 // ============================================================
@@ -118,7 +124,7 @@ crawlBtn.addEventListener("click", async () => {
   const url = catalogUrl.value.trim();
   if (!url) return;
   crawlBtn.disabled = true;
-  catalogStatus.textContent = "Discovering…";
+  catalogStatus.textContent = t("status_discovering");
   catalogPanel.style.display = "none";
   batchResult.style.display = "none";
   try {
@@ -126,20 +132,20 @@ crawlBtn.addEventListener("click", async () => {
     catalogEntries = r.entries;
     renderCatalog(r);
   } catch (e) {
-    catalogStatus.textContent = `Discovery failed: ${e}`;
+    catalogStatus.textContent = `${t("err_discovery")}: ${e}`;
   } finally {
     crawlBtn.disabled = false;
   }
 });
 
 function badgeFor(docType) {
-  const t = (docType || "Unknown").toLowerCase();
-  return `<span class="badge ${t}">${docType ?? "Unknown"}</span>`;
+  const lower = (docType || "Unknown").toLowerCase();
+  return `<span class="badge ${lower}">${docType ?? "Unknown"}</span>`;
 }
 
 function renderCatalog(r) {
   catalogPanel.style.display = "block";
-  catalogStatus.textContent = `${r.entries.length} document(s) discovered`;
+  catalogStatus.textContent = `${r.entries.length} doc(s)`;
   catalogList.innerHTML = r.entries.map((e, i) => `
     <li>
       <input type="checkbox" data-i="${i}" ${e.doc_type !== "Unknown" ? "checked" : ""} />
@@ -165,11 +171,11 @@ batchImportBtn.addEventListener("click", async () => {
   const selected = Array.from(catalogList.querySelectorAll("input[type=checkbox]:checked"))
     .map(c => catalogEntries[parseInt(c.dataset.i, 10)].url);
   if (!selected.length) {
-    catalogStatus.textContent = "No documents selected.";
+    catalogStatus.textContent = t("status_no_docs");
     return;
   }
   batchImportBtn.disabled = true;
-  catalogStatus.textContent = `Importing ${selected.length} document(s)…`;
+  catalogStatus.textContent = t("status_working");
   batchProgress.style.display = "block";
   batchProgressBar.style.width = "10%";
   try {
@@ -179,7 +185,7 @@ batchImportBtn.addEventListener("click", async () => {
     batchProgressBar.style.width = "100%";
     renderBatchResult(r);
   } catch (e) {
-    catalogStatus.textContent = `Batch import failed: ${e}`;
+    catalogStatus.textContent = `${t("err_batch")}: ${e}`;
   } finally {
     batchImportBtn.disabled = false;
     setTimeout(() => { batchProgress.style.display = "none"; batchProgressBar.style.width = "0%"; }, 800);
@@ -198,11 +204,79 @@ function renderBatchResult(r) {
     lines.push(`✗ ${url} — ${err}`);
   }
   batchResult.innerHTML = `
-    <h2 style="margin-top:0;">Batch import — ${ok} ok / ${fail} failed</h2>
+    <h2 style="margin-top:0;">${t("batch_summary", { ok, fail })}</h2>
     <div class="log">${lines.map(l => `<div>${escapeHtml(l)}</div>`).join("")}</div>
   `;
   batchResult.style.display = "block";
-  catalogStatus.textContent = `Done — ${ok} profile(s) created, ${fail} error(s).`;
+  catalogStatus.textContent = t("batch_done_status", { ok, fail });
+}
+
+// ============================================================
+// Database tab (local corpus browser)
+// ============================================================
+const corpusPath    = document.getElementById("corpusPath");
+const corpusScan    = document.getElementById("corpusScanBtn");
+const corpusPanel   = document.getElementById("corpusPanel");
+const corpusBrands  = document.getElementById("corpusBrands");
+const corpusStatus  = document.getElementById("corpusStatus");
+const corpusResult  = document.getElementById("corpusResult");
+let corpusInitialised = false;
+
+async function initCorpusPath() {
+  try {
+    const def = await invoke("corpus_default_path");
+    corpusPath.value = corpusPath.value || def;
+  } catch { /* ignore — user types path manually */ }
+}
+
+corpusScan.addEventListener("click", async () => {
+  const path = corpusPath.value.trim();
+  if (!path) return;
+  corpusScan.disabled = true;
+  corpusPanel.style.display = "none";
+  corpusResult.style.display = "none";
+  try {
+    const r = await invoke("scan_corpus", { path });
+    renderCorpus(r);
+  } catch (e) {
+    corpusPanel.style.display = "block";
+    corpusStatus.textContent = `${t("err_scan")}: ${e}`;
+    corpusBrands.innerHTML = "";
+  } finally {
+    corpusScan.disabled = false;
+  }
+});
+
+function renderCorpus(idx) {
+  corpusPanel.style.display = "block";
+  if (!idx.brands.length) {
+    corpusStatus.textContent = t("database_empty");
+    corpusBrands.innerHTML = "";
+    return;
+  }
+  corpusStatus.textContent = `${idx.pdf_count} PDFs / ${idx.brands.length} brands`;
+  corpusBrands.innerHTML = idx.brands.map(b => `
+    <div class="brand-group">
+      <div class="brand-name">${escapeHtml(b.brand)} <span class="size">(${b.pdfs.length})</span></div>
+      <ul class="brand-pdfs">
+        ${b.pdfs.map(p => `
+          <li data-path="${escapeHtml(p.absolute_path)}">
+            <span>${escapeHtml(p.filename)}</span>
+            <span class="size">${Math.round(p.size_bytes / 1024)} KB</span>
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+  `).join("");
+
+  for (const li of corpusBrands.querySelectorAll("li[data-path]")) {
+    li.addEventListener("click", () => {
+      const p = li.dataset.path;
+      const statusSpan = document.createElement("span");
+      corpusStatus.textContent = `${t("status_working")} — ${p}`;
+      importPdfAndShow(p, false, corpusResult, corpusStatus, null, null, null);
+    });
+  }
 }
 
 function escapeHtml(s) {

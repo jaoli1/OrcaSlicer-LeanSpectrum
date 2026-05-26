@@ -346,11 +346,17 @@ pub fn parse(text: &str) -> ExtractedFilament {
     let bed_max = out.polymer.and_then(|p| p.default_bed_range_c())
         .map(|(_, hi)| hi + 20.0);
 
+    // Label list order matters slightly: more specific phrases first so the
+    // `find` lookup picks the longer one when both are present in the text.
+    // "nozzle temp" and "plate temp" are intentional substrings — they match
+    // both the abbreviated form ("Nozzle Temp.") and the long one
+    // ("Nozzle temperature").
     let (n_lo, n_hi) = scan_range_with_hint(
         text,
-        &["nozzle temperature", "print temperature", "extruder temperature",
+        &["nozzle temperature", "extruder temperature", "print temperature",
           "bottom printing temperature", "température buse", "température d'impression",
-          "printing temperature", "3d printing temperature"],
+          "printing temperature", "3d printing temperature",
+          "nozzle temp", "extruder temp", "print temp", "printing temp"],
         true,
         nozzle_min,
     );
@@ -363,7 +369,8 @@ pub fn parse(text: &str) -> ExtractedFilament {
     let (b_lo, b_hi) = scan_range_after(
         text,
         &["bed temperature", "heated bed", "platform temperature",
-          "température plateau", "plateau chauffant", "base plate"],
+          "température plateau", "plateau chauffant", "base plate",
+          "plate temp", "bed temp", "platform temp", "hot plate temp"],
         true,
     );
     // Reject implausible bed values that look more like a nozzle reading.

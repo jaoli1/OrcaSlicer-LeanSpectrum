@@ -15,7 +15,11 @@ static SECTION_HEADING: Lazy<Regex> = Lazy::new(|| {
     //   "9. Propriétés physiques et chimiques"
     //   "9.Propriétés..." (no space — eSUN SDS does this)
     //   "Section 1 - Identification"
-    Regex::new(r"(?im)^\s*(?:section\s+)?(\d{1,2})\s*[:.\-]?\s*([A-Za-zÀ-ÿ][^\n]{2,80})$").unwrap()
+    //   "Section 3 –Composition" (en-dash, SUNLU)
+    //   "Section 6 —Accidental Release" (em-dash)
+    // The separator class includes ASCII : . - plus Unicode en-dash (\u{2013})
+    // and em-dash (\u{2014}); the regex crate accepts these as literal chars.
+    Regex::new(r"(?im)^\s*(?:section\s+)?(\d{1,2})\s*[:.\-\u{2013}\u{2014}]?\s*([A-Za-zÀ-ÿ][^\n]{2,80})$").unwrap()
 });
 
 static URL_RX: Lazy<Regex> = Lazy::new(|| {
@@ -86,22 +90,28 @@ fn split_sections(text: &str) -> Sections<'_> {
     sections
 }
 
-fn parse_temp_range(text: &str) -> (Option<f64>, Option<f64>) {
+fn parse_temp_range_with_floor(text: &str, floor: f64, ceiling: f64) -> (Option<f64>, Option<f64>) {
     if let Some(c) = TEMP_RANGE_RX.captures(text) {
         let lo: f64 = c.get(1).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
         let hi: f64 = c.get(2).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
-        if hi >= lo && lo >= 50.0 && hi <= 500.0 {
+        if hi >= lo && lo >= floor && hi <= ceiling {
             return (Some(lo), Some(hi));
         }
     }
     if let Some(c) = SINGLE_TEMP_RX.captures(text) {
         if let Some(v) = c.get(1).and_then(|m| m.as_str().parse::<f64>().ok()) {
-            if (50.0..=500.0).contains(&v) {
+            if (floor..=ceiling).contains(&v) {
                 return (Some(v), Some(v));
             }
         }
     }
     (None, None)
+}
+
+/// Default floor (50 °C) matches melting / decomposition / glass-transition
+/// expectations. Bed-temp / print-temp callers use a lower floor.
+fn parse_temp_range(text: &str) -> (Option<f64>, Option<f64>) {
+    parse_temp_range_with_floor(text, 50.0, 500.0)
 }
 
 fn parse_density(text: &str) -> Option<f64> {
@@ -152,7 +162,21 @@ fn parse_section_1(text: &str, out: &mut ExtractedFilament) {
     let mut lines = text.lines();
     while let Some(line) = lines.next() {
         if MANUFACTURER_SUFFIX_RX.is_match(line) {
-            out.manufacturer = Some(line.trim().to_string());
+            // Strip a leading "<Label>:" prefix when the value carrying the
+            // legal suffix sits after a colon ("Manufacture/Supplier : Zhuhai
+            // SUNLU Industrial Co., Ltd.").
+            let trimmed = line.trim();
+            let value = if let Some((_, after)) = trimmed.split_once(':') {
+                let after = after.trim();
+                if !after.is_empty() && MANUFACTURER_SUFFIX_RX.is_match(after) {
+                    after.to_string()
+                } else {
+                    trimmed.to_string()
+                }
+            } else {
+                trimmed.to_string()
+            };
+            out.manufacturer = Some(value);
             break;
         }
         let trimmed = line.trim();
@@ -226,6 +250,37 @@ pub fn parse(text: &str) -> ExtractedFilament {
         if let Some((lo, _hi)) = scan(&["glass transition", "transition vitreuse",
                                         "vicat softening", "vicat"]) {
             out.glass_transition_c = Some(lo);
+        }
+
+        // SUNLU and other modern vendor SDSes carry TDS-style recommendations
+        // inside Section 9 ("Print Temp 210-235", "Bed Temp 60-80"). Pick them
+        // up when present; downstream consumers prefer measured values over
+        // polymer-family defaults.
+        let scan_low = |label_patterns: &[&str], floor: f64, ceiling: f64| -> Option<(f64, f64)> {
+            for pat in label_patterns {
+                if let Some(idx) = s9.to_ascii_lowercase().find(&pat.to_ascii_lowercase()) {
+                    let snippet = &s9[idx..s9.len().min(idx + 160)];
+                    let (lo, hi) = parse_temp_range_with_floor(snippet, floor, ceiling);
+                    if lo.is_some() || hi.is_some() {
+                        return Some((lo.unwrap_or(hi.unwrap_or(0.0)), hi.unwrap_or(lo.unwrap_or(0.0))));
+                    }
+                }
+            }
+            None
+        };
+        if let Some((lo, hi)) = scan_low(&["print temp", "nozzle temp", "extruder temp",
+                                            "printing temp", "extrusion temp"],
+                                          120.0, 450.0) {
+            out.nozzle_temp_min_c = Some(lo);
+            out.nozzle_temp_max_c = Some(hi);
+            out.nozzle_temp_recommended_c = Some((lo + hi) / 2.0);
+        }
+        if let Some((lo, hi)) = scan_low(&["bed temp", "platform temp",
+                                            "heated bed", "build plate temp",
+                                            "hot plate temp"],
+                                          25.0, 200.0) {
+            out.bed_temp_min_c = Some(lo);
+            out.bed_temp_max_c = Some(hi);
         }
     }
 
@@ -388,5 +443,62 @@ Melting point: Not determined
         );
         // .pl TLD is supported and the bare-domain URL is promoted to https.
         assert_eq!(r.manufacturer_url.as_deref(), Some("https://rosa3d.pl"));
+    }
+
+    /// SUNLU SDS layout. Notable real-world quirks all in a single fixture:
+    ///   - "Section 3 –Composition" uses an en-dash, not "-".
+    ///   - "Manufacture/Supplier : Zhuhai SUNLU Industrial Co., Ltd." mixes
+    ///     a colon-labelled prefix with a legal-suffix-bearing value.
+    ///   - Section 9 carries TDS-style "Print Temp" and "Bed Temp" values
+    ///     directly, not just melt/decomposition.
+    #[test]
+    fn parses_sunlu_sds_layout() {
+        let sds = r#"
+Safety Data Sheet(SDS)
+
+Product name: PETG Filament         According to GHS
+Revision Date: 2021.5.15
+
+Section 1 - Identification of the substance/preparation and of the company/undertaking
+
+Product identifier
+
+Product name: PETG filament
+
+Details of the supplier of the safety data sheet
+
+Manufacture/Supplier : Zhuhai SUNLU Industrial Co., Ltd.
+
+Address:                  Room 501C, Building 2 No.35 Jinzhou Road
+Tel:                                                 (086) 0756 3385639
+E-mail :                  jk@sunlugw.com
+
+Section 3 –Composition/Information on Ingredients
+
+Ingredient Name    CAS No.                         EC No.  Content (%)
+   PETG          25640-14-6                            --      100
+
+Section 9 - Physical and Chemical
+Properties Information on basic physical
+and chemical properties
+Form                                      Solid
+Melting Range (°C)                        No data
+Decomposition Temp (°C)                   No data
+Print Temp (°C)                           220-250
+Bed Temp(°C)                              60-80
+Density(g/cm3)                            1.23
+"#;
+        let r = parse(sds);
+        assert_eq!(r.polymer, Some(Polymer::Petg));
+        // Manufacturer extracted with the "Manufacture/Supplier :" prefix
+        // stripped via the new suffix-match branch.
+        assert_eq!(r.manufacturer.as_deref(), Some("Zhuhai SUNLU Industrial Co., Ltd."));
+        // Section 3 must be detected through the en-dash separator.
+        // Print/Bed values come from Section 9's vendor-extended fields.
+        assert_eq!(r.nozzle_temp_min_c, Some(220.0));
+        assert_eq!(r.nozzle_temp_max_c, Some(250.0));
+        assert_eq!(r.bed_temp_min_c,    Some(60.0));
+        assert_eq!(r.bed_temp_max_c,    Some(80.0));
+        assert_eq!(r.density_g_cm3,     Some(1.23));
     }
 }

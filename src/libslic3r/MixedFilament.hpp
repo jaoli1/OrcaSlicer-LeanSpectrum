@@ -222,6 +222,18 @@ public:
     std::string serialize_custom_entries();
     void load_custom_entries(const std::string &serialized, const std::vector<std::string> &filament_colours);
 
+    // LeanSpectrum: hydrate the manager from a bambu_convert_recipe string
+    // produced by BambuConvert::convert_filament_list(). One custom mixed
+    // row is added per recipe entry — physical_a/_b slots are converted to
+    // 1-based filament IDs and the float ratio is mapped onto the nearest
+    // integer cadence in the FullSpectrum table {1:3, 1:2, 1:1, 2:1, 3:1}.
+    // Auto-generated rows are kept; the recipe entries are appended as
+    // custom rows so the user keeps the full C(N,2) auto matrix.
+    //
+    // Returns the number of rows actually added.
+    size_t load_bambu_convert_recipe(const std::string              &recipe,
+                                     const std::vector<std::string> &filament_colours);
+
     // Normalize a manual mixed-pattern string into compact token form.
     // Accepts separators and A/B aliases. Returns empty string if invalid.
     static std::string normalize_manual_pattern(const std::string &pattern);

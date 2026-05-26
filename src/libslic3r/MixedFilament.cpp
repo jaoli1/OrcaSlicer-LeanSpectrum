@@ -1640,6 +1640,72 @@ void MixedFilamentManager::clear_custom_entries()
     m_mixed.erase(std::remove_if(m_mixed.begin(), m_mixed.end(), [](const MixedFilament &mf) { return mf.custom; }), m_mixed.end());
 }
 
+size_t MixedFilamentManager::load_bambu_convert_recipe(
+    const std::string              &recipe,
+    const std::vector<std::string> &filament_colours)
+{
+    if (recipe.empty() || filament_colours.size() < 2)
+        return 0;
+
+    // Parse one entry of the form "target=#RRGGBB,a=N,b=N,ratio_a=F,
+    // achieved=#RRGGBB,de=F" — semicolons separate entries.
+    auto parse_field = [](const std::string &chunk, const std::string &key,
+                          std::string &out) -> bool {
+        const std::string needle = key + "=";
+        const size_t pos = chunk.find(needle);
+        if (pos == std::string::npos)
+            return false;
+        const size_t start = pos + needle.size();
+        size_t end = chunk.find(',', start);
+        if (end == std::string::npos)
+            end = chunk.size();
+        out = chunk.substr(start, end - start);
+        return !out.empty();
+    };
+
+    size_t added = 0;
+    size_t entry_start = 0;
+    while (entry_start <= recipe.size()) {
+        size_t sep = recipe.find(';', entry_start);
+        if (sep == std::string::npos) sep = recipe.size();
+        const std::string entry = recipe.substr(entry_start, sep - entry_start);
+        entry_start = sep + 1;
+        if (entry.empty())
+            continue;
+
+        std::string sa, sb, sr;
+        if (!parse_field(entry, "a", sa) ||
+            !parse_field(entry, "b", sb) ||
+            !parse_field(entry, "ratio_a", sr))
+            continue;
+
+        long a_slot = std::strtol(sa.c_str(), nullptr, 10);
+        long b_slot = std::strtol(sb.c_str(), nullptr, 10);
+        double ratio_a = std::strtod(sr.c_str(), nullptr);
+        if (a_slot < 0 || b_slot < 0 || a_slot == b_slot)
+            continue;
+        if (static_cast<size_t>(a_slot) >= filament_colours.size() ||
+            static_cast<size_t>(b_slot) >= filament_colours.size())
+            continue;
+
+        // Slots are 0-based; MixedFilament component IDs are 1-based.
+        const unsigned int component_a = static_cast<unsigned int>(a_slot) + 1;
+        const unsigned int component_b = static_cast<unsigned int>(b_slot) + 1;
+
+        // mix_b_percent is the fraction of B layers. ratio_a is the fraction
+        // of A layers. So mix_b_percent = (1 - ratio_a) * 100 rounded.
+        if (ratio_a < 0.0) ratio_a = 0.0;
+        if (ratio_a > 1.0) ratio_a = 1.0;
+        int mix_b = static_cast<int>(std::lround((1.0 - ratio_a) * 100.0));
+
+        add_custom_filament(component_a, component_b, mix_b, filament_colours);
+        ++added;
+    }
+
+    refresh_display_colors(filament_colours);
+    return added;
+}
+
 std::string MixedFilamentManager::normalize_manual_pattern(const std::string &pattern)
 {
     std::string normalized;

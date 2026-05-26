@@ -20388,6 +20388,13 @@ bool Plater::convert_bambu_to_u1()
     }
     project_config.set_key_value("bambu_convert_recipe", new ConfigOptionString(recipe.str()));
 
+    // Register the FullSpectrum virtual recipes as custom mixed-filament
+    // rows so the slicer actually uses them — without this, the recipe
+    // is just metadata sitting in the project config and the U1 keeps
+    // printing with the 4 physicals only.
+    wxGetApp().preset_bundle->mixed_filaments.load_bambu_convert_recipe(
+        recipe.str(), new_colors);
+
     // Refresh the GUI.
     on_filaments_change(result.physical_count);
     wxGetApp().get_tab(Preset::TYPE_PRINT)->update();

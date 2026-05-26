@@ -602,6 +602,59 @@ TEST_CASE("DitherMode FloydSteinberg routes through new helpers", "[MixedFilamen
     REQUIRE(count_b(ordered_seq)  <= 12);
 }
 
+TEST_CASE("load_bambu_convert_recipe — parses entries and adds custom rows",
+          "[MixedFilament][BambuRecipe]")
+{
+    std::vector<std::string> colors = {"#FF0000", "#00FF00", "#0000FF", "#FFFFFF"};
+    MixedFilamentManager mgr;
+    mgr.auto_generate(colors); // gives the C(4,2) = 6 auto rows
+    const size_t auto_count = mgr.mixed_filaments().size();
+    REQUIRE(auto_count == 6);
+
+    // Two recipe entries pointing at slots {0,1} ratio 0.5 and {2,3} ratio 0.25.
+    const std::string recipe =
+        "target=#808000,a=0,b=1,ratio_a=0.5,achieved=#808000,de=1.2;"
+        "target=#404080,a=2,b=3,ratio_a=0.25,achieved=#404080,de=4.5";
+
+    const size_t added = mgr.load_bambu_convert_recipe(recipe, colors);
+    REQUIRE(added == 2);
+
+    // Auto rows + 2 new custom rows.
+    REQUIRE(mgr.mixed_filaments().size() == auto_count + 2);
+
+    // The two added rows are at the end and are marked custom.
+    const auto &rows = mgr.mixed_filaments();
+    const MixedFilament &r1 = rows[auto_count];
+    const MixedFilament &r2 = rows[auto_count + 1];
+
+    REQUIRE(r1.custom);
+    REQUIRE(r1.component_a == 1u); // slot 0 -> id 1
+    REQUIRE(r1.component_b == 2u); // slot 1 -> id 2
+    REQUIRE(r1.mix_b_percent == 50); // ratio_a 0.5 -> (1-0.5)*100 = 50
+
+    REQUIRE(r2.custom);
+    REQUIRE(r2.component_a == 3u); // slot 2 -> id 3
+    REQUIRE(r2.component_b == 4u); // slot 3 -> id 4
+    REQUIRE(r2.mix_b_percent == 75); // ratio_a 0.25 -> (1-0.25)*100 = 75
+}
+
+TEST_CASE("load_bambu_convert_recipe — skips malformed entries",
+          "[MixedFilament][BambuRecipe]")
+{
+    std::vector<std::string> colors = {"#000000", "#FFFFFF"};
+    MixedFilamentManager mgr;
+    mgr.auto_generate(colors);
+
+    // Entries: one missing required field, one with a/b out of range, one OK.
+    const std::string recipe =
+        "target=#888888,a=0,ratio_a=0.5;"
+        "target=#888888,a=5,b=7,ratio_a=0.5;"
+        "target=#888888,a=0,b=1,ratio_a=0.5";
+
+    const size_t added = mgr.load_bambu_convert_recipe(recipe, colors);
+    REQUIRE(added == 1);
+}
+
 TEST_CASE("FloydSteinberg + curvature gain biases transition rate",
           "[MixedFilament][Dither][Curvature]")
 {

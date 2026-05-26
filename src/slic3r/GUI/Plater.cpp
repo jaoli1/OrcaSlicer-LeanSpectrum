@@ -20344,18 +20344,20 @@ bool Plater::convert_bambu_to_u1()
         inputs.push_back(std::move(in));
     }
 
-    // Strategy selection: ask the user which to use. Chromatic is more
-    // expensive but gives a better visual match on isolated colors.
-    wxString strat_msg = _L("Pick the physical-slot assignment strategy:\n\n"
-                            "Yes — Chromatic (slower, minimises perceptual color mismatch)\n"
-                            "No — Usage (fast, top-4 by extrusion length)");
-    BambuConvert::Strategy strategy = (::wxMessageBox(strat_msg,
-        _L("Bambu \xe2\x86\x92 U1 conversion"), wxYES_NO | wxICON_QUESTION) == wxYES)
-        ? BambuConvert::Strategy::Chromatic
-        : BambuConvert::Strategy::Usage;
-
+    // Auto-pick the better strategy. We run both — they're each
+    // O(C(N,4) * pairs * ratios), well under 100 ms for the N <= 16
+    // palettes we expect in practice — and keep the one with the
+    // lower sum overflow deltaE. The user shouldn't have to know
+    // about Usage vs Chromatic; what they want is "best palette
+    // mapping". The chosen strategy is reported in the final dialog
+    // for transparency.
+    BambuConvert::ConvertResult via_usage =
+        BambuConvert::convert_filament_list(inputs, BambuConvert::Strategy::Usage);
+    BambuConvert::ConvertResult via_chromatic =
+        BambuConvert::convert_filament_list(inputs, BambuConvert::Strategy::Chromatic);
     BambuConvert::ConvertResult result =
-        BambuConvert::convert_filament_list(inputs, strategy);
+        (via_chromatic.total_overflow_delta_e < via_usage.total_overflow_delta_e)
+            ? std::move(via_chromatic) : std::move(via_usage);
 
     // Reorder the preset_bundle so the 4 physicals come first, in slot order.
     std::vector<std::string> new_colors;
@@ -20415,10 +20417,19 @@ bool Plater::convert_bambu_to_u1()
     wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
     force_filament_colors_update();
 
+    // Compose the result summary including which strategy won.
+    const char *strat_name = (result.strategy == BambuConvert::Strategy::Chromatic)
+        ? "Chromatic" : "Usage";
+    const double loser_de =
+        (result.strategy == BambuConvert::Strategy::Chromatic)
+            ? via_usage.total_overflow_delta_e
+            : via_chromatic.total_overflow_delta_e;
     wxString done = wxString::Format(
-        _L("Conversion complete: %zu physical filaments, %zu virtual FullSpectrum recipes "
-           "(sum perceptual mismatch \xce\x94E = %.2f)."),
-        result.physical_count, result.virtuals.size(), result.total_overflow_delta_e);
+        _L("Conversion complete: %zu physical filaments, %zu virtual FullSpectrum recipes.\n\n"
+           "Strategy: %s   sum \xce\x94E = %.2f (vs %.2f for the other strategy)\n\n"
+           "Floyd-Steinberg dither activated for the FullSpectrum virtuals."),
+        result.physical_count, result.virtuals.size(),
+        strat_name, result.total_overflow_delta_e, loser_de);
     ::wxMessageBox(done, _L("Bambu \xe2\x86\x92 U1 conversion"),
                    wxOK | wxICON_INFORMATION);
     return true;

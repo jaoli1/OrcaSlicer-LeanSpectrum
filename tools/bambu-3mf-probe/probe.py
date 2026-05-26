@@ -17,7 +17,9 @@ on real Bambu palettes.
 import argparse
 import json
 import math
+import re
 import sys
+import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
@@ -175,6 +177,19 @@ def read_bambu_3mf(path):
     with zipfile.ZipFile(path) as z:
         with z.open("Metadata/project_settings.config") as f:
             cfg = json.load(f)
+        # slice_info.config — XML, holds per-filament real usage (used_m, used_g)
+        # populated by the slicer. Optional; older / unsliced files won't have it.
+        usage_m = {}
+        try:
+            with z.open("Metadata/slice_info.config") as f:
+                xml = ET.parse(f).getroot()
+            for fil in xml.iter("filament"):
+                # filament id is 1-based in slice_info; convert to 0-based.
+                idx = int(fil.attrib["id"]) - 1
+                # Convert m -> mm so it lines up with the algorithm's used_mm.
+                usage_m[idx] = float(fil.attrib.get("used_m", "0")) * 1000.0
+        except KeyError:
+            pass  # no slice info, fall back to flat 100.0 in caller
     colours = cfg.get("filament_colour", [])
     types = cfg.get("filament_type", [])
     return {
@@ -185,6 +200,7 @@ def read_bambu_3mf(path):
         "settings_id": cfg.get("filament_settings_id", []),
         "ids": cfg.get("filament_ids", []),
         "flush_matrix": cfg.get("flush_volumes_matrix", []),
+        "usage_mm": usage_m,
     }
 
 
@@ -198,15 +214,24 @@ def main():
     args = p.parse_args()
 
     info = read_bambu_3mf(args.file)
+    has_usage = bool(info["usage_mm"])
     print(f"file:           {args.file}")
     print(f"printer_model:  {info['printer_model']}")
-    print(f"filament count: {info['filament_count']}")
+    print(f"filament count: {info['filament_count']}"
+          + ("  (real usage from slice_info.config)" if has_usage
+             else "  (no slice_info, using flat usage = 100mm)"))
     for i, (c, t) in enumerate(zip(info["colours"], info["types"])):
-        print(f"  [{i}] {c}  {t}")
+        if has_usage:
+            u = info["usage_mm"].get(i, 0.0)
+            print(f"  [{i}] {c}  {t:5s}  used = {u/1000:6.2f} m")
+        else:
+            print(f"  [{i}] {c}  {t}")
     print()
 
-    inputs = [{"color_hex": c, "used_mm": 100.0, "type": t or "PLA"}
-              for c, t in zip(info["colours"], info["types"])]
+    inputs = []
+    for i, (c, t) in enumerate(zip(info["colours"], info["types"])):
+        used = info["usage_mm"].get(i, 100.0) if has_usage else 100.0
+        inputs.append({"color_hex": c, "used_mm": used, "type": t or "PLA"})
 
     for x in args.extra:
         parts = x.split(":")

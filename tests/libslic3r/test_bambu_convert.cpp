@@ -463,6 +463,89 @@ TEST_CASE("apply_bambu_to_u1_conversion — empty plate is no-op",
     REQUIRE_FALSE(apply_bambu_to_u1_conversion(plate, BambuConvert::Strategy::Usage, result));
 }
 
+// -----------------------------------------------------------------------------
+// Boundary input sizes (1, 2, 4, 5, 16) — verifies the assignment algorithm
+// handles edge inputs without UB and that the chromatic exhaustive search
+// scales to the worst case we expect in practice (N=16, C(16, 4) = 1820).
+// -----------------------------------------------------------------------------
+
+TEST_CASE("convert_filament_list — single input collapses to single physical",
+          "[BambuConvert][Boundary]") {
+    std::vector<InputFilament> inputs = {{"#FF0000", 100.0, "PLA"}};
+    for (Strategy s : {Strategy::Usage, Strategy::Chromatic, Strategy::Balanced}) {
+        ConvertResult r = convert_filament_list(inputs, s);
+        REQUIRE(r.physical_count == 1);
+        REQUIRE(r.virtuals.empty());
+        REQUIRE_THAT(r.total_overflow_delta_e, WithinAbs(0.0, 1e-12));
+    }
+}
+
+TEST_CASE("convert_filament_list — exactly 4 inputs hits cap with no overflow",
+          "[BambuConvert][Boundary]") {
+    std::vector<InputFilament> inputs = {
+        {"#FF0000", 100.0, "PLA"},
+        {"#00FF00", 100.0, "PLA"},
+        {"#0000FF", 100.0, "PLA"},
+        {"#FFFFFF", 100.0, "PLA"},
+    };
+    for (Strategy s : {Strategy::Usage, Strategy::Chromatic, Strategy::Balanced}) {
+        ConvertResult r = convert_filament_list(inputs, s);
+        REQUIRE(r.physical_count == 4);
+        REQUIRE(r.virtuals.empty());
+    }
+}
+
+TEST_CASE("convert_filament_list — exactly 5 inputs produces 1 virtual",
+          "[BambuConvert][Boundary]") {
+    std::vector<InputFilament> inputs = {
+        {"#FF0000", 100.0, "PLA"},
+        {"#00FF00", 100.0, "PLA"},
+        {"#0000FF", 100.0, "PLA"},
+        {"#FFFFFF", 100.0, "PLA"},
+        {"#000000",  50.0, "PLA"}, // overflow
+    };
+    ConvertResult r = convert_filament_list(inputs, Strategy::Usage);
+    REQUIRE(r.physical_count == 4);
+    REQUIRE(r.virtuals.size() == 1);
+}
+
+TEST_CASE("convert_filament_list — 16 inputs (chromatic worst case)",
+          "[BambuConvert][Boundary][Slow]") {
+    // C(16, 4) = 1820 candidate physical subsets. Sanity-check that the
+    // exhaustive search completes and produces 12 virtuals. Synthetic but
+    // realistic colors (16 distinct hues spread around the wheel).
+    std::vector<InputFilament> inputs;
+    for (int i = 0; i < 16; ++i) {
+        char hex[8];
+        // Step through the hue circle by 360/16 deg, full saturation+value.
+        // Crude HSV -> sRGB conversion; doesn't need to be perceptually
+        // uniform, just produces 16 different hex codes.
+        int phase = i * 6;
+        int r = (i % 3 == 0) ? 255 : (i % 3 == 1) ? 128 : 64;
+        int g = ((i + 1) % 3 == 0) ? 255 : ((i + 1) % 3 == 1) ? 128 : 64;
+        int b = ((i + 2) % 3 == 0) ? 255 : ((i + 2) % 3 == 1) ? 128 : 64;
+        r = (r + phase * 4) % 256;
+        g = (g + phase * 2) % 256;
+        b = (b + phase * 8) % 256;
+        std::snprintf(hex, sizeof(hex), "#%02X%02X%02X", r, g, b);
+        inputs.push_back({std::string(hex), double(100 - i), "PLA"});
+    }
+
+    ConvertResult r = convert_filament_list(inputs, Strategy::Chromatic);
+    REQUIRE(r.physical_count == 4);
+    REQUIRE(r.virtuals.size() == 12);
+    // Sanity: every virtual references two distinct in-range physicals.
+    for (const VirtualFilament &v : r.virtuals) {
+        REQUIRE(v.physical_a < 4);
+        REQUIRE(v.physical_b < 4);
+        REQUIRE(v.physical_a != v.physical_b);
+        REQUIRE(v.delta_e >= 0.0);
+    }
+    // Chromatic should not be worse than Usage on this random palette.
+    ConvertResult r_usage = convert_filament_list(inputs, Strategy::Usage);
+    REQUIRE(r.total_overflow_delta_e <= r_usage.total_overflow_delta_e);
+}
+
 TEST_CASE("apply_bambu_to_u1_conversion — refuses to re-convert an already-converted plate",
           "[BambuConvert][BBS3mf]") {
     PlateData plate;

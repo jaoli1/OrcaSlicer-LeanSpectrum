@@ -27,10 +27,14 @@ static DENSITY_VALUE_WITH_UNIT_BEFORE_RX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static MANUFACTURER_RX: Lazy<Regex> = Lazy::new(|| {
-    // Captures common company suffixes worldwide. The "Co...Ltd" form is
-    // intentionally permissive — pdftotext often collapses "Co., Ltd" into
-    // weird shapes like "Co,.Ltd" or "Co.Ltd".
-    Regex::new(r"(?i)([^\n]{2,80}(?:Co[.,\s]{0,3}Ltd|GmbH|S\.A\.|S\.A\.S|S\.L\.|S\.R\.L|Inc\.?|LLC|Corp\.?|Limited|B\.V\.|N\.V\.|Pty\.?\s*Ltd|AG|KG|Oy|AB|AS|sp\.?z\.?o\.?o)[^\n]*)").unwrap()
+    // Captures common company suffixes worldwide. Two safeguards against
+    // false positives:
+    //   1. \b boundaries so "AS" doesn't match inside "Class" or "ASTM".
+    //   2. The suffix must be at the END of the line (with optional trailing
+    //      period and whitespace). Real company-name lines end with the
+    //      legal form — "Polymaker GmbH" — whereas false friends like
+    //      "190/2.16 kg g/10 min" have more text after the kg/etc.
+    Regex::new(r"(?im)^\s*([^\n]{2,80}\b(?:Co[.,\s]{0,3}Ltd|GmbH|S\.A\.S?|S\.L\.|S\.R\.L|Inc\.?|LLC|Corp\.?|Limited|B\.V\.|N\.V\.|Pty\.?\s*Ltd|AG|KG|Oy|AB|A/S|Sp\.?\s*z\.?\s*o\.?\s*o\.?|s\.r\.o\.?)\b\.?)\s*$").unwrap()
 });
 
 static PRODUCT_LINE_RX: Lazy<Regex> = Lazy::new(|| {
@@ -208,14 +212,18 @@ fn pick_brand(manufacturer: &str) -> Option<String> {
         .map(|w| w.trim_end_matches(|c: char| !c.is_alphanumeric()).to_string())
 }
 
-/// Trim trailing generic markers that don't belong in a profile name:
-/// "Filament", "1.75mm", "Spool", "Refill" …
+/// Trim trailing generic markers that don't belong in a profile name.
+/// Mirror of the SDS-side helper: if stripping leaves less than 4 chars,
+/// keep the original (e.g. don't reduce "PLA filament" to "PLA").
 fn strip_trailing_noise(s: &str) -> String {
     static TRAIL: Lazy<Regex> = Lazy::new(|| {
         Regex::new(r"(?i)\s*(?:filament|1[,.]75\s*mm|2[,.]85\s*mm|3\s*mm|spool|refill|matt|\d+\s*kg|1kg|3d)+\s*$").unwrap()
     });
     let cleaned = TRAIL.replace(s, "").trim().to_string();
-    if cleaned.is_empty() { s.to_string() } else { cleaned }
+    if cleaned.is_empty() || cleaned.len() < 4 {
+        return s.to_string();
+    }
+    cleaned
 }
 
 fn scan_product_name(text: &str, manufacturer: Option<&str>) -> Option<String> {

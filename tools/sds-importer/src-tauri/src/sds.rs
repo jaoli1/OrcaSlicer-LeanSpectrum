@@ -53,9 +53,15 @@ static DENSITY_VALUE_RX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static PRODUCT_NAME_LINE_RX: Lazy<Regex> = Lazy::new(|| {
-    // "Product Name: <value>", "1.1 Product identification  <value>",
-    // "Trade Name: <value>", "Nom du produit : <value>".
-    Regex::new(r"(?im)^\s*(?:\d+\.\d+\s+)?(?:product\s*(?:name|identification|identifier)|trade\s*name|nom\s+du\s+produit|nom\s+commercial|nom\s+du\s+m[ée]lange)\s*[:\-]?\s+(\S.{1,80}?)\s*$").unwrap()
+    // Accepts:
+    //   "Product Name: <value>"        (colon + space, common)
+    //   "Product Name:<value>"         (colon, no space — eSun SDS)
+    //   "1.1 Product identification  <value>"  (subsection + double space)
+    //   "Trade Name: <value>"
+    //   "Nom du produit : <value>"
+    // [\s:\-]+ in place of \s*[:\-]?\s+ so the separator can be any combination
+    // of space, colon, or dash with no surrounding whitespace requirement.
+    Regex::new(r"(?im)^\s*(?:\d+\.\d+\s+)?(?:product\s*(?:name|identification|identifier)|trade\s*name|nom\s+du\s+produit|nom\s+commercial|nom\s+du\s+m[ée]lange)[\s:\-]+(\S.{1,80}?)\s*$").unwrap()
 });
 
 static MANUFACTURER_SUFFIX_RX: Lazy<Regex> = Lazy::new(|| {
@@ -155,12 +161,19 @@ fn next_non_empty_line<'a>(lines: &mut std::str::Lines<'a>) -> Option<&'a str> {
 
 /// Trim trailing generic markers that don't belong in a profile name:
 /// "Filament", "1.75mm", "2.85mm", "Spool", "Refill", etc.
+/// If stripping leaves a string shorter than 4 chars (e.g. just a polymer
+/// abbreviation like "ABS" or "PLA"), keep the original so the saved
+/// profile carries the more recognisable "ABS filament" form instead of
+/// the generic "ABS".
 fn strip_trailing_noise(s: &str) -> String {
     static TRAIL: Lazy<Regex> = Lazy::new(|| {
         Regex::new(r"(?i)\s*(?:filament|1[,.]75\s*mm|2[,.]85\s*mm|3\s*mm|spool|refill|\d+\s*kg|1kg)+\s*$").unwrap()
     });
     let cleaned = TRAIL.replace(s, "").trim().to_string();
-    if cleaned.is_empty() { s.to_string() } else { cleaned }
+    if cleaned.is_empty() || cleaned.len() < 4 {
+        return s.to_string();
+    }
+    cleaned
 }
 
 fn parse_section_1(text: &str, out: &mut ExtractedFilament) {

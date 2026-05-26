@@ -402,3 +402,34 @@ TEST_CASE("apply_bambu_to_u1_conversion — empty plate is no-op",
     BambuConvert::ConvertResult result;
     REQUIRE_FALSE(apply_bambu_to_u1_conversion(plate, BambuConvert::Strategy::Usage, result));
 }
+
+TEST_CASE("apply_bambu_to_u1_conversion — refuses to re-convert an already-converted plate",
+          "[BambuConvert][BBS3mf]") {
+    PlateData plate;
+    auto add = [&](int id, const char *color, double used_m, const char *type) {
+        FilamentInfo fi;
+        fi.id     = id - 1;
+        fi.color  = color;
+        fi.used_m = used_m;
+        fi.type   = type;
+        plate.slice_filaments_info.push_back(fi);
+    };
+    add(1, "#FF0000", 10.0, "PLA");
+    add(2, "#00FF00",  8.0, "PLA");
+    add(3, "#0000FF",  6.0, "PLA");
+    add(4, "#FFFF00",  5.0, "PLA");
+    add(5, "#00FFFF",  3.0, "PLA"); // overflow
+
+    BambuConvert::ConvertResult first;
+    REQUIRE(apply_bambu_to_u1_conversion(plate, BambuConvert::Strategy::Usage, first));
+    REQUIRE(first.virtuals.size() == 1);
+
+    // Re-invoking on the same plate must fail without touching state.
+    BambuConvert::ConvertResult second;
+    REQUIRE_FALSE(apply_bambu_to_u1_conversion(plate, BambuConvert::Strategy::Usage, second));
+
+    // Original recipe is still present.
+    const auto *recipe = plate.config.option<ConfigOptionString>("bambu_convert_recipe");
+    REQUIRE(recipe != nullptr);
+    REQUIRE_FALSE(recipe->value.empty());
+}

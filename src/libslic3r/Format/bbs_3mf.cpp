@@ -9013,6 +9013,17 @@ std::string serialize_virtual_recipe(const BambuConvert::VirtualFilament &v) {
 bool apply_bambu_to_u1_conversion(PlateData                   &plate,
                                   BambuConvert::Strategy       strategy,
                                   BambuConvert::ConvertResult &out_result) {
+    // Idempotency guard: if the plate already carries a non-empty
+    // bambu_convert_recipe the conversion has already been applied
+    // (and slice_filaments_info has already been truncated to the 4
+    // physical slots). Re-running would not be a no-op — it would
+    // overwrite the existing recipe with a meaningless identity, so
+    // refuse loudly. Callers who want to redo the conversion must
+    // clear the recipe first.
+    if (const auto *prior = plate.config.option<ConfigOptionString>("bambu_convert_recipe");
+        prior != nullptr && !prior->value.empty())
+        return false;
+
     // Build BambuConvert input from slice_filaments_info. The slicer
     // populates FilamentInfo from <filament .../> entries in
     // Metadata/slice_info.config; if that wasn't sliced (no slice_info)

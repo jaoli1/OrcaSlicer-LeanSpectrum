@@ -93,7 +93,13 @@ public:
     bool                                            has_fuzzy_skin = false;
     bool                                            has_fuzzy_hole = false;
     std::unordered_map<FuzzySkinConfig, ExPolygons> regions_by_fuzzify;
-    
+
+    // LeanSpectrum: Wave-Overhang output footprints. Populated by
+    // PerimeterGenerator in Phase 3b; LayerRegion::make_perimeters
+    // moves them into Layer::wave_overhang_*. Empty until Phase 3b.
+    Polygons                                        out_wave_overhang_floor_polygons;
+    Polygons                                        out_wave_overhang_covered_polygons;
+
     PerimeterGenerator(
         // Input:
         const SurfaceCollection*    slices,

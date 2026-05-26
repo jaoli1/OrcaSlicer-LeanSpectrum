@@ -355,10 +355,12 @@ VirtualFilament best_virtual_for_target(const std::vector<Rgb> &phys_rgb,
 }
 
 // For a candidate physical set, synthesize virtuals for every other
-// input and return them along with the total deltaE sum.
+// input and return them along with the total deltaE sum (raw and
+// usage-weighted).
 struct AssignmentEval {
     std::vector<VirtualFilament> virtuals;
-    double                       total_delta_e = 0.0;
+    double                       total_delta_e          = 0.0;
+    double                       total_weighted_delta_e = 0.0;
 };
 
 AssignmentEval evaluate_assignment(const std::vector<InputFilament> &inputs,
@@ -379,7 +381,12 @@ AssignmentEval evaluate_assignment(const std::vector<InputFilament> &inputs,
         const Lab target_lab = rgb_to_lab(target_rgb);
         VirtualFilament v = best_virtual_for_target(phys_rgb, target_rgb, target_lab);
         out.virtuals.push_back(v);
-        out.total_delta_e += v.delta_e;
+        out.total_delta_e          += v.delta_e;
+        // Weight by used_mm; floor at 1 mm so a zero-usage filament still
+        // contributes a tiny amount (and so an entirely synthetic input
+        // list with used_mm = 0 collapses to the unweighted metric).
+        const double w = std::max(1.0, inputs[k].used_mm);
+        out.total_weighted_delta_e += v.delta_e * w;
     }
     return out;
 }
@@ -400,10 +407,14 @@ std::vector<size_t> pick_by_usage(const std::vector<InputFilament> &inputs,
 }
 
 // Exhaustively enumerate C(N, cap) physical subsets and pick the one
-// minimising total overflow deltaE. Tie-break by lexicographic combo
-// for determinism.
-std::vector<size_t> pick_by_chromatic(const std::vector<InputFilament> &inputs,
-                                      size_t cap) {
+// minimising the chosen overflow metric. Tie-break by lexicographic
+// combo for determinism.
+//
+// `weighted` = false  -> minimise sum of CIEDE2000 (chromatic strategy)
+// `weighted` = true   -> minimise sum of CIEDE2000 * used_mm (balanced)
+std::vector<size_t> pick_by_exhaustive(const std::vector<InputFilament> &inputs,
+                                       size_t cap,
+                                       bool   weighted) {
     const size_t n = inputs.size();
     if (n <= cap) {
         std::vector<size_t> all(n);
@@ -414,17 +425,16 @@ std::vector<size_t> pick_by_chromatic(const std::vector<InputFilament> &inputs,
     std::vector<size_t> best;
     double best_total = std::numeric_limits<double>::infinity();
 
-    // Generate combinations of `cap` indices out of [0, n) in
-    // lexicographic order.
     std::vector<size_t> combo(cap);
     std::iota(combo.begin(), combo.end(), size_t{0});
     while (true) {
         AssignmentEval ev = evaluate_assignment(inputs, combo);
-        if (ev.total_delta_e < best_total) {
-            best_total = ev.total_delta_e;
+        const double cost = weighted ? ev.total_weighted_delta_e
+                                     : ev.total_delta_e;
+        if (cost < best_total) {
+            best_total = cost;
             best       = combo;
         }
-        // Advance combo to the next lexicographic combination.
         size_t i = cap;
         while (i-- > 0) {
             if (combo[i] < n - (cap - i)) {
@@ -434,7 +444,7 @@ std::vector<size_t> pick_by_chromatic(const std::vector<InputFilament> &inputs,
                 break;
             }
             if (i == 0)
-                return best; // exhausted
+                return best;
         }
     }
 }
@@ -450,9 +460,18 @@ ConvertResult convert_filament_list(const std::vector<InputFilament> &inputs,
 
     const size_t cap = 4; // U1 physical extruder count
 
-    std::vector<size_t> physicals = (strategy == Strategy::Chromatic)
-        ? pick_by_chromatic(inputs, cap)
-        : pick_by_usage(inputs, cap);
+    std::vector<size_t> physicals;
+    switch (strategy) {
+        case Strategy::Usage:
+            physicals = pick_by_usage(inputs, cap);
+            break;
+        case Strategy::Chromatic:
+            physicals = pick_by_exhaustive(inputs, cap, /*weighted=*/false);
+            break;
+        case Strategy::Balanced:
+            physicals = pick_by_exhaustive(inputs, cap, /*weighted=*/true);
+            break;
+    }
 
     const size_t n_phys = std::min(cap, physicals.size());
     result.physical_count = n_phys;
@@ -468,8 +487,9 @@ ConvertResult convert_filament_list(const std::vector<InputFilament> &inputs,
 
     // Synthesize the virtuals against the picked physical set.
     AssignmentEval ev = evaluate_assignment(inputs, physicals);
-    result.virtuals = std::move(ev.virtuals);
-    result.total_overflow_delta_e = ev.total_delta_e;
+    result.virtuals                        = std::move(ev.virtuals);
+    result.total_overflow_delta_e          = ev.total_delta_e;
+    result.total_overflow_weighted_delta_e = ev.total_weighted_delta_e;
     return result;
 }
 

@@ -20345,20 +20345,26 @@ bool Plater::convert_bambu_to_u1()
         inputs.push_back(std::move(in));
     }
 
-    // Auto-pick the better strategy. We run both — they're each
-    // O(C(N,4) * pairs * ratios), well under 100 ms for the N <= 16
-    // palettes we expect in practice — and keep the one with the
-    // lower sum overflow deltaE. The user shouldn't have to know
-    // about Usage vs Chromatic; what they want is "best palette
-    // mapping". The chosen strategy is reported in the final dialog
-    // for transparency.
+    // Auto-pick the best of three strategies, scored on the
+    // usage-WEIGHTED deltaE sum (perceptual mismatch multiplied by how
+    // much of that color the print actually deposits). This is what
+    // "how visually wrong the print looks" actually correlates with —
+    // a deltaE 30 drift on 2 m of filament hurts much less than a
+    // deltaE 5 drift on 40 m. All three strategies are cheap (well
+    // under 100 ms for N <= 16), so we just run them all and pick.
     BambuConvert::ConvertResult via_usage =
         BambuConvert::convert_filament_list(inputs, BambuConvert::Strategy::Usage);
     BambuConvert::ConvertResult via_chromatic =
         BambuConvert::convert_filament_list(inputs, BambuConvert::Strategy::Chromatic);
-    BambuConvert::ConvertResult result =
-        (via_chromatic.total_overflow_delta_e < via_usage.total_overflow_delta_e)
-            ? std::move(via_chromatic) : std::move(via_usage);
+    BambuConvert::ConvertResult via_balanced =
+        BambuConvert::convert_filament_list(inputs, BambuConvert::Strategy::Balanced);
+    BambuConvert::ConvertResult result = via_usage;
+    if (via_chromatic.total_overflow_weighted_delta_e <
+        result.total_overflow_weighted_delta_e)
+        result = via_chromatic;
+    if (via_balanced.total_overflow_weighted_delta_e <
+        result.total_overflow_weighted_delta_e)
+        result = via_balanced;
 
     // Reorder the preset_bundle so the 4 physicals come first, in slot order.
     std::vector<std::string> new_colors;
@@ -20418,19 +20424,35 @@ bool Plater::convert_bambu_to_u1()
     wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
     force_filament_colors_update();
 
-    // Compose the result summary including which strategy won.
-    const char *strat_name = (result.strategy == BambuConvert::Strategy::Chromatic)
-        ? "Chromatic" : "Usage";
-    const double loser_de =
-        (result.strategy == BambuConvert::Strategy::Chromatic)
-            ? via_usage.total_overflow_delta_e
-            : via_chromatic.total_overflow_delta_e;
+    // Compose the result summary including which of the three strategies won.
+    auto strat_name = [](BambuConvert::Strategy s) {
+        switch (s) {
+            case BambuConvert::Strategy::Usage:     return "Usage";
+            case BambuConvert::Strategy::Chromatic: return "Chromatic";
+            case BambuConvert::Strategy::Balanced:  return "Balanced";
+        }
+        return "?";
+    };
+    // Helper: print 1000 as 1.0k, 12345 as 12.3k for readable weighted scores.
+    auto fmt_w = [](double v) {
+        if (v < 1000) return wxString::Format("%.0f", v);
+        return wxString::Format("%.1fk", v / 1000.0);
+    };
     wxString done = wxString::Format(
         _L("Conversion complete: %zu physical filaments, %zu virtual FullSpectrum recipes.\n\n"
-           "Strategy: %s   sum \xce\x94E = %.2f (vs %.2f for the other strategy)\n\n"
+           "Picked: %s  (lowest weighted \xce\x94E)\n\n"
+           "                  raw \xce\x94E    weighted\n"
+           "  Usage:        %6.2f      %s\n"
+           "  Chromatic:    %6.2f      %s\n"
+           "  Balanced:     %6.2f      %s\n\n"
+           "Weighted = sum(\xce\x94E \xc3\x97 filament_used_mm), correlates with how "
+           "visibly wrong the print looks.\n"
            "Floyd-Steinberg dither activated for the FullSpectrum virtuals."),
         result.physical_count, result.virtuals.size(),
-        strat_name, result.total_overflow_delta_e, loser_de);
+        strat_name(result.strategy),
+        via_usage.total_overflow_delta_e,     fmt_w(via_usage.total_overflow_weighted_delta_e),
+        via_chromatic.total_overflow_delta_e, fmt_w(via_chromatic.total_overflow_weighted_delta_e),
+        via_balanced.total_overflow_delta_e,  fmt_w(via_balanced.total_overflow_weighted_delta_e));
     ::wxMessageBox(done, _L("Bambu \xe2\x86\x92 U1 conversion"),
                    wxOK | wxICON_INFORMATION);
     return true;

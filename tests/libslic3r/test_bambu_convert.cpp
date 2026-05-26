@@ -308,6 +308,44 @@ TEST_CASE("convert_filament_list — chromatic strategy beats usage on isolated 
     REQUIRE(by_chromatic.strategy == Strategy::Chromatic);
 }
 
+TEST_CASE("Balanced strategy promotes heavy-usage colors over chromatically isolated ones",
+          "[BambuConvert][Assign][Balanced]") {
+    // Construct a palette where one color is chromatically isolated but
+    // barely used, and one is chromatically reproducible but used heavily.
+    // Chromatic should physical-promote the isolated color; Balanced
+    // should physical-promote the heavy-usage one.
+    std::vector<InputFilament> inputs = {
+        {"#FCECD6", 40000.0, "PLA"}, // 0 — heavy beige (40 m, most used)
+        {"#161616", 15000.0, "PLA"}, // 1 — black
+        {"#FFF144", 12000.0, "PLA"}, // 2 — yellow
+        {"#FFFFFF",  8000.0, "PLA"}, // 3 — white
+        {"#7C4B00",  6000.0, "PLA"}, // 4 — brown
+        {"#443089",   500.0, "PLA"}, // 5 — purple, rarely used but isolated
+    };
+    ConvertResult by_chromatic = convert_filament_list(inputs, Strategy::Chromatic);
+    ConvertResult by_balanced  = convert_filament_list(inputs, Strategy::Balanced);
+
+    auto has_idx = [](const ConvertResult &r, size_t idx) {
+        for (size_t i = 0; i < r.physical_count; ++i)
+            if (r.physical_indices[i] == idx) return true;
+        return false;
+    };
+
+    // Chromatic should include the isolated purple (idx 5) — it can't be
+    // reproduced by mixing the other (largely neutral) colors.
+    REQUIRE(has_idx(by_chromatic, 5));
+
+    // Balanced should NOT include purple (only 500 mm of usage — virtualising
+    // it has tiny weighted cost) and should KEEP beige (idx 0) physical
+    // because demoting it to virtual would multiply any drift by 40000.
+    REQUIRE(has_idx(by_balanced, 0));
+
+    // Balanced strictly beats Chromatic on the weighted metric on this
+    // input.
+    REQUIRE(by_balanced.total_overflow_weighted_delta_e
+            < by_chromatic.total_overflow_weighted_delta_e);
+}
+
 TEST_CASE("convert_filament_list — chromatic with <= 4 inputs reduces to identity",
           "[BambuConvert][Assign][Chromatic]") {
     std::vector<InputFilament> inputs = {

@@ -171,16 +171,13 @@ def convert_filament_list(inputs, cap=4, strategy="usage"):
     """inputs: list of dicts {color_hex, used_mm, type}.
 
     strategy:
-        "usage"     — pick the top `cap` filaments by used_mm. Fast,
-                      deterministic, the BambuConvert C++ default.
-        "chromatic" — exhaustively search C(N, cap) physical subsets,
-                      pick the one that minimises Σ overflow ΔE.
-                      Costlier (C(16, 4) = 1820 candidates max) but
-                      drastically better when one rarely-used color is
-                      chromatically isolated.
-
-    Returns dict with physical_indices, virtuals, and (for chromatic)
-    candidates_considered + total_overflow_delta_e.
+        "usage"     — pick the top `cap` filaments by used_mm.
+        "chromatic" — exhaustive search minimising sum overflow deltaE
+                      (unweighted; pure perceptual quality).
+        "balanced"  — exhaustive search minimising sum
+                      (deltaE * used_mm). High-deltaE overflows on
+                      barely-used colors cost less than small drift on
+                      heavy filaments.
     """
     from itertools import combinations
 
@@ -202,21 +199,35 @@ def convert_filament_list(inputs, cap=4, strategy="usage"):
         return {"physical_indices": physicals, "virtuals": virtuals,
                 "strategy": "usage", "total_overflow_delta_e": total_de}
 
-    if strategy == "chromatic":
+    if strategy in ("chromatic", "balanced"):
         best_phys = None
         best_virts = None
-        best_total = float("inf")
+        best_score = float("inf")
+        best_total_de = float("inf")
         candidates = 0
+        phys_set = set()
         for combo in combinations(range(len(inputs)), n_phys):
-            virts, total = _virtuals_for(inputs, combo)
+            virts, total_de = _virtuals_for(inputs, combo)
+            if strategy == "chromatic":
+                score = total_de
+            else:  # balanced
+                phys_set = set(combo)
+                score = sum(
+                    v["delta_e"] * max(1.0, inputs[v["input_idx"]]["used_mm"])
+                    for v in virts
+                )
             candidates += 1
-            if total < best_total:
-                best_total = total
+            if score < best_score:
+                best_score = score
+                best_total_de = total_de
                 best_phys = list(combo)
                 best_virts = virts
         return {"physical_indices": best_phys, "virtuals": best_virts,
-                "strategy": "chromatic", "candidates_considered": candidates,
-                "total_overflow_delta_e": best_total}
+                "strategy": strategy,
+                "candidates_considered": candidates,
+                "total_overflow_delta_e": best_total_de,
+                "total_weighted_delta_e": best_score if strategy == "balanced"
+                                          else None}
 
     raise ValueError(f"unknown strategy: {strategy}")
 
@@ -262,7 +273,7 @@ def main():
     p.add_argument("--extra", action="append", default=[],
                    help="extra synthetic filament '#RRGGBB[:used_mm[:type]]'")
     p.add_argument("--strategy", default="usage",
-                   choices=["usage", "chromatic", "both"],
+                   choices=["usage", "chromatic", "balanced", "all"],
                    help="physical selection strategy (default: usage)")
     args = p.parse_args()
 
@@ -320,7 +331,8 @@ def main():
         if "total_overflow_delta_e" in res:
             print(f"  sum overflow deltaE = {res['total_overflow_delta_e']:.2f}")
 
-    strategies = ["usage", "chromatic"] if args.strategy == "both" else [args.strategy]
+    strategies = (["usage", "chromatic", "balanced"]
+                  if args.strategy == "all" else [args.strategy])
     for i, strat in enumerate(strategies):
         if i:
             print()

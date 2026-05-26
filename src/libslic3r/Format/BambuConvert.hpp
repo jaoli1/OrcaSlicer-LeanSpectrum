@@ -108,8 +108,20 @@ struct InputFilament {
 //               BL2U1_NATIVE_PORT.md for the comparison data on
 //               real Bambu prints.
 enum class Strategy {
-    Usage = 0,
+    // Pick top-N by usage. Fast, deterministic. Best when the most-used
+    // colors are chromatically diverse.
+    Usage     = 0,
+    // Exhaustively search C(N, 4) physical subsets, minimise unweighted
+    // sum of overflow CIEDE2000. Best raw perceptual quality but ignores
+    // how much filament each overflow color actually consumes.
     Chromatic = 1,
+    // Same exhaustive search as Chromatic but minimises sum of
+    // (CIEDE2000 * used_mm) instead. A high-deltaE overflow on a barely-
+    // used color costs less than a low-deltaE drift on a heavy filament.
+    // This is usually what users actually want — the metric correlates
+    // with how visually wrong the final print looks, not with abstract
+    // per-color color distance.
+    Balanced  = 2,
 };
 
 struct ConvertResult {
@@ -117,8 +129,12 @@ struct ConvertResult {
     size_t                       physical_count   = 0;
     std::vector<VirtualFilament> virtuals;
     // Sum of CIEDE2000 across all virtuals. 0 when there's no overflow.
-    // Useful for comparing strategies.
-    double                       total_overflow_delta_e = 0.0;
+    // Useful for comparing strategies on perceptual quality alone.
+    double                       total_overflow_delta_e          = 0.0;
+    // Sum of (CIEDE2000 * max(1, used_mm)) across all virtuals. Used
+    // by the Plater auto-pick to choose the strategy that minimises
+    // visible impact on the final print, not abstract per-color drift.
+    double                       total_overflow_weighted_delta_e = 0.0;
     // Echoes back the strategy actually used (so callers can log it).
     Strategy                     strategy = Strategy::Usage;
 };

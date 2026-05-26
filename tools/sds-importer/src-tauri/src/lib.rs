@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
+mod crawler;
 mod fetcher;
 mod ocr;
 mod pdf;
@@ -16,6 +17,7 @@ mod profile;
 mod sds;
 mod tds;
 
+pub use crawler::{CatalogEntry, CrawlResult, DocType};
 pub use polymer::Polymer;
 pub use profile::{FilamentProfile, RecommendedProcess};
 
@@ -158,6 +160,46 @@ fn import_pdf(req: ImportRequest) -> std::result::Result<ImportResult, Error> {
 }
 
 #[tauri::command]
+fn crawl_catalog(url: String) -> std::result::Result<CrawlResult, Error> {
+    crawler::crawl_vendor_page(&url)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchImportRequest {
+    pub urls:         Vec<String>,
+    pub fetch_online: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchImportResult {
+    pub succeeded: Vec<ImportResult>,
+    pub failed:    Vec<(String, String)>,    // (url, error)
+}
+
+#[tauri::command]
+fn import_from_urls(req: BatchImportRequest) -> std::result::Result<BatchImportResult, Error> {
+    let mut succeeded = Vec::with_capacity(req.urls.len());
+    let mut failed    = Vec::new();
+    for url in &req.urls {
+        match crawler::download_to_temp(url) {
+            Err(e) => failed.push((url.clone(), format!("download: {e}"))),
+            Ok(path) => {
+                let sub = ImportRequest {
+                    pdf_path: path.display().to_string(),
+                    fetch_online: req.fetch_online,
+                };
+                match import_pdf(sub) {
+                    Ok(r)  => succeeded.push(r),
+                    Err(e) => failed.push((url.clone(), e.to_string())),
+                }
+                let _ = std::fs::remove_file(&path);
+            }
+        }
+    }
+    Ok(BatchImportResult { succeeded, failed })
+}
+
+#[tauri::command]
 fn pick_pdf(app: tauri::AppHandle) -> std::result::Result<Option<String>, Error> {
     use tauri_plugin_dialog::DialogExt;
     let (tx, rx) = std::sync::mpsc::channel();
@@ -178,7 +220,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .invoke_handler(tauri::generate_handler![import_pdf, pick_pdf])
+        .invoke_handler(tauri::generate_handler![import_pdf, pick_pdf, crawl_catalog, import_from_urls])
         .setup(|app| {
             log::info!("LeanSpectrum SDS Importer starting; main window id = {}", app.get_webview_window("main").map(|_| "main").unwrap_or("?"));
             Ok(())

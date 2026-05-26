@@ -2,6 +2,10 @@
 
 ## Pipeline overview
 
+Two entry points: a single-PDF import path, and a vendor-catalog
+crawl-then-batch-import path.
+
+### Single PDF
 ```
   PDF (SDS or TDS)
         │
@@ -39,6 +43,32 @@
         │
         ▼
   UI displays: "Created PLA Brand XYZ — use 0.20mm Standard process"
+```
+
+### Vendor catalog
+```
+  Vendor URL (e.g. https://eryone3d.com/pages/certificates)
+        │
+        ▼
+  crawler::crawl_vendor_page
+        │
+        ▼
+  ┌────────────────────────────────────────────────┐
+  │  CrawlResult { entries: Vec<CatalogEntry> }    │
+  │   • dedup by URL minus query string             │
+  │   • classify_doc_type (SDS / TDS / Cert / ?)    │
+  │   • classify_polymer  (PLA / PETG / …)          │
+  │   • guess_product (anchor minus SDS/TDS tokens) │
+  │   • skip non-filament certificates              │
+  └────────────────────────────────────────────────┘
+        │
+        ▼  user picks N entries (auto-checked when
+        │  doc_type ≠ Unknown)
+        ▼
+  import_from_urls (batched download_to_temp + import_pdf)
+        │
+        ▼
+  BatchImportResult { succeeded, failed }
 ```
 
 ## Key invariants

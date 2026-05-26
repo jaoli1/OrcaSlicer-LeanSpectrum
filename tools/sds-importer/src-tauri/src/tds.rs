@@ -53,22 +53,67 @@ pub fn looks_like_tds(text: &str) -> bool {
     signals.iter().filter(|p| lower.contains(*p)).count() >= 1
 }
 
+/// Find the first plausible range in `window` that matches the expected unit
+/// class. `expect_c=true` keeps temperatures only — values with a `%` or
+/// `mm/s` suffix immediately after the range are rejected because they are
+/// almost certainly fan speeds or print speeds.
+fn first_range_with_unit_check(window: &str, expect_c: bool) -> Option<(f64, f64)> {
+    let mut last: Option<usize> = None;
+    for c in RANGE_RX.captures_iter(window) {
+        let m = c.get(0)?;
+        // Skip captures that have already been considered (RANGE_RX is global).
+        if let Some(prev) = last { if m.start() <= prev { continue; } }
+        last = Some(m.end());
+
+        let lo: f64 = c.get(1).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
+        let hi: f64 = c.get(2).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
+        let plausible = if expect_c {
+            lo >= 30.0 && hi <= 350.0 && hi >= lo
+        } else {
+            lo >= 1.0 && hi <= 1000.0 && hi >= lo
+        };
+        if !plausible { continue; }
+
+        // Look at the 6 chars after the match for a disqualifying unit.
+        let tail_start = m.end();
+        let tail = &window[tail_start..window.len().min(tail_start + 8)];
+        let tail_low = tail.to_ascii_lowercase();
+        if expect_c {
+            if tail_low.contains('%') || tail_low.contains("mm/s") || tail_low.contains("mm /s") {
+                continue;
+            }
+        } else {
+            if tail_low.contains('°') {
+                continue;
+            }
+        }
+        return Some((lo, hi));
+    }
+    None
+}
+
 fn scan_range_after(text: &str, labels: &[&str], expect_c: bool) -> (Option<f64>, Option<f64>) {
     let lower = text.to_ascii_lowercase();
     for label in labels {
         if let Some(idx) = lower.find(&label.to_ascii_lowercase()) {
-            // Window of 200 chars accommodates tabular layouts with long
-            // padding between label and value.
-            let window = &text[idx..text.len().min(idx + 200)];
-            if let Some(c) = RANGE_RX.captures(window) {
-                let lo: f64 = c.get(1).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
-                let hi: f64 = c.get(2).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
-                let plausible = if expect_c {
-                    lo >= 30.0 && hi <= 350.0 && hi >= lo
-                } else {
-                    lo >= 1.0 && hi <= 1000.0 && hi >= lo
-                };
-                if plausible {
+            // Forward window of 200 chars covers normal "label  ...  value"
+            // layouts.
+            let forward = &text[idx + label.len()..text.len().min(idx + label.len() + 200)];
+            if let Some((lo, hi)) = first_range_with_unit_check(forward, expect_c) {
+                return (Some(lo), Some(hi));
+            }
+            // Backward search is intentionally only attempted when the
+            // forward window has NO numeric range at all. Some vendor PDFs
+            // (notably ones whose tables pdftotext extracts column-first)
+            // place values above labels — but several adjacent labels then
+            // share the same backward window, and a naive backward read
+            // would map the wrong value to each label. Requiring a fully
+            // empty forward window catches the "single-label-with-no-value"
+            // edge while avoiding the multi-label cross-talk.
+            if !RANGE_RX.is_match(forward) {
+                let before_start = idx.saturating_sub(200);
+                let backward = &text[before_start..idx];
+                if let Some((lo, hi)) = first_range_with_unit_check(backward, expect_c) {
                     return (Some(lo), Some(hi));
                 }
             }
@@ -138,6 +183,12 @@ fn scan_product_name(text: &str, manufacturer: Option<&str>) -> Option<String> {
     None
 }
 
+static WORD_BOUNDED_NUM_RX: Lazy<Regex> = Lazy::new(|| {
+    // Word-bounded number so "152" from a standards code like "ASTM D1525"
+    // does not get picked up as a temperature.
+    Regex::new(r"\b(\d{2,3}(?:\.\d+)?)\b").unwrap()
+});
+
 fn scan_glass_transition(text: &str) -> Option<f64> {
     let lower = text.to_ascii_lowercase();
     // Vicat softening temperature is a good T_g proxy for amorphous-ish
@@ -146,12 +197,22 @@ fn scan_glass_transition(text: &str) -> Option<f64> {
     for label in ["glass transition", "transition vitreuse",
                   "vicat softening", "vicat", "heat distortion"] {
         if let Some(idx) = lower.find(label) {
-            let window = &text[idx..text.len().min(idx + 160)];
-            // Find first plausible Celsius value (30..200).
-            let rx = Regex::new(r"(\d{2,3}(?:\.\d+)?)").unwrap();
-            for m in rx.find_iter(window) {
+            let window = &text[idx..text.len().min(idx + 200)];
+            for m in WORD_BOUNDED_NUM_RX.find_iter(window) {
                 if let Ok(v) = m.as_str().parse::<f64>() {
                     if (30.0..200.0).contains(&v) {
+                        // Skip plain integers that are obviously test-method
+                        // codes (e.g. "1525" -> "152" was the original
+                        // failure mode; with \b we're safe, but also skip if
+                        // the value is immediately preceded by "D" or "ISO"
+                        // to avoid astm-style designators).
+                        let prefix_start = idx + m.start().saturating_sub(8);
+                        let prefix = &text[prefix_start..idx + m.start()].to_ascii_lowercase();
+                        if prefix.ends_with("d") || prefix.ends_with("iso ")
+                           || prefix.ends_with("astm ") || prefix.ends_with("gb/t ")
+                        {
+                            continue;
+                        }
                         return Some(v);
                     }
                 }

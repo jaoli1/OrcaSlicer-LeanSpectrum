@@ -129,46 +129,96 @@ MIXING_RATIOS = [0.25, 1.0/3.0, 0.5, 2.0/3.0, 0.75]
 
 # --- assignment ------------------------------------------------------------
 
-def convert_filament_list(inputs, cap=4):
-    """inputs: list of dicts {color_hex, used_mm, type}. Returns dict."""
-    if not inputs:
-        return {"physical_indices": [], "virtuals": []}
+def _best_mix_for_target(target_lab, phys_rgb, phys_lab):
+    """Try every (a, b, ratio) combination, return the best recipe."""
+    best = {"delta_e": float("inf")}
+    n = len(phys_rgb)
+    for a in range(n):
+        for b in range(n):
+            if a == b:
+                continue
+            for r in MIXING_RATIOS:
+                mixed = mix(phys_rgb[a], phys_rgb[b], r)
+                de = ciede2000(rgb_to_lab(mixed), target_lab)
+                if de < best["delta_e"]:
+                    best.update({
+                        "physical_a": a, "physical_b": b, "ratio_a": r,
+                        "achieved_hex": format_hex(mixed), "delta_e": de,
+                    })
+    return best
 
-    order = sorted(range(len(inputs)),
-                   key=lambda i: (-inputs[i]["used_mm"], i))
-    n_phys = min(cap, len(order))
-    physicals = order[:n_phys]
-    result = {"physical_indices": physicals, "virtuals": []}
-    if len(order) <= cap:
-        return result
 
+def _virtuals_for(inputs, physicals):
+    """Given a fixed physical set, synthesise virtuals for every input
+    not in `physicals`. Returns (virtual_list, sum_delta_e)."""
     phys_rgb = [parse_hex(inputs[i]["color_hex"]) for i in physicals]
     phys_lab = [rgb_to_lab(c) for c in phys_rgb]
+    virtuals = []
+    total_de = 0.0
+    phys_set = set(physicals)
+    for k, fil in enumerate(inputs):
+        if k in phys_set:
+            continue
+        target_lab = rgb_to_lab(parse_hex(fil["color_hex"]))
+        best = _best_mix_for_target(target_lab, phys_rgb, phys_lab)
+        best.update({"input_idx": k, "target_hex": fil["color_hex"]})
+        virtuals.append(best)
+        total_de += best["delta_e"]
+    return virtuals, total_de
 
-    for k in range(cap, len(order)):
-        input_idx = order[k]
-        target_rgb = parse_hex(inputs[input_idx]["color_hex"])
-        target_lab = rgb_to_lab(target_rgb)
 
-        best = {"input_idx": input_idx, "delta_e": float("inf")}
-        for a in range(n_phys):
-            for b in range(n_phys):
-                if a == b:
-                    continue
-                for r in MIXING_RATIOS:
-                    mixed = mix(phys_rgb[a], phys_rgb[b], r)
-                    de = ciede2000(rgb_to_lab(mixed), target_lab)
-                    if de < best["delta_e"]:
-                        best.update({
-                            "physical_a": a,
-                            "physical_b": b,
-                            "ratio_a": r,
-                            "achieved_hex": format_hex(mixed),
-                            "delta_e": de,
-                            "target_hex": inputs[input_idx]["color_hex"],
-                        })
-        result["virtuals"].append(best)
-    return result
+def convert_filament_list(inputs, cap=4, strategy="usage"):
+    """inputs: list of dicts {color_hex, used_mm, type}.
+
+    strategy:
+        "usage"     — pick the top `cap` filaments by used_mm. Fast,
+                      deterministic, the BambuConvert C++ default.
+        "chromatic" — exhaustively search C(N, cap) physical subsets,
+                      pick the one that minimises Σ overflow ΔE.
+                      Costlier (C(16, 4) = 1820 candidates max) but
+                      drastically better when one rarely-used color is
+                      chromatically isolated.
+
+    Returns dict with physical_indices, virtuals, and (for chromatic)
+    candidates_considered + total_overflow_delta_e.
+    """
+    from itertools import combinations
+
+    if not inputs:
+        return {"physical_indices": [], "virtuals": [], "strategy": strategy}
+
+    n_phys = min(cap, len(inputs))
+
+    if len(inputs) <= cap:
+        physicals = list(range(len(inputs)))
+        return {"physical_indices": physicals, "virtuals": [],
+                "strategy": strategy, "total_overflow_delta_e": 0.0}
+
+    if strategy == "usage":
+        order = sorted(range(len(inputs)),
+                       key=lambda i: (-inputs[i]["used_mm"], i))
+        physicals = order[:n_phys]
+        virtuals, total_de = _virtuals_for(inputs, physicals)
+        return {"physical_indices": physicals, "virtuals": virtuals,
+                "strategy": "usage", "total_overflow_delta_e": total_de}
+
+    if strategy == "chromatic":
+        best_phys = None
+        best_virts = None
+        best_total = float("inf")
+        candidates = 0
+        for combo in combinations(range(len(inputs)), n_phys):
+            virts, total = _virtuals_for(inputs, combo)
+            candidates += 1
+            if total < best_total:
+                best_total = total
+                best_phys = list(combo)
+                best_virts = virts
+        return {"physical_indices": best_phys, "virtuals": best_virts,
+                "strategy": "chromatic", "candidates_considered": candidates,
+                "total_overflow_delta_e": best_total}
+
+    raise ValueError(f"unknown strategy: {strategy}")
 
 
 # --- 3mf parsing -----------------------------------------------------------
@@ -211,6 +261,9 @@ def main():
     p.add_argument("file")
     p.add_argument("--extra", action="append", default=[],
                    help="extra synthetic filament '#RRGGBB[:used_mm[:type]]'")
+    p.add_argument("--strategy", default="usage",
+                   choices=["usage", "chromatic", "both"],
+                   help="physical selection strategy (default: usage)")
     args = p.parse_args()
 
     info = read_bambu_3mf(args.file)
@@ -246,22 +299,32 @@ def main():
             print(f"  {x}")
         print()
 
-    res = convert_filament_list(inputs)
-    print("CONVERT_FILAMENT_LIST result:")
-    print(f"  physical filaments ({len(res['physical_indices'])}):")
-    for slot, idx in enumerate(res["physical_indices"]):
-        f = inputs[idx]
-        print(f"    slot {slot} <- input[{idx}]  {f['color_hex']}  {f['type']}")
-    if not res["virtuals"]:
-        print("  virtual filaments: (none, no overflow)")
-    else:
-        print(f"  virtual filaments ({len(res['virtuals'])}):")
-        for v in res["virtuals"]:
-            f = inputs[v["input_idx"]]
-            print(f"    input[{v['input_idx']}] target={v['target_hex']}  ->  "
-                  f"mix(slot {v['physical_a']}, slot {v['physical_b']}, "
-                  f"ratio_a={v['ratio_a']:.3f})  "
-                  f"achieved={v['achieved_hex']}  deltaE={v['delta_e']:.2f}")
+    def print_result(res):
+        tag = res["strategy"]
+        if "candidates_considered" in res:
+            tag += f" ({res['candidates_considered']} candidates)"
+        print(f"CONVERT_FILAMENT_LIST [{tag}]:")
+        print(f"  physical filaments ({len(res['physical_indices'])}):")
+        for slot, idx in enumerate(res["physical_indices"]):
+            f = inputs[idx]
+            print(f"    slot {slot} <- input[{idx}]  {f['color_hex']}  {f['type']}")
+        if not res["virtuals"]:
+            print("  virtual filaments: (none, no overflow)")
+        else:
+            print(f"  virtual filaments ({len(res['virtuals'])}):")
+            for v in sorted(res["virtuals"], key=lambda v: v["delta_e"]):
+                print(f"    input[{v['input_idx']}] target={v['target_hex']}  ->  "
+                      f"mix(slot {v['physical_a']}, slot {v['physical_b']}, "
+                      f"ratio_a={v['ratio_a']:.3f})  "
+                      f"achieved={v['achieved_hex']}  deltaE={v['delta_e']:.2f}")
+        if "total_overflow_delta_e" in res:
+            print(f"  sum overflow deltaE = {res['total_overflow_delta_e']:.2f}")
+
+    strategies = ["usage", "chromatic"] if args.strategy == "both" else [args.strategy]
+    for i, strat in enumerate(strategies):
+        if i:
+            print()
+        print_result(convert_filament_list(inputs, strategy=strat))
 
 
 if __name__ == "__main__":

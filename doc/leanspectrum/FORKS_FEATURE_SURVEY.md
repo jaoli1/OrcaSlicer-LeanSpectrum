@@ -71,6 +71,65 @@ Together they compound the existing 5-pass G-code economy module. Each
 also keeps its master toggle off-by-default so they can be evaluated
 independently.
 
+## Snapmaker U1 reference values (2026-05-26 wiki snapshot)
+
+Sourced from:
+- [Snapmaker U1 specs page](https://www.snapmaker.com/snapmaker-u1/specs)
+- [Snapmaker wiki — U1 multi-color guide](https://wiki.snapmaker.com/en/snapmaker_u1/printing_guides/multi-color_printing_guide)
+- [Snapmaker wiki — filament library](https://wiki.snapmaker.com/en/general/manual/filament_library)
+- [Snapmaker forum — prime tower minimisation](https://forum.snapmaker.com/t/u1-how-to-minimize-prime-tower-in-orca/40721)
+- [JNP-1/Snapmaker-U1-Config](https://github.com/JNP-1/Snapmaker-U1-Config) — community Klipper cfg with real motion numbers
+
+| Parameter | Value | Source / notes |
+|---|---|---|
+| Max volumetric flow (PLA, 0.4 mm) | **32 mm³/s** ceiling | Hardware spec; SnapSpeed PLA practical ceiling |
+| Max travel speed | 500 mm/s | Snapmaker spec |
+| Max print acceleration | 20 000 mm/s² (toolhead) | Spec; Klipper allows 25 000 |
+| Input shaping | MZV ~54 Hz X / ~47.5 Hz Y | Auto-tuned via accelerometer; no slicer-side override |
+| PLA temp / bed | 230-250 °C / 60-80 °C | Wiki filament library — high range matches direct-drive stainless hotend |
+| PETG temp / bed | 230-240 / 70-80 °C | Cooling fan default OFF |
+| ABS / ASA temp / bed | 230-250 / 60-80 °C | Enclosure recommended |
+| Retraction (all) | 0.5-3 mm @ 30-70 mm/s | Direct-drive — keep low |
+| **Purge volume per color swap** | **40-60 mm³** | Stock Orca over-purges; biggest economy win |
+| Multi-tool ramming volume | 5 mm³ PLA | Wiki value |
+| Multi-tool ramming flow | 1.2-1.5× max_volumetric_speed | Wiki guidance |
+| Prime tower brim | 3-8 mm (10+ for tall, 1.5-2× model brim for PETG/ABS) | Forum + wiki |
+| Z-hop type | **Normal, per-extruder** (NOT "Auto") | Mandatory on U1 IDEX per community guide |
+
+These numbers are baked into [AutoProfile.cpp](../../src/libslic3r/AutoProfile.cpp)
+(intent + polymer refine tables) so the one-click flow lands on values
+the U1 hardware was actually validated against.
+
+## PrusaSlicer absorption candidates (2026-05-26)
+
+PrusaSlicer is the upstream of much of OrcaSlicer's algorithm core via
+the Slic3r → Bambu Studio → OrcaSlicer chain. Most of PrusaSlicer's
+big wins are already merged:
+
+| PrusaSlicer feature | Status in OrcaSlicer | Action |
+|---|---|---|
+| Arachne (variable-width walls) | Merged | None — rebase only |
+| Lightning infill | Merged | None |
+| Organic / tree supports v2 | Merged | None |
+| Adaptive cubic infill (octree) | Merged | Verify Quality intent enables it |
+| Variable layer height | Merged (simpler heuristic) | Could port the Wasserfall cusp-height metric — medium effort, future task |
+| Ramping travel optimisation | Partial (smooth travel only) | Port from PrusaSlicer 2.7.2 — low effort |
+| **G2/G3 arc-fitting on G-code export** | **NOT in OrcaSlicer mainline** | **Absorb candidate** — PrusaSlicer 2.7.0-alpha issue #4352, ArcWelderLib reference impl. Reduces .gcode size 15-76%; verify u1-klipper `[gcode_arcs]` is enabled |
+| Improved seam placement (2.8) | OrcaSlicer has own logic | Cherry-pick test cases only |
+| TBB multi-threaded slice pipeline | Merged | None |
+| SLA analytical pipeline (2.9.5) | N/A | Skip — SLA only |
+
+**Ranked add-ons specifically from PrusaSlicer**:
+
+1. **G2/G3 arc-fitting** — biggest single PrusaSlicer-specific perf win
+   not already in OrcaSlicer. Smaller .gcode + smoother motion on dense
+   multi-color prints. Verify Klipper config first.
+2. **Ramping travel from 2.7.2** — small but easy port, fewer stringing
+   artefacts on color transitions.
+3. **Wasserfall variable-layer-height refinement** — medium effort,
+   compounds naturally with FullSpectrum (fewer wasted color
+   transitions in low-detail Z bands).
+
 ## License notes
 
 All inspected forks are AGPL-3.0 (inherited from OrcaSlicer / Bambu

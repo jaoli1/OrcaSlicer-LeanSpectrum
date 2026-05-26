@@ -32,6 +32,15 @@ DynamicPrintConfig make_seeded_config()
     c.set_key_value("fan_max_speed",       new ConfigOptionInt(100));
     c.set_key_value("fan_min_speed",       new ConfigOptionInt(50));
 
+    // Per-filament options (one slot by default — the test fixture pretends
+    // a single-material print, which is enough for the auto-profile tables).
+    c.set_key_value("filament_max_volumetric_speed",
+                    new ConfigOptionFloats{30.0});
+    c.set_key_value("filament_retraction_length",
+                    new ConfigOptionFloats{1.0});
+    c.set_key_value("filament_retraction_speed",
+                    new ConfigOptionFloats{40.0});
+
     std::vector<std::string> types{"PLA"};
     c.set_key_value("filament_type", new ConfigOptionStrings(types));
     return c;
@@ -143,4 +152,39 @@ TEST_CASE("apply() with auto-detected polymer uses filament_type",
     c.option<ConfigOptionStrings>("filament_type")->values = {"ABS"};
     apply(c, Intent::Standard); // no explicit polymer
     REQUIRE(c.option<ConfigOptionInt>("fan_max_speed")->value <= 50);
+}
+
+TEST_CASE("max_volumetric_speed respects U1 ceiling (32 mm^3/s)",
+          "[AutoProfile][U1]")
+{
+    DynamicPrintConfig c = make_seeded_config();
+    // Draft on PLA is the most aggressive: intent 28 * polymer 1.0 = 28.
+    apply(c, Intent::Draft, Polymer::PLA);
+    REQUIRE_THAT(c.option<ConfigOptionFloats>("filament_max_volumetric_speed")->values.at(0),
+                 WithinAbs(28.0, 1e-9));
+    // High quality on PLA: intent 15 * polymer 1.0 = 15.
+    apply(c, Intent::HighQuality, Polymer::PLA);
+    REQUIRE_THAT(c.option<ConfigOptionFloats>("filament_max_volumetric_speed")->values.at(0),
+                 WithinAbs(15.0, 1e-9));
+    // TPU caps at intent 22 * polymer 0.4 = 8.8 even on Standard — TPU
+    // physically can't push more than ~5 mm^3/s anyway.
+    apply(c, Intent::Standard, Polymer::TPU);
+    REQUIRE(c.option<ConfigOptionFloats>("filament_max_volumetric_speed")->values.at(0)
+            < 10.0);
+}
+
+TEST_CASE("retraction tuned for direct-drive on U1", "[AutoProfile][U1]")
+{
+    DynamicPrintConfig c = make_seeded_config();
+    apply(c, Intent::Standard, Polymer::PLA);
+    // PLA on U1 direct-drive: 0.8 mm @ 40 mm/s — well under generic 2-5 mm.
+    REQUIRE_THAT(c.option<ConfigOptionFloats>("filament_retraction_length")->values.at(0),
+                 WithinAbs(0.8, 1e-9));
+    REQUIRE_THAT(c.option<ConfigOptionFloats>("filament_retraction_speed")->values.at(0),
+                 WithinAbs(40.0, 1e-9));
+
+    apply(c, Intent::Standard, Polymer::TPU);
+    // TPU: zero retract (rubber stretches, retract just snaps the filament).
+    REQUIRE_THAT(c.option<ConfigOptionFloats>("filament_retraction_length")->values.at(0),
+                 WithinAbs(0.0, 1e-9));
 }

@@ -79,59 +79,74 @@ Polymer polymer_from_type(const std::string &filament_type)
 
 namespace {
 
+// Per-intent overrides. Values calibrated against the Snapmaker U1
+// official hardware envelope (see wiki.snapmaker.com/en/snapmaker_u1):
+// max_volumetric_speed ceiling 32 mm^3/s on a 0.4 mm nozzle, max travel
+// 500 mm/s, max accel 20 000 mm/s^2. The per-intent max_volumetric
+// values pick a sensible point under that ceiling depending on how
+// aggressively the user wants to print.
 struct IntentOverrides {
-    double layer_height;          // mm
+    double layer_height;            // mm
     int    wall_loops;
     int    top_shell_layers;
     int    bottom_shell_layers;
-    int    sparse_infill_density; // percent
+    int    sparse_infill_density;   // percent
     InfillPattern sparse_infill_pattern;
-    double outer_wall_speed;      // mm/s
-    bool   enable_scarf_seam;     // wires seam_slope_min_length etc.
+    double outer_wall_speed;        // mm/s
+    double max_volumetric_speed;    // mm^3/s   (PLA reference, scaled by polymer refine)
+    bool   enable_scarf_seam;       // wires seam_slope_min_length etc.
 };
 
 IntentOverrides overrides_for(Intent intent)
 {
     switch (intent) {
+        // {layer, walls, top, bot, density, pattern,    outer, max_vol, scarf}
         case Intent::Draft:
-            return {0.28, 1, 3, 3,  8,  ipGyroid,     80.0, false};
+            return {0.28, 1, 3, 3,  8, ipGyroid,    80.0, 28.0, false};
         case Intent::Standard:
-            return {0.20, 2, 4, 4, 15,  ipGyroid,     60.0, false};
+            return {0.20, 2, 4, 4, 15, ipGyroid,    60.0, 22.0, false};
         case Intent::HighQuality:
-            return {0.12, 3, 6, 5, 20,  ipGyroid,     40.0, true};
+            return {0.12, 3, 6, 5, 20, ipGyroid,    40.0, 15.0, true};
         case Intent::Strength:
-            return {0.20, 4, 5, 5, 35,  ipGyroid,     50.0, false};
+            return {0.20, 4, 5, 5, 35, ipGyroid,    50.0, 20.0, false};
         case Intent::Decorative:
-            return {0.16, 2, 5, 4, 10,  ipLightning,  45.0, true};
+            return {0.16, 2, 5, 4, 10, ipLightning, 45.0, 18.0, true};
     }
-    return {0.20, 2, 4, 4, 15, ipGyroid, 60.0, false};
+    return {0.20, 2, 4, 4, 15, ipGyroid, 60.0, 22.0, false};
 }
 
 // Material-aware refinements applied on top of the intent overrides.
-// These leave the structural choices (layer height, walls, infill) from
-// the intent intact and only tweak material-specific knobs.
+// Values cross-referenced with Snapmaker's wiki filament library and
+// real-world community settings for the U1 direct-drive head. retract_*
+// and max_vol_scale tighten the intent's nominal numbers per polymer.
 struct MaterialRefine {
-    int  fan_max_speed_pct;       // percent
-    int  fan_min_speed_pct;
-    bool enable_retract_lift;     // big retraction-Z helps stringy materials
-    bool override_scarf_off;      // some materials don't ramp cleanly
-    double speed_scale;           // multiplier on outer/inner/infill speeds
+    int    fan_max_speed_pct;       // percent
+    int    fan_min_speed_pct;
+    bool   override_scarf_off;      // some materials don't ramp cleanly
+    double speed_scale;             // multiplier on outer/inner/infill speeds
+    double max_vol_scale;           // multiplier on intent's max_volumetric_speed
+    double retract_length_mm;       // U1 direct-drive — keep low (0.5..3 mm range)
+    int    retract_speed_mm_s;      // 30..70 mm/s per Snapmaker filament library
 };
 
 MaterialRefine refine_for(Polymer polymer)
 {
+    // PLA range on U1 hotend: nominally 230..250 C (stainless direct-drive).
+    // Retract numbers are PLA-conservative (0.8 mm at 40 mm/s) on direct
+    // drive; stringy materials (PETG, PA, PP) get longer retracts.
     switch (polymer) {
-        case Polymer::PLA:     return {100, 100, false, false, 1.0};
-        case Polymer::PETG:    return { 50,  30, true,  false, 0.9};
-        case Polymer::ABS:     return { 30,   0, false, false, 0.9};
-        case Polymer::PC:      return { 30,   0, false, false, 0.85};
-        case Polymer::PA:      return { 40,  10, true,  true,  0.8};
-        case Polymer::TPU:     return { 50,  30, false, true,  0.5};
-        case Polymer::HIPS:    return { 60,  30, false, false, 0.9};
-        case Polymer::PP:      return { 80,  40, false, true,  0.8};
-        case Polymer::Unknown: return { 80,  40, false, false, 0.9};
+        // {fan_max, fan_min, scarf_off, speed, vol,  retract_mm, retract_mm_s}
+        case Polymer::PLA:     return {100, 100, false, 1.00, 1.00, 0.8, 40};
+        case Polymer::PETG:    return { 50,  30, false, 0.90, 0.70, 1.5, 40};
+        case Polymer::ABS:     return { 30,   0, false, 0.90, 0.80, 1.0, 40};
+        case Polymer::PC:      return { 30,   0, false, 0.85, 0.65, 1.0, 35};
+        case Polymer::PA:      return { 40,  10, true,  0.80, 0.65, 2.0, 50};
+        case Polymer::TPU:     return { 50,  30, true,  0.50, 0.40, 0.0, 30}; // no retract
+        case Polymer::HIPS:    return { 60,  30, false, 0.90, 0.75, 1.0, 40};
+        case Polymer::PP:      return { 80,  40, true,  0.80, 0.65, 2.0, 50};
+        case Polymer::Unknown: return { 80,  40, false, 0.90, 0.75, 1.0, 40};
     }
-    return {80, 40, false, false, 0.9};
+    return {80, 40, false, 0.90, 0.75, 1.0, 40};
 }
 
 const char *infill_pattern_name(InfillPattern p)
@@ -216,6 +231,42 @@ std::vector<std::string> apply(DynamicPrintConfig &config,
     // --- speeds (intent baseline, scaled by material refine) ---
     const double outer_speed = io.outer_wall_speed * mr.speed_scale;
     set_float (config, "outer_wall_speed", outer_speed, notes, " mm/s");
+
+    // --- per-extruder max volumetric speed (Snapmaker U1 ceiling 32 mm^3/s).
+    // The slicer reads this as a per-filament list (ConfigOptionFloats), one
+    // value per loaded filament. We apply the same intent + polymer-scaled
+    // value to every filament slot. Materials with low max_vol (e.g. TPU)
+    // get a much tighter cap. The actual U1 hardware enforces 32 mm^3/s on
+    // top, so this is purely a slicer-side hint.
+    {
+        const double mv = io.max_volumetric_speed * mr.max_vol_scale;
+        if (auto *opt = config.option<ConfigOptionFloats>("filament_max_volumetric_speed")) {
+            const size_t n = std::max<size_t>(1, opt->values.size());
+            std::ostringstream ss;
+            ss << "filament_max_volumetric_speed -> " << mv << " mm^3/s "
+               << "(x" << n << " filaments)";
+            notes.push_back(ss.str());
+            opt->values.assign(n, mv);
+        }
+    }
+
+    // --- retraction (U1 direct-drive — short retracts, mid speeds).
+    // filament_retraction_length / filament_retraction_speed are
+    // per-filament lists too.
+    if (auto *opt = config.option<ConfigOptionFloats>("filament_retraction_length")) {
+        const size_t n = std::max<size_t>(1, opt->values.size());
+        std::ostringstream ss;
+        ss << "filament_retraction_length -> " << mr.retract_length_mm << " mm";
+        notes.push_back(ss.str());
+        opt->values.assign(n, mr.retract_length_mm);
+    }
+    if (auto *opt = config.option<ConfigOptionFloats>("filament_retraction_speed")) {
+        const size_t n = std::max<size_t>(1, opt->values.size());
+        std::ostringstream ss;
+        ss << "filament_retraction_speed -> " << mr.retract_speed_mm_s << " mm/s";
+        notes.push_back(ss.str());
+        opt->values.assign(n, double(mr.retract_speed_mm_s));
+    }
 
     // --- scarf seam (gated by intent + material override-off) ---
     const bool scarf_on = io.enable_scarf_seam && !mr.override_scarf_off;

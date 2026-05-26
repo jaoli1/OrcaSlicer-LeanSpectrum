@@ -1,66 +1,147 @@
 #include "FilamentEconomy.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cctype>
+#include <cmath>
+#include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
+#include <limits>
 #include <regex>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <boost/log/trivial.hpp>
 
 #include "../PrintConfig.hpp"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace Slic3r {
 namespace FilamentEconomy {
 
 // ---------------------------------------------------------------------------
-// Settings
+// Settings::from_config
 // ---------------------------------------------------------------------------
 
 Settings Settings::from_config(const DynamicPrintConfig &config)
 {
     Settings s;
 
-    if (const ConfigOptionBool *opt = config.option<ConfigOptionBool>("filament_economy_enable"))
-        s.enable = opt->value;
+    auto get_bool = [&](const char *key, bool &out) {
+        if (const ConfigOptionBool *opt = config.option<ConfigOptionBool>(key))
+            out = opt->value;
+    };
+    auto get_int = [&](const char *key, int &out) {
+        if (const ConfigOptionInt *opt = config.option<ConfigOptionInt>(key))
+            out = opt->value;
+    };
+    auto get_float = [&](const char *key, double &out) {
+        if (const ConfigOptionFloat *opt = config.option<ConfigOptionFloat>(key))
+            out = opt->value;
+    };
 
-    if (const ConfigOptionBool *opt = config.option<ConfigOptionBool>("filament_economy_remove_noop_swaps"))
-        s.remove_noop_swaps = opt->value;
+    get_bool ("filament_economy_enable",            s.enable);
+    get_bool ("filament_economy_remove_noop_swaps", s.remove_noop_swaps);
+    get_bool ("filament_economy_shrink_purge",      s.shrink_purge);
+    get_int  ("filament_economy_shrink_purge_pct",  s.shrink_purge_pct);
+    get_bool ("filament_economy_merge_travel",      s.merge_travel);
 
-    if (const ConfigOptionBool *opt = config.option<ConfigOptionBool>("filament_economy_shrink_purge"))
-        s.shrink_purge = opt->value;
+    get_bool ("filament_economy_curvature_lh",            s.curvature_lh);
+    get_float("filament_economy_curvature_low_deg",       s.curvature_low_deg);
+    get_float("filament_economy_curvature_high_deg",      s.curvature_high_deg);
+    get_int  ("filament_economy_curvature_max_pct",       s.curvature_max_pct);
+    get_int  ("filament_economy_curvature_filter_window", s.curvature_filter_window);
 
-    if (const ConfigOptionInt *opt = config.option<ConfigOptionInt>("filament_economy_shrink_purge_pct"))
-        s.shrink_purge_pct = std::clamp(opt->value, 0, 100);
+    get_bool ("filament_economy_force_m83",          s.force_m83);
+    get_float("filament_economy_mass_tolerance_pct", s.mass_tolerance_pct);
 
-    if (const ConfigOptionBool *opt = config.option<ConfigOptionBool>("filament_economy_merge_travel"))
-        s.merge_travel = opt->value;
+    s.shrink_purge_pct  = std::clamp(s.shrink_purge_pct,  0, 100);
+    s.curvature_max_pct = std::clamp(s.curvature_max_pct, 0, 100);
+    if (s.curvature_filter_window < 1)
+        s.curvature_filter_window = 1;
 
     return s;
 }
 
 // ---------------------------------------------------------------------------
-// Internal types
+// Internal types and helpers
 // ---------------------------------------------------------------------------
 
 namespace {
 
-// A tool-change event located in the input G-code by line index.
-struct ToolChange
-{
-    size_t line_idx       = 0;        // Index of the T<n> line in the input buffer
-    int    tool           = -1;       // Target tool number (T<n>)
-    size_t block_start    = 0;        // First line of the swap block (purge prologue)
-    size_t block_end      = 0;        // First line *after* the swap block (exclusive)
+enum class FeatureType : uint8_t {
+    Unknown = 0,
+    OuterWall,
+    InnerWall,
+    SolidInfill,
+    SparseInfill,
+    TopSurface,
+    BottomSurface,
+    Bridge,
+    Support,
+    WipeTower,
+    Custom,
+    Travel,
 };
 
-// Parsed view of the G-code split into lines, plus all tool-change events.
+double feature_cap(FeatureType f)
+{
+    switch (f) {
+        case FeatureType::OuterWall:     return 0.15;
+        case FeatureType::InnerWall:     return 0.20;
+        case FeatureType::SolidInfill:   return 0.25;
+        case FeatureType::TopSurface:    return 0.15;
+        case FeatureType::BottomSurface: return 0.15;
+        case FeatureType::SparseInfill:  return 0.35;
+        case FeatureType::Bridge:        return 0.0;
+        case FeatureType::WipeTower:     return 0.0;
+        case FeatureType::Support:       return 0.30;
+        case FeatureType::Custom:        return 0.0;
+        default:                         return 0.0;
+    }
+}
+
+// A single parsed G-code line in semantic form.
+struct Line
+{
+    std::string raw;
+    bool   is_g1            = false;
+    bool   has_x = false, has_y = false, has_z = false;
+    bool   has_e = false, has_f = false;
+    double x = 0, y = 0, z = 0;
+    double e = 0;           // value as written (mode-dependent)
+    double f = 0;           // feedrate (mm/min)
+    bool   is_tool_change   = false;
+    int    tool             = -1;
+    bool   is_retract       = false;
+    bool   is_unretract     = false;
+    bool   is_extrusion     = false;
+    bool   is_travel        = false;
+    bool   is_layer_change  = false;
+    double delta_x = 0, delta_y = 0;
+    double length_xy = 0;
+    double curvature_rad = 0;
+    double e_ratio = 1.0;
+    FeatureType feature = FeatureType::Unknown;
+};
+
 struct Parsed
 {
-    std::vector<std::string> lines;
-    std::vector<ToolChange>  tool_changes;
+    std::vector<Line> lines;
+    bool   absolute_e         = false;
+    bool   m83_present        = false;
+    size_t retract_count_in   = 0;
+    double retract_volume_in  = 0.0;
+    double total_extrusion_in = 0.0;
+    double layer_height_modal = 0.2;
+    double extrusion_width_modal = 0.4;
 };
 
 bool read_file(const std::string &path, std::vector<std::string> &out_lines)
@@ -91,79 +172,400 @@ bool write_file(const std::string &path, const std::vector<std::string> &lines)
     return static_cast<bool>(out);
 }
 
-// Match "T0", "T12", possibly followed by spaces or a comment.
-const std::regex re_tool_change(R"(^\s*T(\d+)\s*(;.*)?$)");
-
-void index_tool_changes(Parsed &p)
+bool starts_with(const std::string &s, const char *prefix)
 {
-    p.tool_changes.clear();
-    std::smatch m;
-    for (size_t i = 0; i < p.lines.size(); ++i) {
-        if (std::regex_match(p.lines[i], m, re_tool_change)) {
-            ToolChange tc;
-            tc.line_idx    = i;
-            tc.tool        = std::stoi(m[1].str());
-            tc.block_start = i;     // refined in a later pass
-            tc.block_end   = i + 1; // refined in a later pass
-            p.tool_changes.emplace_back(tc);
+    const size_t n = std::char_traits<char>::length(prefix);
+    return s.size() >= n && s.compare(0, n, prefix) == 0;
+}
+
+bool parse_axis(const std::string &raw, size_t &pos, char letter, double &value)
+{
+    if (pos >= raw.size() || std::toupper(static_cast<unsigned char>(raw[pos])) != letter)
+        return false;
+    char *parse_end = nullptr;
+    value = std::strtod(raw.c_str() + pos + 1, &parse_end);
+    if (parse_end == raw.c_str() + pos + 1)
+        return false;
+    pos = static_cast<size_t>(parse_end - raw.c_str());
+    return true;
+}
+
+void parse_line(Line &out, FeatureType &current_feature)
+{
+    out.is_g1 = false;
+    out.has_x = out.has_y = out.has_z = out.has_e = out.has_f = false;
+    out.is_tool_change = out.is_retract = out.is_unretract = false;
+    out.is_extrusion = out.is_travel = out.is_layer_change = false;
+    out.tool = -1;
+    out.feature = current_feature;
+
+    const std::string &raw = out.raw;
+    if (raw.empty())
+        return;
+
+    // Comments — track feature transitions from upstream slicer markers.
+    if (raw[0] == ';') {
+        if (raw.find(";TYPE:") != std::string::npos) {
+            if      (raw.find(";TYPE:Outer wall")     != std::string::npos) current_feature = FeatureType::OuterWall;
+            else if (raw.find(";TYPE:Inner wall")     != std::string::npos) current_feature = FeatureType::InnerWall;
+            else if (raw.find(";TYPE:Solid infill")   != std::string::npos) current_feature = FeatureType::SolidInfill;
+            else if (raw.find(";TYPE:Sparse infill")  != std::string::npos) current_feature = FeatureType::SparseInfill;
+            else if (raw.find(";TYPE:Top surface")    != std::string::npos) current_feature = FeatureType::TopSurface;
+            else if (raw.find(";TYPE:Bottom surface") != std::string::npos) current_feature = FeatureType::BottomSurface;
+            else if (raw.find(";TYPE:Bridge")         != std::string::npos) current_feature = FeatureType::Bridge;
+            else if (raw.find(";TYPE:Support")        != std::string::npos) current_feature = FeatureType::Support;
+            else if (raw.find(";TYPE:Wipe tower")     != std::string::npos) current_feature = FeatureType::WipeTower;
+            else if (raw.find(";TYPE:Custom")         != std::string::npos) current_feature = FeatureType::Custom;
         }
+        if (raw.find("CP TOOLCHANGE START") != std::string::npos ||
+            raw.find("WIPE_START")          != std::string::npos)
+            current_feature = FeatureType::WipeTower;
+        if (raw.find(";LAYER_CHANGE") != std::string::npos ||
+            raw.find(";LAYER:")       != std::string::npos)
+            out.is_layer_change = true;
+        out.feature = current_feature;
+        return;
+    }
+
+    // Tool change.
+    if ((raw[0] == 'T' || raw[0] == 't') && raw.size() > 1 &&
+        std::isdigit(static_cast<unsigned char>(raw[1]))) {
+        out.is_tool_change = true;
+        out.tool           = std::atoi(raw.c_str() + 1);
+        out.feature        = current_feature;
+        return;
+    }
+
+    // G1 motion line.
+    if (raw.size() >= 2 && (raw[0] == 'G' || raw[0] == 'g') && raw[1] == '1' &&
+        (raw.size() == 2 || raw[2] == ' ' || raw[2] == '\t')) {
+        out.is_g1 = true;
+        size_t pos = 2;
+        while (pos < raw.size()) {
+            while (pos < raw.size() && (raw[pos] == ' ' || raw[pos] == '\t'))
+                ++pos;
+            if (pos >= raw.size() || raw[pos] == ';')
+                break;
+            char c   = static_cast<char>(std::toupper(static_cast<unsigned char>(raw[pos])));
+            double v = 0.0;
+            size_t before = pos;
+            if (parse_axis(raw, pos, c, v)) {
+                switch (c) {
+                    case 'X': out.x = v; out.has_x = true; break;
+                    case 'Y': out.y = v; out.has_y = true; break;
+                    case 'Z': out.z = v; out.has_z = true; break;
+                    case 'E': out.e = v; out.has_e = true; break;
+                    case 'F': out.f = v; out.has_f = true; break;
+                    default: break;
+                }
+            } else if (pos == before) {
+                ++pos; // avoid infinite loop on malformed input
+            }
+        }
+        out.feature = current_feature;
+        return;
     }
 }
 
-} // namespace
-
-// ---------------------------------------------------------------------------
-// Passes (skeleton — to be implemented)
-// ---------------------------------------------------------------------------
-
-// Pass 1: detect no-op swaps and mark them for removal.
-// A no-op swap is a T<n> that points to the same physical extruder as the
-// currently active one. Returns the number of swaps that would be removed.
-static size_t pass_noop_swaps(Parsed &p, Stats &stats)
+// Walk the lines, fill modal X/Y/Z and classify each G1 as travel/retract/
+// unretract/extrusion. Detects M82/M83. Updates absolute-E counters.
+void reconstruct_modal(Parsed &p)
 {
-    if (p.tool_changes.size() < 2)
-        return 0;
+    bool   abs_mode  = false;
+    bool   any_m82   = false;
+    bool   any_m83   = false;
+    double mx = 0, my = 0, mz = 0;
+    double abs_e    = 0;
 
-    size_t removed = 0;
-    int    current = p.tool_changes.front().tool;
+    p.retract_count_in   = 0;
+    p.retract_volume_in  = 0.0;
+    p.total_extrusion_in = 0.0;
 
-    // Iterate from the second tool change onwards; if it matches the current
-    // tool, mark the line for deletion by clearing it and skip the swap block.
-    for (size_t i = 1; i < p.tool_changes.size(); ++i) {
-        ToolChange &tc = p.tool_changes[i];
-        if (tc.tool == current) {
-            // Mark the T<n> line as a comment so the rewriter drops it later.
-            p.lines[tc.line_idx] = "; LeanSpectrum: removed no-op T" + std::to_string(tc.tool);
-            ++removed;
-        } else {
-            current = tc.tool;
+    for (Line &l : p.lines) {
+        const std::string &r = l.raw;
+        if (starts_with(r, "M82")) { abs_mode = true;  any_m82 = true; continue; }
+        if (starts_with(r, "M83")) { abs_mode = false; any_m83 = true; continue; }
+        if (starts_with(r, "G92")) {
+            if (r.find('E') != std::string::npos || r.find('e') != std::string::npos)
+                abs_e = 0;
+            continue;
+        }
+        if (!l.is_g1)
+            continue;
+
+        const double prev_x = mx;
+        const double prev_y = my;
+        if (l.has_x) mx = l.x;
+        if (l.has_y) my = l.y;
+        if (l.has_z) mz = l.z;
+        l.delta_x   = mx - prev_x;
+        l.delta_y   = my - prev_y;
+        l.length_xy = std::hypot(l.delta_x, l.delta_y);
+
+        double e_inc = 0.0;
+        if (l.has_e) {
+            if (abs_mode) {
+                e_inc = l.e - abs_e;
+                abs_e = l.e;
+            } else {
+                e_inc = l.e;
+            }
+        }
+        if (e_inc > 0.0) {
+            if (l.length_xy < 1e-6) {
+                l.is_unretract = true;
+            } else {
+                l.is_extrusion = true;
+                p.total_extrusion_in += e_inc;
+            }
+        } else if (e_inc < 0.0) {
+            l.is_retract = true;
+            ++p.retract_count_in;
+            p.retract_volume_in += -e_inc;
+        } else if (l.length_xy > 1e-6) {
+            l.is_travel = true;
+        }
+        l.z = mz;
+    }
+
+    p.absolute_e  = any_m82 && !any_m83;
+    p.m83_present = any_m83;
+}
+
+// Replace the value of the first 'E' or 'e' token in raw with new_value.
+void rewrite_e_token(std::string &raw, double new_value)
+{
+    size_t pe = raw.find('E');
+    if (pe == std::string::npos)
+        pe = raw.find('e');
+    if (pe == std::string::npos)
+        return;
+    size_t end = pe + 1;
+    while (end < raw.size() && (std::isdigit(static_cast<unsigned char>(raw[end])) ||
+                                 raw[end] == '.' || raw[end] == '-' || raw[end] == '+'))
+        ++end;
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%.5f", new_value);
+    raw.replace(pe + 1, end - (pe + 1), buf);
+}
+
+// Convert the entire file to relative (M83) extrusion.
+bool convert_to_m83(Parsed &p)
+{
+    bool   modified = false;
+    bool   abs_mode = false;
+    double abs_e    = 0.0;
+
+    for (Line &l : p.lines) {
+        std::string &r = l.raw;
+        if (starts_with(r, "M82")) {
+            r        = "M83 ; LeanSpectrum: converted from M82";
+            abs_mode = true;
+            modified = true;
+            continue;
+        }
+        if (starts_with(r, "M83")) {
+            abs_mode = false;
+            continue;
+        }
+        if (starts_with(r, "G92") && (r.find('E') != std::string::npos || r.find('e') != std::string::npos)) {
+            abs_e = 0.0;
+            continue;
+        }
+        if (!l.is_g1 || !l.has_e || !abs_mode)
+            continue;
+        const double delta = l.e - abs_e;
+        abs_e              = l.e;
+        rewrite_e_token(r, delta);
+        l.e       = delta;
+        modified  = true;
+    }
+    return modified;
+}
+
+double material_flow_limit(const Settings &s)
+{
+    // Conservative: smallest of common materials. A future iteration takes
+    // the active filament_type into account.
+    const double lo = std::min({s.flow_limits.pla, s.flow_limits.petg,
+                                s.flow_limits.abs, s.flow_limits.nylon});
+    return s.flow_limits.safety * lo;
+}
+
+double compute_max_flow(const Parsed &p)
+{
+    double q_max = 0.0;
+    for (const Line &l : p.lines) {
+        if (!l.is_extrusion || !l.has_f)
+            continue;
+        const double q = p.layer_height_modal * p.extrusion_width_modal *
+                         (l.f / 60.0);
+        q_max = std::max(q_max, q);
+    }
+    return q_max;
+}
+
+void verification_pass(Parsed &p, Stats &stats, const Settings &s)
+{
+    // I1 — M83 enforcement.
+    if (p.absolute_e && s.force_m83) {
+        if (convert_to_m83(p)) {
+            stats.converted_to_m83 = true;
+            stats.notes.emplace_back("Converted G-code from M82 absolute to M83 relative extrusion.");
+            reconstruct_modal(p);
         }
     }
 
+    // I5 — volumetric flow.
+    const double q_max = compute_max_flow(p);
+    stats.max_flow_mm3s = q_max;
+    const double q_cap = material_flow_limit(s);
+    if (q_max > q_cap) {
+        char buf[160];
+        std::snprintf(buf, sizeof(buf),
+                      "Volumetric flow %.2f mm^3/s exceeds %.2f mm^3/s safety cap; "
+                      "aggressive E-scaling passes will be skipped.",
+                      q_max, q_cap);
+        stats.notes.emplace_back(buf);
+        stats.verification_ok = false;
+    }
+}
+
+// Pass 1 — remove no-op tool changes.
+size_t pass_noop_swaps(Parsed &p, Stats &stats)
+{
+    size_t removed = 0;
+    int    current = -1;
+    for (Line &l : p.lines) {
+        if (!l.is_tool_change)
+            continue;
+        if (current == -1) {
+            current = l.tool;
+            continue;
+        }
+        if (l.tool == current) {
+            l.raw = "; LeanSpectrum: removed no-op T" + std::to_string(l.tool);
+            l.is_tool_change = false;
+            ++removed;
+        } else {
+            current = l.tool;
+        }
+    }
     stats.swaps_removed += removed;
     return removed;
 }
 
-// Pass 2: shrink purge volumes based on recent same-tool activity.
-// Skeleton — not yet implemented.
-static size_t pass_shrink_purge(Parsed &p, Stats &stats, int /*max_pct*/)
+double angle_between(double ax, double ay, double bx, double by)
 {
-    (void)p;
-    (void)stats;
-    // TODO(leanspectrum): parse "; WIPE_START" / "; WIPE_END" markers and
-    // shrink E values inside.
+    const double na = std::hypot(ax, ay);
+    const double nb = std::hypot(bx, by);
+    if (na < 1e-9 || nb < 1e-9)
+        return 0.0;
+    double c = (ax * bx + ay * by) / (na * nb);
+    c = std::clamp(c, -1.0, 1.0);
+    return std::acos(c);
+}
+
+void median_filter(std::vector<double> &v, int window)
+{
+    if (window <= 1 || v.size() < static_cast<size_t>(window))
+        return;
+    const int half = window / 2;
+    std::vector<double> out(v.size());
+    std::vector<double> w; w.reserve(static_cast<size_t>(window));
+    for (size_t i = 0; i < v.size(); ++i) {
+        w.clear();
+        for (int k = -half; k <= half; ++k) {
+            const int j = static_cast<int>(i) + k;
+            if (j < 0 || j >= static_cast<int>(v.size()))
+                continue;
+            w.push_back(v[j]);
+        }
+        std::nth_element(w.begin(), w.begin() + w.size() / 2, w.end());
+        out[i] = w[w.size() / 2];
+    }
+    v.swap(out);
+}
+
+// Pass 4 — curvature-aware adaptive E scaling.
+size_t pass_curvature_lh(Parsed &p, Stats &stats, const Settings &s)
+{
+    if (!stats.verification_ok)
+        return 0;
+
+    std::vector<size_t> idx;
+    idx.reserve(p.lines.size() / 8);
+    for (size_t i = 0; i < p.lines.size(); ++i) {
+        const Line &l = p.lines[i];
+        if (l.is_extrusion && l.length_xy > 1e-6)
+            idx.push_back(i);
+    }
+    if (idx.size() < 3)
+        return 0;
+
+    const double low_rad  = s.curvature_low_deg  * M_PI / 180.0;
+    const double high_rad = s.curvature_high_deg * M_PI / 180.0;
+    const double max_red  = std::clamp(s.curvature_max_pct, 0, 100) / 100.0;
+
+    std::vector<double> ratios(idx.size(), 1.0);
+    for (size_t k = 1; k + 1 < idx.size(); ++k) {
+        const Line &prev = p.lines[idx[k - 1]];
+        const Line &cur  = p.lines[idx[k]];
+
+        const double kappa = angle_between(prev.delta_x, prev.delta_y,
+                                           cur.delta_x,  cur.delta_y);
+        const double cap   = feature_cap(cur.feature);
+        const double red   = std::min(max_red, cap);
+
+        double r;
+        if (kappa >= high_rad)        r = 1.0;
+        else if (kappa <= low_rad)    r = 1.0 - red;
+        else {
+            const double t = (kappa - low_rad) / (high_rad - low_rad);
+            r = (1.0 - red) + t * red;
+        }
+        ratios[k] = r;
+    }
+    ratios.front() = 1.0;
+    ratios.back()  = 1.0;
+
+    median_filter(ratios, s.curvature_filter_window);
+
+    size_t scaled = 0;
+    double saved  = 0.0;
+    for (size_t k = 0; k < idx.size(); ++k) {
+        Line &l = p.lines[idx[k]];
+        if (!l.has_e || l.e <= 0.0)
+            continue;
+        const double r = ratios[k];
+        if (r >= 0.999)
+            continue;
+        const double e_new = l.e * r;
+        saved   += (l.e - e_new);
+        l.e      = e_new;
+        l.e_ratio = r;
+        rewrite_e_token(l.raw, e_new);
+        ++scaled;
+    }
+
+    stats.segments_scaled    += scaled;
+    stats.extrusion_saved_mm += saved;
+    return scaled;
+}
+
+// Pass 2 — placeholder, see PASS_2_SHRINK_PURGE.md.
+size_t pass_shrink_purge(Parsed & /*p*/, Stats & /*stats*/, int /*max_pct*/)
+{
     return 0;
 }
 
-// Pass 3: merge redundant travel + retract pairs around kept swaps.
-// Skeleton — not yet implemented.
-static size_t pass_merge_travel(Parsed &p, Stats &stats)
+// Pass 3 — placeholder, see PASS_3_MERGE_TRAVEL.md.
+size_t pass_merge_travel(Parsed & /*p*/, Stats & /*stats*/)
 {
-    (void)p;
-    (void)stats;
-    // TODO(leanspectrum): collapse "; TRAVEL" sequences around kept swaps.
     return 0;
 }
+
+} // namespace
 
 // ---------------------------------------------------------------------------
 // Public entry point
@@ -172,53 +574,68 @@ static size_t pass_merge_travel(Parsed &p, Stats &stats)
 Stats process(const std::string &gcode_path, const Settings &settings)
 {
     Stats stats;
-
     if (!settings.enable) {
         BOOST_LOG_TRIVIAL(info) << "FilamentEconomy: disabled, skipping " << gcode_path;
         return stats;
     }
 
-    Parsed parsed;
-    if (!read_file(gcode_path, parsed.lines)) {
+    std::vector<std::string> raw;
+    if (!read_file(gcode_path, raw)) {
         BOOST_LOG_TRIVIAL(error) << "FilamentEconomy: cannot read " << gcode_path;
         return stats;
     }
 
-    index_tool_changes(parsed);
-
-    BOOST_LOG_TRIVIAL(info)
-        << "FilamentEconomy: " << parsed.lines.size() << " lines, "
-        << parsed.tool_changes.size() << " tool changes detected";
-
-    if (parsed.tool_changes.size() < 2) {
-        // Single-material or no swaps — nothing to optimise.
-        return stats;
+    Parsed p;
+    p.lines.reserve(raw.size());
+    FeatureType cur_feature = FeatureType::Unknown;
+    for (std::string &s : raw) {
+        Line l;
+        l.raw = std::move(s);
+        parse_line(l, cur_feature);
+        p.lines.emplace_back(std::move(l));
     }
 
-    bool changed = false;
+    reconstruct_modal(p);
 
-    if (settings.remove_noop_swaps)
-        if (pass_noop_swaps(parsed, stats) > 0)
-            changed = true;
+    BOOST_LOG_TRIVIAL(info)
+        << "FilamentEconomy: " << p.lines.size() << " lines parsed; "
+        << "absolute_e=" << p.absolute_e
+        << " retracts=" << p.retract_count_in
+        << " ext_total=" << p.total_extrusion_in << " mm";
 
-    if (settings.shrink_purge)
-        if (pass_shrink_purge(parsed, stats, settings.shrink_purge_pct) > 0)
-            changed = true;
+    // Pass 5 — verification gate. Sets verification_ok in stats.
+    verification_pass(p, stats, settings);
 
-    if (settings.merge_travel)
-        if (pass_merge_travel(parsed, stats) > 0)
+    bool changed = stats.converted_to_m83;
+
+    if (stats.verification_ok) {
+        if (settings.remove_noop_swaps && pass_noop_swaps(p, stats) > 0)
             changed = true;
+        if (settings.curvature_lh   && pass_curvature_lh(p, stats, settings) > 0)
+            changed = true;
+        if (settings.shrink_purge   && pass_shrink_purge(p, stats, settings.shrink_purge_pct) > 0)
+            changed = true;
+        if (settings.merge_travel   && pass_merge_travel(p, stats) > 0)
+            changed = true;
+    }
 
     if (changed) {
-        if (!write_file(gcode_path, parsed.lines)) {
+        std::vector<std::string> out;
+        out.reserve(p.lines.size());
+        for (const Line &l : p.lines)
+            out.emplace_back(l.raw);
+        if (!write_file(gcode_path, out)) {
             BOOST_LOG_TRIVIAL(error) << "FilamentEconomy: cannot write " << gcode_path;
+            stats.notes.emplace_back("Failed to write optimised G-code; original file kept.");
+            stats.modified = false;
             return stats;
         }
         stats.modified = true;
         BOOST_LOG_TRIVIAL(info)
-            << "FilamentEconomy: removed " << stats.swaps_removed << " no-op swaps, "
-            << stats.purges_shrunk << " purges shrunk, "
-            << stats.lines_removed << " lines removed";
+            << "FilamentEconomy: modified file (swaps=" << stats.swaps_removed
+            << " segments_scaled=" << stats.segments_scaled
+            << " saved_mm=" << stats.extrusion_saved_mm
+            << " m83_conv=" << stats.converted_to_m83 << ")";
     }
 
     return stats;

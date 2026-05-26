@@ -49,6 +49,8 @@ Settings default_settings()
     s.remove_noop_swaps = true;
     s.shrink_purge      = false; // Pass 2 not implemented yet
     s.merge_travel      = false; // Pass 3 not implemented yet
+    s.curvature_lh      = false; // Pass 4 disabled to keep these unit tests focused on Pass 1
+    s.force_m83         = false; // Pass 5 disabled (M82/M83 not relevant for these inputs)
     return s;
 }
 
@@ -142,4 +144,74 @@ TEST_CASE("Pass 1 disabled flag respects setting", "[FilamentEconomy]")
     Stats stats             = process(gc.path.string(), s);
     REQUIRE(stats.swaps_removed == 0);
     REQUIRE(stats.modified == false);
+}
+
+TEST_CASE("Pass 5: M82 absolute G-code is converted to M83 relative", "[FilamentEconomy]")
+{
+    // Absolute-extrusion file with two short deposition moves. After
+    // conversion the cumulative-E values should become per-line deltas.
+    const std::string gcode =
+        ";TYPE:Solid infill\n"
+        "M82\n"
+        "G92 E0\n"
+        "G1 X10 Y0 E1.000 F1200\n"
+        "G1 X20 Y0 E2.000 F1200\n"
+        "G1 X20 Y10 E3.000 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.force_m83 = true;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.converted_to_m83 == true);
+    const std::string out = gc.read();
+    REQUIRE_THAT(out, Catch::Matchers::Contains("M83"));
+    // After conversion the second deposition should carry a delta of 1.0,
+    // not the cumulative 2.0 from the absolute form.
+    REQUIRE_THAT(out, Catch::Matchers::Contains("E1.00000"));
+}
+
+TEST_CASE("Pass 4: straight line is reduced, sharp corner is preserved", "[FilamentEconomy]")
+{
+    // A short toolpath: long straight run, then a 90 degree corner, then a
+    // short stretch. Pass 4 should leave the corner segment at full E and
+    // reduce the straight-run segments.
+    const std::string gcode =
+        ";TYPE:Sparse infill\n"
+        "M83\n"
+        "G1 X10 Y0   E1.000 F1200\n"
+        "G1 X20 Y0   E1.000 F1200\n"
+        "G1 X30 Y0   E1.000 F1200\n"
+        "G1 X30 Y10  E1.000 F1200\n"
+        "G1 X30 Y20  E1.000 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.curvature_lh                  = true;
+    s.curvature_low_deg             = 10.0;
+    s.curvature_high_deg            = 45.0;
+    s.curvature_max_pct             = 30;
+    s.curvature_filter_window       = 1; // disable smoothing for this assertion
+    s.force_m83                     = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.segments_scaled > 0);
+    REQUIRE(stats.extrusion_saved_mm > 0.0);
+    REQUIRE(stats.modified == true);
+}
+
+TEST_CASE("Pass 4: bridge segments are never reduced", "[FilamentEconomy]")
+{
+    const std::string gcode =
+        ";TYPE:Bridge\n"
+        "M83\n"
+        "G1 X10 Y0 E1.000 F1200\n"
+        "G1 X20 Y0 E1.000 F1200\n"
+        "G1 X30 Y0 E1.000 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.curvature_lh           = true;
+    s.curvature_filter_window= 1;
+    s.force_m83              = false;
+    Stats stats = process(gc.path.string(), s);
+    // Bridge cap is 0 — even though these segments are perfectly straight,
+    // no extrusion should be reduced.
+    REQUIRE(stats.segments_scaled == 0);
+    REQUIRE(stats.extrusion_saved_mm == 0.0);
 }

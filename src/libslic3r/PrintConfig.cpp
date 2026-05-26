@@ -4197,6 +4197,83 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionBool(false));
 
+    // ---------------------------------------------------------------------
+    // Pass 4 — curvature-aware adaptive E scaling.
+    // Based on Al-Juboori (2026) post-slicing G-code optimization framework.
+    // See doc/filament-economy/PASS_4_CURVATURE_LAYER_HEIGHT.md
+    // ---------------------------------------------------------------------
+    def = this->add("filament_economy_curvature_lh", coBool);
+    def->label = L("Curvature-aware E scaling");
+    def->category = L("Multi-material");
+    def->tooltip = L("Scale per-segment extrusion based on local toolpath curvature. "
+                     "Low-curvature regions (straight runs) get less plastic, sharp corners stay at full extrusion. "
+                     "Walls, bridges and first layer are protected with stricter caps.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("filament_economy_curvature_low_deg", coFloat);
+    def->label = L("Low-curvature threshold");
+    def->category = L("Multi-material");
+    def->tooltip = L("Angle (degrees) below which a segment is treated as straight and receives the maximum allowed reduction.");
+    def->sidetext = "°";
+    def->min = 0.;
+    def->max = 90.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(10.0));
+
+    def = this->add("filament_economy_curvature_high_deg", coFloat);
+    def->label = L("High-curvature threshold");
+    def->category = L("Multi-material");
+    def->tooltip = L("Angle (degrees) above which a segment is treated as a sharp corner and receives no reduction.");
+    def->sidetext = "°";
+    def->min = 0.;
+    def->max = 180.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(45.0));
+
+    def = this->add("filament_economy_curvature_max_pct", coInt);
+    def->label = L("Max E reduction");
+    def->category = L("Multi-material");
+    def->tooltip = L("Global upper bound on the per-segment extrusion reduction applied by curvature-aware E scaling. "
+                     "Per-feature caps (walls, infill, bridge…) may be lower.");
+    def->sidetext = "%";
+    def->min = 0;
+    def->max = 100;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(30));
+
+    def = this->add("filament_economy_curvature_filter_window", coInt);
+    def->label = L("Curvature filter window");
+    def->category = L("Multi-material");
+    def->tooltip = L("Length of the moving-median filter applied to the per-segment reduction ratios. "
+                     "Higher values smooth transitions; 1 disables filtering.");
+    def->min = 1;
+    def->max = 51;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(7));
+
+    // ---------------------------------------------------------------------
+    // Pass 5 — verification.
+    // ---------------------------------------------------------------------
+    def = this->add("filament_economy_force_m83", coBool);
+    def->label = L("Force M83 relative extrusion");
+    def->category = L("Multi-material");
+    def->tooltip = L("Convert the produced G-code to relative extrusion mode (M83) if it uses absolute (M82). "
+                     "Required for stable per-segment E rewrites.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("filament_economy_mass_tolerance_pct", coFloat);
+    def->label = L("Mass conservation tolerance");
+    def->category = L("Multi-material");
+    def->tooltip = L("Maximum allowed deviation of total extruded length after optimisation vs. the expected reduction. "
+                     "Catches parser bugs that would otherwise alter the physical part mass.");
+    def->sidetext = "%";
+    def->min = 0.;
+    def->max = 10.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(1.0));
+
     def = this->add("mixed_color_layer_height_a", coFloat);
     def->label = L("Dithering cadence height A");
     def->category = L("Others");

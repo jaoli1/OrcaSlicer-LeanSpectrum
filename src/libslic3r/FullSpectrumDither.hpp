@@ -9,8 +9,8 @@
 //
 // These are pure, side-effect-free helpers that can be unit-tested in
 // isolation from the slicing pipeline. MixedFilamentManager wires them
-// in opt-in; see doc/filament-economy/FULLSPECTRUM_F1_F2.md for the
-// integration plan and rationale.
+// in opt-in; see doc/filament-economy/FULLSPECTRUM_OPTIMIZATIONS.md
+// for the integration plan and rationale.
 //
 // Why F2 (Floyd-Steinberg) over the existing rotated-Bresenham helper:
 //   - Bresenham gives a periodic phase-stable pattern; over long runs

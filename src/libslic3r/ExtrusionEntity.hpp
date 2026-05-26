@@ -176,6 +176,10 @@ public:
         , mm3_per_mm(rhs.mm3_per_mm)
         , width(rhs.width)
         , height(rhs.height)
+        , wave_overhang(rhs.wave_overhang)
+        , wave_overhang_floor(rhs.wave_overhang_floor)
+        , wave_overhang_perimeter(rhs.wave_overhang_perimeter)
+        , wave_overhang_floor_perimeter(rhs.wave_overhang_floor_perimeter)
         , m_can_reverse(rhs.m_can_reverse)
         , m_role(rhs.m_role)
         , m_no_extrusion(rhs.m_no_extrusion)
@@ -187,6 +191,10 @@ public:
         , mm3_per_mm(rhs.mm3_per_mm)
         , width(rhs.width)
         , height(rhs.height)
+        , wave_overhang(rhs.wave_overhang)
+        , wave_overhang_floor(rhs.wave_overhang_floor)
+        , wave_overhang_perimeter(rhs.wave_overhang_perimeter)
+        , wave_overhang_floor_perimeter(rhs.wave_overhang_floor_perimeter)
         , m_can_reverse(rhs.m_can_reverse)
         , m_role(rhs.m_role)
         , m_no_extrusion(rhs.m_no_extrusion)
@@ -198,6 +206,10 @@ public:
         , mm3_per_mm(rhs.mm3_per_mm)
         , width(rhs.width)
         , height(rhs.height)
+        , wave_overhang(rhs.wave_overhang)
+        , wave_overhang_floor(rhs.wave_overhang_floor)
+        , wave_overhang_perimeter(rhs.wave_overhang_perimeter)
+        , wave_overhang_floor_perimeter(rhs.wave_overhang_floor_perimeter)
         , m_can_reverse(rhs.m_can_reverse)
         , m_role(rhs.m_role)
         , m_no_extrusion(rhs.m_no_extrusion)
@@ -209,6 +221,10 @@ public:
         , mm3_per_mm(rhs.mm3_per_mm)
         , width(rhs.width)
         , height(rhs.height)
+        , wave_overhang(rhs.wave_overhang)
+        , wave_overhang_floor(rhs.wave_overhang_floor)
+        , wave_overhang_perimeter(rhs.wave_overhang_perimeter)
+        , wave_overhang_floor_perimeter(rhs.wave_overhang_floor_perimeter)
         , m_can_reverse(rhs.m_can_reverse)
         , m_role(rhs.m_role)
         , m_no_extrusion(rhs.m_no_extrusion)
@@ -223,6 +239,10 @@ public:
         this->mm3_per_mm = rhs.mm3_per_mm;
         this->width = rhs.width;
         this->height = rhs.height;
+        this->wave_overhang                 = rhs.wave_overhang;
+        this->wave_overhang_floor           = rhs.wave_overhang_floor;
+        this->wave_overhang_perimeter       = rhs.wave_overhang_perimeter;
+        this->wave_overhang_floor_perimeter = rhs.wave_overhang_floor_perimeter;
         this->polyline = rhs.polyline;
         this->inset_idx = rhs.inset_idx;
         return *this;
@@ -234,6 +254,10 @@ public:
         this->mm3_per_mm = rhs.mm3_per_mm;
         this->width = rhs.width;
         this->height = rhs.height;
+        this->wave_overhang                 = rhs.wave_overhang;
+        this->wave_overhang_floor           = rhs.wave_overhang_floor;
+        this->wave_overhang_perimeter       = rhs.wave_overhang_perimeter;
+        this->wave_overhang_floor_perimeter = rhs.wave_overhang_floor_perimeter;
         this->polyline = std::move(rhs.polyline);
         this->inset_idx = rhs.inset_idx;
         return *this;

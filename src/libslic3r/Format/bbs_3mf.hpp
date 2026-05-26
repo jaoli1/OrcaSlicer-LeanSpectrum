@@ -4,6 +4,7 @@
 #include "../GCode/ThumbnailData.hpp"
 #include "libslic3r/ProjectTask.hpp"
 #include "libslic3r/GCode/GCodeProcessor.hpp"
+#include "libslic3r/Format/BambuConvert.hpp"
 #include <functional>
 
 namespace Slic3r {
@@ -170,6 +171,32 @@ inline bool operator & (LoadStrategy & lhs, LoadStrategy rhs)
     using T = std::underlying_type_t <LoadStrategy>;
     return (static_cast<T>(lhs) & static_cast<T>(rhs)) == static_cast<T>(rhs);
 }
+
+// ---------------------------------------------------------------------------
+// LeanSpectrum: Bambu .3mf -> Snapmaker U1 palette conversion adapter
+// ---------------------------------------------------------------------------
+//
+// Glues the BambuConvert pure-data layer (Format/BambuConvert.hpp) into the
+// 3mf loader's PlateData. Reads slice_filaments_info (populated when a
+// Bambu .3mf has been sliced — color, type, used_m), runs the assignment
+// algorithm, and rewrites:
+//
+//   - plate.config["filament_colour"]    -> only the 4 chosen physicals
+//   - plate.config["filament_type"]      -> only the 4 chosen physicals
+//   - plate.config["bambu_convert_recipe"] (new key) -> compact string
+//       encoding the FullSpectrum virtual mixing recipes. Format:
+//       "target=#RRGGBB,a=<slot>,b=<slot>,ratio_a=<float>,
+//        achieved=#RRGGBB,de=<float>;..."
+//
+// Returns the ConvertResult for the caller (UI) to log / display.
+//
+// Important: this is NOT auto-invoked by the load path. It must be called
+// explicitly by the UI when the user requests a Bambu -> U1 conversion, so
+// loading a Bambu .3mf without a U1 target stays untouched.
+
+bool apply_bambu_to_u1_conversion(PlateData                 &plate,
+                                  BambuConvert::Strategy    strategy,
+                                  BambuConvert::ConvertResult &out_result);
 
 const int EXPORT_STAGE_OPEN_3MF         = 0;
 const int EXPORT_STAGE_CONTENT_TYPES    = 1;

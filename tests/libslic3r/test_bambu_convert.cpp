@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "libslic3r/Format/BambuConvert.hpp"
+#include "libslic3r/Format/bbs_3mf.hpp"
+#include "libslic3r/PrintConfig.hpp"
 
 using namespace Slic3r;
 using namespace Slic3r::BambuConvert;
@@ -295,4 +297,108 @@ TEST_CASE("convert_filament_list — chromatic with <= 4 inputs reduces to ident
     REQUIRE(r.physical_count == 3);
     REQUIRE(r.virtuals.empty());
     REQUIRE_THAT(r.total_overflow_delta_e, WithinAbs(0.0, 1e-12));
+}
+
+// -----------------------------------------------------------------------------
+// PlateData integration adapter — apply_bambu_to_u1_conversion(plate, ...)
+// -----------------------------------------------------------------------------
+
+TEST_CASE("apply_bambu_to_u1_conversion — rewrites filament list on real Bambu palette",
+          "[BambuConvert][BBS3mf]") {
+    // Same 8-color Bambu X1 Carbon "HarryPotter +Color Painted" palette used
+    // by the chromatic test above. We construct a PlateData from scratch,
+    // populate slice_filaments_info as if the 3mf parser had just finished,
+    // and verify the adapter rewrites the plate state correctly.
+    PlateData plate;
+
+    auto add = [&](int id, const char *color, double used_m, const char *type) {
+        FilamentInfo fi;
+        fi.id     = id - 1;
+        fi.color  = color;
+        fi.used_m = used_m;
+        fi.type   = type;
+        plate.slice_filaments_info.push_back(fi);
+    };
+    add(1, "#F72323",  2.45, "PLA");
+    add(2, "#FCECD6", 36.99, "PLA"); // beige — most used
+    add(3, "#161616", 16.92, "PLA");
+    add(4, "#7C4B00",  6.42, "PLA");
+    add(5, "#FFF144", 11.75, "PLA");
+    add(6, "#FFFFFF",  8.62, "PLA");
+    add(7, "#898989",  3.29, "PLA");
+    add(8, "#443089",  5.31, "PLA"); // purple — chromatically isolated
+
+    BambuConvert::ConvertResult result;
+    REQUIRE(apply_bambu_to_u1_conversion(plate, BambuConvert::Strategy::Usage, result));
+
+    // After conversion, slice_filaments_info should contain exactly the
+    // 4 chosen physicals.
+    REQUIRE(plate.slice_filaments_info.size() == 4);
+
+    // The config's filament_colour / filament_type should match.
+    const auto *colors = plate.config.option<ConfigOptionStrings>("filament_colour");
+    const auto *types  = plate.config.option<ConfigOptionStrings>("filament_type");
+    REQUIRE(colors != nullptr);
+    REQUIRE(types  != nullptr);
+    REQUIRE(colors->values.size() == 4);
+    REQUIRE(types->values.size()  == 4);
+
+    // For Strategy::Usage: top-4 by used_m are beige (37), black (17),
+    // yellow (12), white (9) — in that order.
+    REQUIRE(colors->values[0] == "#FCECD6");
+    REQUIRE(colors->values[1] == "#161616");
+    REQUIRE(colors->values[2] == "#FFF144");
+    REQUIRE(colors->values[3] == "#FFFFFF");
+
+    // The overflow recipes are serialised into bambu_convert_recipe.
+    const auto *recipe = plate.config.option<ConfigOptionString>("bambu_convert_recipe");
+    REQUIRE(recipe != nullptr);
+    REQUIRE_FALSE(recipe->value.empty());
+    // Four overflow filaments -> four semicolon-separated entries.
+    size_t semis = 0;
+    for (char c : recipe->value) if (c == ';') ++semis;
+    REQUIRE(semis == 3); // n-1 separators for n entries
+}
+
+TEST_CASE("apply_bambu_to_u1_conversion — chromatic promotes isolated purple",
+          "[BambuConvert][BBS3mf][Chromatic]") {
+    PlateData plate;
+    auto add = [&](int id, const char *color, double used_m, const char *type) {
+        FilamentInfo fi;
+        fi.id     = id - 1;
+        fi.color  = color;
+        fi.used_m = used_m;
+        fi.type   = type;
+        plate.slice_filaments_info.push_back(fi);
+    };
+    add(1, "#F72323",  2.45, "PLA");
+    add(2, "#FCECD6", 36.99, "PLA");
+    add(3, "#161616", 16.92, "PLA");
+    add(4, "#7C4B00",  6.42, "PLA");
+    add(5, "#FFF144", 11.75, "PLA");
+    add(6, "#FFFFFF",  8.62, "PLA");
+    add(7, "#898989",  3.29, "PLA");
+    add(8, "#443089",  5.31, "PLA");
+
+    BambuConvert::ConvertResult result;
+    REQUIRE(apply_bambu_to_u1_conversion(plate, BambuConvert::Strategy::Chromatic, result));
+
+    const auto *colors = plate.config.option<ConfigOptionStrings>("filament_colour");
+    REQUIRE(colors != nullptr);
+    REQUIRE(colors->values.size() == 4);
+
+    // Chromatic strategy is expected to include the chromatically isolated
+    // purple #443089 in the physical set — the algorithm trades the
+    // heavily-used beige for it because purple cannot be mixed.
+    bool has_purple = false;
+    for (const std::string &c : colors->values)
+        if (c == "#443089") has_purple = true;
+    REQUIRE(has_purple);
+}
+
+TEST_CASE("apply_bambu_to_u1_conversion — empty plate is no-op",
+          "[BambuConvert][BBS3mf]") {
+    PlateData plate;
+    BambuConvert::ConvertResult result;
+    REQUIRE_FALSE(apply_bambu_to_u1_conversion(plate, BambuConvert::Strategy::Usage, result));
 }

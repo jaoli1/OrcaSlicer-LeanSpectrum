@@ -437,6 +437,75 @@ void verification_pass(Parsed &p, Stats &stats, const Settings &s)
     }
 }
 
+// Post-optimisation gate: re-walk the final line buffer and check that
+// the retract count, cumulative retract volume, and total extrusion
+// match the pre-pass snapshot (modulo the deliberate savings from
+// Pass 1 / Pass 2 / Pass 4). If any check fails the caller reverts to
+// the original file. Per design doc PASS_5_VERIFICATION.md I2 + I3.
+bool verify_post_optimisation(Parsed &p, const Stats &stats,
+                              const Settings &s, std::string &out_reason)
+{
+    out_reason.clear();
+
+    // Re-parse the rewritten raw lines so the classification flags reflect
+    // the current state (Pass 1 may have commented out tool-change lines,
+    // Pass 2/4 may have shrunk E values).
+    Parsed q;
+    q.lines.reserve(p.lines.size());
+    FeatureType cur_feature = FeatureType::Unknown;
+    for (const Line &src : p.lines) {
+        Line l;
+        l.raw = src.raw;
+        parse_line(l, cur_feature);
+        q.lines.emplace_back(std::move(l));
+    }
+    reconstruct_modal(q);
+
+    // I2 — retract count + cumulative retract volume must equal
+    // (input − deliberately removed by Pass 1). Anything else means a
+    // pass touched a retract it shouldn't have.
+    const size_t expected_retracts = p.retract_count_in - stats.retracts_removed;
+    if (q.retract_count_in != expected_retracts) {
+        out_reason = "retract count drifted (input " +
+                     std::to_string(p.retract_count_in) + " − removed " +
+                     std::to_string(stats.retracts_removed) + " = expected " +
+                     std::to_string(expected_retracts) + ", observed " +
+                     std::to_string(q.retract_count_in) + ")";
+        return false;
+    }
+    const double expected_retract_vol =
+        p.retract_volume_in - stats.retract_volume_removed_mm;
+    const double dvol = std::fabs(q.retract_volume_in - expected_retract_vol);
+    if (dvol > 1e-3 * std::max(1.0, expected_retract_vol)) {
+        char buf[160];
+        std::snprintf(buf, sizeof(buf),
+                      "retract volume drifted by %.4f mm (>0.1%% of expected %.2f mm)",
+                      dvol, expected_retract_vol);
+        out_reason = buf;
+        return false;
+    }
+
+    // I3 — total extrusion must equal (input total - deliberately-saved).
+    // We allow either the relative tolerance from settings (default 1%) OR
+    // 1 mm absolute, whichever is bigger, to tolerate small parser rounding
+    // on very short prints.
+    const double expected = p.total_extrusion_in - stats.extrusion_saved_mm;
+    const double drift    = std::fabs(q.total_extrusion_in - expected);
+    const double tol_rel  = std::max(0.0, s.mass_tolerance_pct) / 100.0;
+    const double allowed  = std::max(1.0, tol_rel * std::max(1.0, expected));
+    if (drift > allowed) {
+        char buf[160];
+        std::snprintf(buf, sizeof(buf),
+                      "total extrusion drift %.3f mm exceeds %.3f mm tolerance "
+                      "(input %.2f, saved %.2f, expected %.2f, observed %.2f)",
+                      drift, allowed, p.total_extrusion_in,
+                      stats.extrusion_saved_mm, expected, q.total_extrusion_in);
+        out_reason = buf;
+        return false;
+    }
+    return true;
+}
+
 // Pass 1 — remove no-op tool changes AND their orphan wipe-tower block.
 //
 // A "no-op swap" is a `T<n>` that re-selects the currently active extruder.
@@ -463,9 +532,11 @@ size_t pass_noop_swaps(Parsed &p, Stats &stats)
         l.is_travel      = false;
     };
 
-    size_t swap_count = 0;
-    double saved_mm   = 0.0;
-    int    current    = -1;
+    size_t swap_count          = 0;
+    double saved_mm            = 0.0;
+    size_t retracts_dropped    = 0;
+    double retract_vol_dropped = 0.0;
+    int    current             = -1;
     for (size_t i = 0; i < p.lines.size(); ++i) {
         Line &l = p.lines[i];
         if (!l.is_tool_change)
@@ -501,11 +572,21 @@ size_t pass_noop_swaps(Parsed &p, Stats &stats)
         }
 
         if (block_start < i && block_end > i) {
-            // Sum positive E inside the block before neutralising.
+            // Account for positive E (extrusion saved) and retract events
+            // (count + volume) before neutralising. Pass 5's post-pass
+            // verifier subtracts these from the input snapshot, so the
+            // I2 / I3 checks tolerate Pass 1's deliberate removals.
             for (size_t k = block_start + 1; k < block_end; ++k) {
                 const Line &lk = p.lines[k];
-                if (lk.is_g1 && lk.has_e && lk.e > 0.0 && lk.is_extrusion)
+                if (!lk.is_g1)
+                    continue;
+                if (lk.has_e && lk.e > 0.0 && lk.is_extrusion)
                     saved_mm += lk.e;
+                else if (lk.is_retract) {
+                    ++retracts_dropped;
+                    if (lk.has_e && lk.e < 0.0)
+                        retract_vol_dropped += -lk.e;
+                }
             }
             for (size_t k = block_start; k <= block_end; ++k)
                 comment_out(p.lines[k], "no-op wipe block");
@@ -515,8 +596,10 @@ size_t pass_noop_swaps(Parsed &p, Stats &stats)
         }
         ++swap_count;
     }
-    stats.swaps_removed      += swap_count;
-    stats.extrusion_saved_mm += saved_mm;
+    stats.swaps_removed              += swap_count;
+    stats.extrusion_saved_mm         += saved_mm;
+    stats.retracts_removed           += retracts_dropped;
+    stats.retract_volume_removed_mm  += retract_vol_dropped;
     return swap_count;
 }
 
@@ -958,7 +1041,15 @@ Stats process(const std::string &gcode_path, const Settings &settings)
 
     bool changed = stats.converted_to_m83;
 
+    // Snapshot the input raw text so we can revert if the post-pass
+    // verifier trips. Cheap (vector of strings, identical to what we
+    // already keep in p.lines).
+    std::vector<std::string> input_snapshot;
     if (stats.verification_ok) {
+        input_snapshot.reserve(p.lines.size());
+        for (const Line &l : p.lines)
+            input_snapshot.push_back(l.raw);
+
         if (settings.remove_noop_swaps && pass_noop_swaps(p, stats) > 0)
             changed = true;
         if (settings.curvature_lh   && pass_curvature_lh(p, stats, settings) > 0)
@@ -967,6 +1058,36 @@ Stats process(const std::string &gcode_path, const Settings &settings)
             changed = true;
         if (settings.merge_travel   && pass_merge_travel(p, stats) > 0)
             changed = true;
+    }
+
+    // Post-optimisation gate (I2 + I3). If any retract was lost outside
+    // Pass 1's accounting, or the total extrusion drifted beyond the
+    // mass-tolerance bound, revert to the input snapshot.
+    if (changed && stats.verification_ok) {
+        std::string reason;
+        if (!verify_post_optimisation(p, stats, settings, reason)) {
+            stats.notes.emplace_back("Post-pass verification failed: " + reason
+                                     + "; reverting to input.");
+            stats.verification_ok = false;
+            BOOST_LOG_TRIVIAL(warning)
+                << "FilamentEconomy: post-pass verification failed (" << reason
+                << "); reverting file to input.";
+            // Roll p.lines back to the snapshot so the write step below
+            // emits the original file. Stats keep their per-pass counters
+            // for diagnostics but stats.modified is set to false later.
+            for (size_t i = 0; i < p.lines.size() && i < input_snapshot.size(); ++i)
+                p.lines[i].raw = input_snapshot[i];
+            // Reset the saved-mm/retracts-removed counters since the
+            // file ended up unchanged.
+            stats.swaps_removed             = 0;
+            stats.segments_scaled           = 0;
+            stats.purges_shrunk             = 0;
+            stats.lines_removed             = 0;
+            stats.retracts_removed          = 0;
+            stats.retract_volume_removed_mm = 0.0;
+            stats.extrusion_saved_mm        = 0.0;
+            changed = stats.converted_to_m83; // keep M83 conversion if any
+        }
     }
 
     if (changed) {

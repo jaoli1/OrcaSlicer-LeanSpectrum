@@ -80,6 +80,8 @@ struct Stats
 {
     // Pass 1
     size_t swaps_removed       = 0;
+    size_t retracts_removed    = 0;        // inside no-op wipe blocks
+    double retract_volume_removed_mm = 0.0;
     // Pass 4
     size_t segments_scaled     = 0;
     double extrusion_saved_mm  = 0.0;

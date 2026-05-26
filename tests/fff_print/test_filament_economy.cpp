@@ -275,6 +275,40 @@ TEST_CASE("Pass 4: layers above the first are reduced normally", "[FilamentEcono
     REQUIRE(stats.extrusion_saved_mm > 0.0);
 }
 
+TEST_CASE("Pass 5: post-pass verifier accepts Pass 1 wipe-block removals",
+          "[FilamentEconomy]")
+{
+    // A no-op tool change with a surrounding CP TOOLCHANGE block whose
+    // body contains both a retract and an extrusion. Pass 1 should
+    // neutralise the block AND account for the retract in
+    // stats.retracts_removed / retract_volume_removed_mm. Pass 5's
+    // post-pass verifier then accepts the (input - removed) accounting
+    // and lets the modified file ship.
+    const std::string gcode =
+        "M83\n"
+        "T0\n"
+        "G1 X0 Y0 E1 F1200\n"
+        "; CP TOOLCHANGE START\n"
+        "G1 E-2.0 F1800\n"       // retract inside the wipe block
+        "G1 X5 Y0 E0.5 F1200\n"
+        "T0\n"                    // no-op tool change targeting current
+        "G1 X10 Y0 E0.5 F1200\n"
+        "; CP TOOLCHANGE END\n"
+        "G1 X20 Y20 E1 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.remove_noop_swaps = true;
+    s.curvature_lh      = false;
+    s.force_m83         = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.verification_ok);
+    REQUIRE(stats.modified);
+    REQUIRE(stats.swaps_removed == 1);
+    REQUIRE(stats.retracts_removed == 1);
+    REQUIRE_THAT(stats.retract_volume_removed_mm,
+                 Catch::Matchers::WithinAbs(2.0, 1e-6));
+}
+
 TEST_CASE("Pass 4: bridge segments are never reduced", "[FilamentEconomy]")
 {
     const std::string gcode =

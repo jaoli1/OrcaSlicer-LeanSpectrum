@@ -818,8 +818,31 @@ void BackgroundSlicingProcess::finalize_gcode()
 						<< "FilamentEconomy: failed to make safe copy at " << econ_path << ": " << err;
 				}
 			}
-			if (post_processed)
-				Slic3r::FilamentEconomy::process(output_path, econ_settings);
+			if (post_processed) {
+				const Slic3r::FilamentEconomy::Stats econ_stats =
+					Slic3r::FilamentEconomy::process(output_path, econ_settings);
+				// Surface the savings so the user / dev can see what
+				// LeanSpectrum did. The slicer status bar only shows
+				// pre-defined progress strings, so this lands in the log.
+				if (econ_stats.modified) {
+					BOOST_LOG_TRIVIAL(info)
+						<< "FilamentEconomy: optimised G-code — "
+						<< "swaps_removed=" << econ_stats.swaps_removed
+						<< " segments_scaled=" << econ_stats.segments_scaled
+						<< " purges_shrunk=" << econ_stats.purges_shrunk
+						<< " extrusion_saved=" << econ_stats.extrusion_saved_mm << " mm"
+						<< " retracts_removed=" << econ_stats.retracts_removed
+						<< " m83_converted=" << econ_stats.converted_to_m83
+						<< " max_flow=" << econ_stats.max_flow_mm3s << " mm^3/s";
+					for (const std::string &note : econ_stats.notes)
+						BOOST_LOG_TRIVIAL(info) << "FilamentEconomy: " << note;
+				} else if (!econ_stats.verification_ok) {
+					BOOST_LOG_TRIVIAL(warning)
+						<< "FilamentEconomy: verification failed; file left unchanged";
+					for (const std::string &note : econ_stats.notes)
+						BOOST_LOG_TRIVIAL(warning) << "FilamentEconomy: " << note;
+				}
+			}
 		}
 	}
 	auto remove_post_processed_temp_file = [post_processed, &output_path]() {

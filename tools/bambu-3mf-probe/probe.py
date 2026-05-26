@@ -124,7 +124,7 @@ def mix(a, b, ratio_a):
             a[2] * ratio_a + b[2] * rb)
 
 
-MIXING_RATIOS = [0.25, 1.0/3.0, 0.5, 2.0/3.0, 0.75]
+MIXING_RATIOS = [i * 0.05 for i in range(1, 20)]  # 0.05..0.95 step 0.05
 
 
 # --- assignment ------------------------------------------------------------

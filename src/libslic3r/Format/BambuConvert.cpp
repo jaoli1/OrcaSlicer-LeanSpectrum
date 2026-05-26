@@ -298,6 +298,27 @@ extern const std::array<double, 5> kMixingRatios = {
 
 namespace {
 
+// Internal denser search table. The public kMixingRatios (5 values) is
+// kept for backward compat and UI presentation; the assignment search
+// uses this finer grid to find better matches when one of the 5
+// "natural" cadences lands far from the perceptual sweet spot.
+//
+// Range deliberately stays inside [0.05, 0.95] — extreme ratios
+// (1 layer A every 100 of B) don't produce a clean mix in practice
+// because of color bleed across the very-thin film of A. 19 sample
+// points × ~12 (a, b) pairs = ~228 evaluations per overflow, which is
+// negligible compared to the C(N, cap) outer loop in chromatic mode.
+const std::vector<double> &search_ratios()
+{
+    static const std::vector<double> kSearchRatios = []() {
+        std::vector<double> v;
+        for (int i = 1; i < 20; ++i) // 0.05, 0.10, ..., 0.95
+            v.push_back(i * 0.05);
+        return v;
+    }();
+    return kSearchRatios;
+}
+
 // Given a fixed list of physical filament inputs, compute the best
 // virtual recipe for one overflow target. Pure function — returns
 // the recipe with the lowest CIEDE2000.
@@ -312,10 +333,12 @@ VirtualFilament best_virtual_for_target(const std::vector<Rgb> &phys_rgb,
     best.achieved   = phys_rgb.empty() ? Rgb{} : phys_rgb[0];
     best.delta_e    = std::numeric_limits<double>::infinity();
 
+    const std::vector<double> &ratios = search_ratios();
+
     for (size_t a = 0; a < phys_rgb.size(); ++a) {
         for (size_t b = 0; b < phys_rgb.size(); ++b) {
             if (a == b) continue; // mixing X with X is just X
-            for (double ratio_a : kMixingRatios) {
+            for (double ratio_a : ratios) {
                 Rgb mixed = mix(phys_rgb[a], phys_rgb[b], ratio_a);
                 double de = ciede2000(rgb_to_lab(mixed), target_lab);
                 if (de < best.delta_e) {

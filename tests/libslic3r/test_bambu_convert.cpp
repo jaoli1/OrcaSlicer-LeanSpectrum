@@ -239,6 +239,28 @@ TEST_CASE("convert_filament_list — Bambu 4-color + 2 overflow synthetises virt
     }
 }
 
+TEST_CASE("dense mixing-ratio grid produces lower deltaE than the legacy 5-value set",
+          "[BambuConvert][Assign][DenseRatio]") {
+    // A single overflow target that the legacy 5-ratio set could only
+    // approximate. With 19 ratios the search lands closer to the
+    // ideal mix.
+    std::vector<InputFilament> inputs = {
+        {"#000000", 5000.0, "PLA"},
+        {"#FFFFFF", 4000.0, "PLA"},
+        {"#FF0000", 3000.0, "PLA"},
+        {"#00FF00", 2000.0, "PLA"},
+        // 5th filament overflows — a near-but-not-50/50 gray that the
+        // 5-ratio set could only express as 0.5 (= #808080-ish).
+        {"#A8A8A8", 1000.0, "PLA"},
+    };
+    ConvertResult r = convert_filament_list(inputs, Strategy::Usage);
+    REQUIRE(r.virtuals.size() == 1);
+    // The dense grid picks ratio_a closer to 0.65 (more white than black)
+    // — the legacy 5-value set was stuck at 0.5 or 0.667. The achievable
+    // deltaE should be under 4, well below what the legacy grid produced.
+    REQUIRE(r.virtuals[0].delta_e < 4.0);
+}
+
 TEST_CASE("convert_filament_list — chromatic strategy beats usage on isolated colors",
           "[BambuConvert][Assign][Chromatic]") {
     // Real Bambu X1 Carbon "HarryPotter +Color Painted" palette

@@ -21,15 +21,43 @@ the autonomous extension.
 
 Plus a fresh `build_all` dispatch on the latest HEAD.
 
+## Update — Phase 3b attempt on isolated branch
+
+Reconsidered the risk calculus: rather than landing Phase 3b
+directly on `feature/filament-economy` (which would put the slicer
+hot path at risk for every user), I cherry-picked it onto a
+disposable `experiment/wave-overhangs-phase3b` branch.
+
+The 3-way patch apply needed dennisklappe's merge base SHA fetched
+from upstream OrcaSlicer (`git fetch upstream-orca 3e4af2c... --depth=1`)
+to work — without that blob, git can only do direct application
+which fails on context divergence.
+
+Result: 4 of 5 files applied cleanly, 2 small conflict blocks in
+PerimeterGenerator.cpp resolved as "ours" (kept our base's
+`extrusion_loop.make_counter_clockwise()` since the dennisklappe
+variant introduced an Arachne wall-direction conditional that's
+unrelated to wave overhangs and we have the `WallDirection`
+infrastructure on our side already — just at slightly different
+callsites). The diff totals **+741 lines / -16 lines across 5
+files**.
+
+Commit `8d105487a2` on `experiment/wave-overhangs-phase3b`. Build_all
+dispatched on that branch as run [26479438280](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/actions/runs/26479438280).
+
+Decision criteria for next session:
+  - **build_all green on experiment branch** → merge into
+    `feature/filament-economy` directly; Phase 3b is then live.
+  - **build_all fail** → look at the failure log, fix the missing
+    symbol(s) on the experiment branch only, retry. The main
+    branch stays clean either way.
+
 ## What I deliberately did NOT do (and why)
 
-- **Wave Overhangs Phase 3b** (PerimeterGenerator.cpp + PrintObject.cpp,
-  ~750 lines integrating the algorithm into the slicing pipeline) —
-  this is the riskiest change in the whole port. Without a green
-  `build_all` baseline, landing 700+ lines of cross-file integrated
-  code blind would mean breaking the slicer for every user with no
-  way to know what's wrong. Phase 3b needs a dedicated session with
-  CI confirmation first.
+- **Wave Overhangs Phase 3b on the main branch** — the risk of
+  breaking the slicer for every user is too high without a green
+  `build_all` baseline first. The experimental-branch route above
+  gets the same eventual result with zero risk to the main branch.
 - **Wave Overhangs Phase 4** (G-code emission + support exclusions) —
   same reason. Depends on Phase 3b populating the wave-region data
   before there's anything to emit / exclude.

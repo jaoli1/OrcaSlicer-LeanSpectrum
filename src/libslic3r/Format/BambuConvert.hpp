@@ -95,13 +95,36 @@ struct InputFilament {
     std::string type;           // "PLA", "PETG", etc — passes through
 };
 
+// Selection strategy for the 4 physical filament slots.
+//   Usage     — pick top-4 by used_mm. Deterministic, cheap, the
+//               default. Works well when the most-used colors are
+//               also chromatically diverse.
+//   Chromatic — exhaustively search every C(N, 4) physical subset
+//               and pick the one that minimises the total overflow
+//               CIEDE2000 to the targets. Costlier (C(16, 4) = 1820)
+//               but drastically better when a rarely-used color is
+//               chromatically isolated and impossible to mix from
+//               the heavy-usage palette. See doc/filament-economy/
+//               BL2U1_NATIVE_PORT.md for the comparison data on
+//               real Bambu prints.
+enum class Strategy {
+    Usage = 0,
+    Chromatic = 1,
+};
+
 struct ConvertResult {
     std::array<size_t, 4>        physical_indices = {0, 0, 0, 0};
     size_t                       physical_count   = 0;
     std::vector<VirtualFilament> virtuals;
+    // Sum of CIEDE2000 across all virtuals. 0 when there's no overflow.
+    // Useful for comparing strategies.
+    double                       total_overflow_delta_e = 0.0;
+    // Echoes back the strategy actually used (so callers can log it).
+    Strategy                     strategy = Strategy::Usage;
 };
 
-ConvertResult convert_filament_list(const std::vector<InputFilament> &inputs);
+ConvertResult convert_filament_list(const std::vector<InputFilament> &inputs,
+                                    Strategy strategy = Strategy::Usage);
 
 // ---------------------------------------------------------------------------
 // Mixing-ratio sampling

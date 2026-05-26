@@ -236,3 +236,63 @@ TEST_CASE("convert_filament_list — Bambu 4-color + 2 overflow synthetises virt
         // — that's correct algorithm behavior, not a bug.
     }
 }
+
+TEST_CASE("convert_filament_list — chromatic strategy beats usage on isolated colors",
+          "[BambuConvert][Assign][Chromatic]") {
+    // Real Bambu X1 Carbon "HarryPotter +Color Painted" palette
+    // (extracted from Metadata/slice_info.config). 8 PLA colors, with
+    // the most-used four perceptually similar (beige, near-black,
+    // yellow, white) and the only chromatically saturated color —
+    // purple — only used for ~5 m. Usage strategy leaves purple in
+    // the overflow where no two-physical mix can reproduce it.
+    // Chromatic strategy promotes purple to a physical slot and
+    // demotes beige (easy to mix from white+yellow).
+    std::vector<InputFilament> inputs = {
+        {"#F72323",  2450.0, "PLA"}, // 0 — red
+        {"#FCECD6", 36990.0, "PLA"}, // 1 — beige (most used)
+        {"#161616", 16920.0, "PLA"}, // 2 — near-black
+        {"#7C4B00",  6420.0, "PLA"}, // 3 — dark brown
+        {"#FFF144", 11750.0, "PLA"}, // 4 — yellow
+        {"#FFFFFF",  8620.0, "PLA"}, // 5 — white
+        {"#898989",  3290.0, "PLA"}, // 6 — gray
+        {"#443089",  5310.0, "PLA"}, // 7 — purple
+    };
+
+    ConvertResult by_usage     = convert_filament_list(inputs, Strategy::Usage);
+    ConvertResult by_chromatic = convert_filament_list(inputs, Strategy::Chromatic);
+
+    REQUIRE(by_usage.physical_count == 4);
+    REQUIRE(by_chromatic.physical_count == 4);
+    REQUIRE(by_usage.virtuals.size() == 4);
+    REQUIRE(by_chromatic.virtuals.size() == 4);
+
+    // Chromatic must strictly beat usage on the sum of overflow deltaE.
+    REQUIRE(by_chromatic.total_overflow_delta_e
+            < by_usage.total_overflow_delta_e);
+
+    // The chromatic strategy is expected to include the isolated
+    // purple (index 7). Usage strategy will not (purple has only
+    // 5310 mm extruded, beating only red 2450 and gray 3290).
+    bool chromatic_includes_purple = false;
+    for (size_t i = 0; i < by_chromatic.physical_count; ++i)
+        if (by_chromatic.physical_indices[i] == 7)
+            chromatic_includes_purple = true;
+    REQUIRE(chromatic_includes_purple);
+
+    // Sanity: strategy field on the result echoes back what we asked.
+    REQUIRE(by_usage.strategy     == Strategy::Usage);
+    REQUIRE(by_chromatic.strategy == Strategy::Chromatic);
+}
+
+TEST_CASE("convert_filament_list — chromatic with <= 4 inputs reduces to identity",
+          "[BambuConvert][Assign][Chromatic]") {
+    std::vector<InputFilament> inputs = {
+        {"#FF0000", 100.0, "PLA"},
+        {"#00FF00", 100.0, "PLA"},
+        {"#0000FF", 100.0, "PLA"},
+    };
+    ConvertResult r = convert_filament_list(inputs, Strategy::Chromatic);
+    REQUIRE(r.physical_count == 3);
+    REQUIRE(r.virtuals.empty());
+    REQUIRE_THAT(r.total_overflow_delta_e, WithinAbs(0.0, 1e-12));
+}

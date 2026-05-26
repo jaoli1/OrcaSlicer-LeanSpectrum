@@ -296,13 +296,74 @@ extern const std::array<double, 5> kMixingRatios = {
 // Assignment algorithm
 // ---------------------------------------------------------------------------
 
-ConvertResult convert_filament_list(const std::vector<InputFilament> &inputs) {
-    ConvertResult result;
-    if (inputs.empty())
-        return result;
+namespace {
 
-    // Rank filaments by extrusion length (most-used first). Ties broken by
-    // original index so the result is deterministic.
+// Given a fixed list of physical filament inputs, compute the best
+// virtual recipe for one overflow target. Pure function — returns
+// the recipe with the lowest CIEDE2000.
+VirtualFilament best_virtual_for_target(const std::vector<Rgb> &phys_rgb,
+                                        const Rgb              &target_rgb,
+                                        const Lab              &target_lab) {
+    VirtualFilament best;
+    best.physical_a = 0;
+    best.physical_b = 0;
+    best.ratio_a    = 0.5;
+    best.target     = target_rgb;
+    best.achieved   = phys_rgb.empty() ? Rgb{} : phys_rgb[0];
+    best.delta_e    = std::numeric_limits<double>::infinity();
+
+    for (size_t a = 0; a < phys_rgb.size(); ++a) {
+        for (size_t b = 0; b < phys_rgb.size(); ++b) {
+            if (a == b) continue; // mixing X with X is just X
+            for (double ratio_a : kMixingRatios) {
+                Rgb mixed = mix(phys_rgb[a], phys_rgb[b], ratio_a);
+                double de = ciede2000(rgb_to_lab(mixed), target_lab);
+                if (de < best.delta_e) {
+                    best.delta_e    = de;
+                    best.physical_a = a;
+                    best.physical_b = b;
+                    best.ratio_a    = ratio_a;
+                    best.achieved   = mixed;
+                }
+            }
+        }
+    }
+    return best;
+}
+
+// For a candidate physical set, synthesize virtuals for every other
+// input and return them along with the total deltaE sum.
+struct AssignmentEval {
+    std::vector<VirtualFilament> virtuals;
+    double                       total_delta_e = 0.0;
+};
+
+AssignmentEval evaluate_assignment(const std::vector<InputFilament> &inputs,
+                                   const std::vector<size_t>        &physicals) {
+    AssignmentEval out;
+    std::vector<Rgb> phys_rgb;
+    phys_rgb.reserve(physicals.size());
+    for (size_t p : physicals)
+        phys_rgb.push_back(parse_srgb_hex(inputs[p].color_hex));
+
+    std::vector<bool> in_phys(inputs.size(), false);
+    for (size_t p : physicals)
+        in_phys[p] = true;
+
+    for (size_t k = 0; k < inputs.size(); ++k) {
+        if (in_phys[k]) continue;
+        const Rgb target_rgb = parse_srgb_hex(inputs[k].color_hex);
+        const Lab target_lab = rgb_to_lab(target_rgb);
+        VirtualFilament v = best_virtual_for_target(phys_rgb, target_rgb, target_lab);
+        out.virtuals.push_back(v);
+        out.total_delta_e += v.delta_e;
+    }
+    return out;
+}
+
+// Pick physicals by usage ranking (top-N descending). Deterministic.
+std::vector<size_t> pick_by_usage(const std::vector<InputFilament> &inputs,
+                                  size_t cap) {
     std::vector<size_t> order(inputs.size());
     std::iota(order.begin(), order.end(), size_t{0});
     std::sort(order.begin(), order.end(), [&](size_t i, size_t j) {
@@ -310,64 +371,82 @@ ConvertResult convert_filament_list(const std::vector<InputFilament> &inputs) {
             return inputs[i].used_mm > inputs[j].used_mm;
         return i < j;
     });
+    const size_t n = std::min(cap, order.size());
+    order.resize(n);
+    return order;
+}
+
+// Exhaustively enumerate C(N, cap) physical subsets and pick the one
+// minimising total overflow deltaE. Tie-break by lexicographic combo
+// for determinism.
+std::vector<size_t> pick_by_chromatic(const std::vector<InputFilament> &inputs,
+                                      size_t cap) {
+    const size_t n = inputs.size();
+    if (n <= cap) {
+        std::vector<size_t> all(n);
+        std::iota(all.begin(), all.end(), size_t{0});
+        return all;
+    }
+
+    std::vector<size_t> best;
+    double best_total = std::numeric_limits<double>::infinity();
+
+    // Generate combinations of `cap` indices out of [0, n) in
+    // lexicographic order.
+    std::vector<size_t> combo(cap);
+    std::iota(combo.begin(), combo.end(), size_t{0});
+    while (true) {
+        AssignmentEval ev = evaluate_assignment(inputs, combo);
+        if (ev.total_delta_e < best_total) {
+            best_total = ev.total_delta_e;
+            best       = combo;
+        }
+        // Advance combo to the next lexicographic combination.
+        size_t i = cap;
+        while (i-- > 0) {
+            if (combo[i] < n - (cap - i)) {
+                ++combo[i];
+                for (size_t j = i + 1; j < cap; ++j)
+                    combo[j] = combo[j - 1] + 1;
+                break;
+            }
+            if (i == 0)
+                return best; // exhausted
+        }
+    }
+}
+
+} // namespace
+
+ConvertResult convert_filament_list(const std::vector<InputFilament> &inputs,
+                                    Strategy strategy) {
+    ConvertResult result;
+    result.strategy = strategy;
+    if (inputs.empty())
+        return result;
 
     const size_t cap = 4; // U1 physical extruder count
-    const size_t n_phys = std::min(cap, order.size());
+
+    std::vector<size_t> physicals = (strategy == Strategy::Chromatic)
+        ? pick_by_chromatic(inputs, cap)
+        : pick_by_usage(inputs, cap);
+
+    const size_t n_phys = std::min(cap, physicals.size());
     result.physical_count = n_phys;
     for (size_t i = 0; i < n_phys; ++i)
-        result.physical_indices[i] = order[i];
+        result.physical_indices[i] = physicals[i];
     // Pad remaining slots with the last physical (harmless: physical_count
     // is the authoritative size).
     for (size_t i = n_phys; i < cap; ++i)
-        result.physical_indices[i] = n_phys > 0 ? order[n_phys - 1] : 0;
+        result.physical_indices[i] = n_phys > 0 ? physicals[n_phys - 1] : 0;
 
-    if (order.size() <= cap)
+    if (inputs.size() <= cap)
         return result;
 
-    // Pre-compute Lab for every physical filament — we'll evaluate many
-    // (pair, ratio) candidates per overflow.
-    std::array<Rgb, 4> phys_rgb{};
-    std::array<Lab, 4> phys_lab{};
-    for (size_t i = 0; i < n_phys; ++i) {
-        phys_rgb[i] = parse_srgb_hex(inputs[order[i]].color_hex);
-        phys_lab[i] = rgb_to_lab(phys_rgb[i]);
-    }
-
-    // For each overflow filament, search over all (pair_a, pair_b, ratio)
-    // combinations and keep the lowest CIEDE2000.
-    for (size_t k = cap; k < order.size(); ++k) {
-        const size_t input_idx = order[k];
-        const Rgb target_rgb = parse_srgb_hex(inputs[input_idx].color_hex);
-        const Lab target_lab = rgb_to_lab(target_rgb);
-
-        VirtualFilament best;
-        best.physical_a = 0;
-        best.physical_b = 0;
-        best.ratio_a    = 0.5;
-        best.target     = target_rgb;
-        best.achieved   = phys_rgb[0];
-        best.delta_e    = std::numeric_limits<double>::infinity();
-
-        for (size_t a = 0; a < n_phys; ++a) {
-            for (size_t b = 0; b < n_phys; ++b) {
-                if (a == b) continue; // mixing X with X is just X
-                for (double ratio_a : kMixingRatios) {
-                    Rgb mixed = mix(phys_rgb[a], phys_rgb[b], ratio_a);
-                    double de = ciede2000(rgb_to_lab(mixed), target_lab);
-                    if (de < best.delta_e) {
-                        best.delta_e    = de;
-                        best.physical_a = a;
-                        best.physical_b = b;
-                        best.ratio_a    = ratio_a;
-                        best.achieved   = mixed;
-                    }
-                }
-            }
-        }
-
-        result.virtuals.push_back(best);
-    }
-
+    // Synthesize the virtuals against the picked physical set.
+    AssignmentEval ev = evaluate_assignment(inputs, physicals);
+    result.virtuals = std::move(ev.virtuals);
+    result.total_overflow_delta_e = ev.total_delta_e;
     return result;
 }
 

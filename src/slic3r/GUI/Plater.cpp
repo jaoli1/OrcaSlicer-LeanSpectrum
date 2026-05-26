@@ -20293,6 +20293,116 @@ void Plater::on_filaments_delete(size_t num_filaments, size_t filament_id, int r
 }
 
 
+// LeanSpectrum: Bambu .3mf -> Snapmaker U1 palette conversion entry point.
+// Reads filament_colour / filament_type from project_config, runs the
+// BambuConvert assignment algorithm, reduces the palette to the 4 U1
+// physical slots, and writes the FullSpectrum overflow recipes into
+// project_config["bambu_convert_recipe"]. Triggered from the File menu
+// item added in MainFrame.cpp.
+bool Plater::convert_bambu_to_u1()
+{
+    auto &project_config = wxGetApp().preset_bundle->project_config;
+
+    if (const auto *prior = project_config.option<ConfigOptionString>("bambu_convert_recipe");
+        prior != nullptr && !prior->value.empty()) {
+        ::wxMessageBox(_L("The current project's palette has already been converted to Snapmaker U1. "
+                          "Reset the bambu_convert_recipe config option to re-run the conversion."),
+                       _L("Bambu \xe2\x86\x92 U1 conversion"),
+                       wxOK | wxICON_INFORMATION);
+        return false;
+    }
+
+    const auto *colors_opt = project_config.option<ConfigOptionStrings>("filament_colour");
+    const auto *types_opt  = project_config.option<ConfigOptionStrings>("filament_type");
+    if (colors_opt == nullptr || colors_opt->values.size() <= 4) {
+        ::wxMessageBox(_L("This project has 4 or fewer filaments — no Bambu \xe2\x86\x92 U1 "
+                          "conversion is needed (the Snapmaker U1 has 4 physical extruders)."),
+                       _L("Bambu \xe2\x86\x92 U1 conversion"),
+                       wxOK | wxICON_INFORMATION);
+        return false;
+    }
+
+    // Confirm with the user before mutating the preset.
+    wxString summary = wxString::Format(
+        _L("Convert this project's %zu-color palette to the Snapmaker U1's 4 physical extruders?\n\n"
+           "Colors beyond the first 4 will be synthesised as FullSpectrum virtual filaments using "
+           "two-physical mixes at runtime. The original palette is replaced — undo or reset "
+           "the recipe to revert."),
+        colors_opt->values.size());
+    if (::wxMessageBox(summary, _L("Bambu \xe2\x86\x92 U1 conversion"),
+                       wxYES_NO | wxICON_QUESTION) != wxYES)
+        return false;
+
+    std::vector<BambuConvert::InputFilament> inputs;
+    inputs.reserve(colors_opt->values.size());
+    for (size_t i = 0; i < colors_opt->values.size(); ++i) {
+        BambuConvert::InputFilament in;
+        in.color_hex = colors_opt->values[i];
+        in.used_mm   = 1.0; // no slice info at the project level — flat usage
+        in.type      = (types_opt != nullptr && i < types_opt->values.size())
+            ? types_opt->values[i] : std::string("PLA");
+        inputs.push_back(std::move(in));
+    }
+
+    // Strategy selection: ask the user which to use. Chromatic is more
+    // expensive but gives a better visual match on isolated colors.
+    wxString strat_msg = _L("Pick the physical-slot assignment strategy:\n\n"
+                            "Yes — Chromatic (slower, minimises perceptual color mismatch)\n"
+                            "No — Usage (fast, top-4 by extrusion length)");
+    BambuConvert::Strategy strategy = (::wxMessageBox(strat_msg,
+        _L("Bambu \xe2\x86\x92 U1 conversion"), wxYES_NO | wxICON_QUESTION) == wxYES)
+        ? BambuConvert::Strategy::Chromatic
+        : BambuConvert::Strategy::Usage;
+
+    BambuConvert::ConvertResult result =
+        BambuConvert::convert_filament_list(inputs, strategy);
+
+    // Reorder the preset_bundle so the 4 physicals come first, in slot order.
+    std::vector<std::string> new_colors;
+    std::vector<std::string> new_types;
+    new_colors.reserve(result.physical_count);
+    new_types.reserve(result.physical_count);
+    for (size_t i = 0; i < result.physical_count; ++i) {
+        const size_t idx = result.physical_indices[i];
+        new_colors.push_back(inputs[idx].color_hex);
+        new_types.push_back(inputs[idx].type);
+    }
+
+    wxGetApp().preset_bundle->set_num_filaments(result.physical_count,
+        new_colors.empty() ? std::string("#FFFFFF") : new_colors.front());
+    project_config.set_key_value("filament_colour", new ConfigOptionStrings(new_colors));
+    project_config.set_key_value("filament_type",   new ConfigOptionStrings(new_types));
+
+    // Encode virtuals into bambu_convert_recipe (semicolon-separated entries).
+    std::ostringstream recipe;
+    for (size_t i = 0; i < result.virtuals.size(); ++i) {
+        if (i) recipe << ";";
+        const auto &v = result.virtuals[i];
+        recipe.precision(4);
+        recipe << "target=" << BambuConvert::format_srgb_hex(v.target)
+               << ",a=" << v.physical_a
+               << ",b=" << v.physical_b
+               << ",ratio_a=" << v.ratio_a
+               << ",achieved=" << BambuConvert::format_srgb_hex(v.achieved)
+               << ",de=" << v.delta_e;
+    }
+    project_config.set_key_value("bambu_convert_recipe", new ConfigOptionString(recipe.str()));
+
+    // Refresh the GUI.
+    on_filaments_change(result.physical_count);
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
+    force_filament_colors_update();
+
+    wxString done = wxString::Format(
+        _L("Conversion complete: %zu physical filaments, %zu virtual FullSpectrum recipes "
+           "(sum perceptual mismatch \xce\x94E = %.2f)."),
+        result.physical_count, result.virtuals.size(), result.total_overflow_delta_e);
+    ::wxMessageBox(done, _L("Bambu \xe2\x86\x92 U1 conversion"),
+                   wxOK | wxICON_INFORMATION);
+    return true;
+}
+
+
 // BBS.
 void Plater::on_filaments_change(size_t num_filaments)
 {

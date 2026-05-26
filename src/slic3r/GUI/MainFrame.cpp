@@ -2452,6 +2452,18 @@ void MainFrame::init_menubar_as_editor()
 
         fileMenu->AppendSeparator();
 
+        // LeanSpectrum: Bambu Lab .3mf -> Snapmaker U1 palette conversion.
+        // Triggered manually by the user after importing a Bambu project; not
+        // auto-fired so the existing import path stays unchanged.
+        append_menu_item(fileMenu, wxID_ANY,
+            _L("Convert Bambu palette to Snapmaker U1") + dots,
+            _L("Map the project's filament palette onto the U1's 4 physical extruders, "
+               "synthesising FullSpectrum virtual filaments for any overflow."),
+            [this](wxCommandEvent&) { if (m_plater) m_plater->convert_bambu_to_u1(); },
+            "", nullptr,
+            [this](){ return m_plater != nullptr; }, this);
+        fileMenu->AppendSeparator();
+
         // BBS
         wxMenu *import_menu = new wxMenu();
 #ifndef __APPLE__

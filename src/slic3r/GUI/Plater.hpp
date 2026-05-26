@@ -492,6 +492,16 @@ public:
 
     void on_filaments_change(size_t extruders_count);
     void on_filaments_delete(size_t extruders_count, size_t filament_id, int replace_filament_id = -1);
+
+    // LeanSpectrum: Bambu .3mf -> Snapmaker U1 palette conversion.
+    // Reads the current filament_colour / filament_type from the project
+    // config, runs BambuConvert::convert_filament_list, reduces the
+    // palette to the 4 U1 physical extruders, and writes the overflow
+    // FullSpectrum recipes into project_config["bambu_convert_recipe"].
+    // Returns true if a conversion was applied. Shows a status message
+    // on success / failure (refused if already converted or fewer than
+    // 5 inputs to convert).
+    bool convert_bambu_to_u1();
     bool confirm_auto_generated_gradients(size_t num_physical);
     void set_auto_generated_gradient_decision(size_t num_physical, bool create_auto_gradients);
     // BBS

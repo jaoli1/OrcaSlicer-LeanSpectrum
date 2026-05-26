@@ -209,6 +209,8 @@ set(lisbslic3r_sources
     GCode/ExtrusionProcessor.hpp
     GCode/FanMover.cpp
     GCode/FanMover.hpp
+    GCode/FilamentEconomy.cpp
+    GCode/FilamentEconomy.hpp
     GCode/GCodeProcessor.cpp
     GCode/GCodeProcessor.hpp
     GCode.hpp

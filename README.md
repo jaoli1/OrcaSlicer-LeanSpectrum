@@ -1,9 +1,23 @@
 
-<h1> <p "font-size:200px;"> Snapmaker Orca FullSpectrum</p> </h1>
+<h1> <p "font-size:200px;"> LeanSpectrum</p> </h1>
+
+### A Snapmaker Orca FullSpectrum fork with post-slicing filament economy
+
+[![Build all](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/actions/workflows/build_all.yml/badge.svg?branch=main)](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/actions/workflows/build_all.yml)
+
+> **LeanSpectrum** extends [Snapmaker Orca FullSpectrum](https://github.com/ratdoux/OrcaSlicer-FullSpectrum)
+> with a native C++ post-slicing module that reduces filament waste on the Snapmaker U1
+> when printing with FullSpectrum mixed-color filaments. See
+> [doc/filament-economy/ARCHITECTURE.md](doc/filament-economy/ARCHITECTURE.md) for the design.
+
+---
+
+<details>
+<summary>Upstream Snapmaker Orca FullSpectrum README (unchanged below)</summary>
+
+# Snapmaker Orca FullSpectrum
 
 ### A Snapmaker Orca Fork with Mixed-Color Filament Support
-
-[![Build all](https://github.com/Snapmaker/OrcaSlicer/actions/workflows/build_all.yml/badge.svg?branch=main)](https://github.com/Snapmaker/OrcaSlicer/actions/workflows/build_all.yml)
 
 ---
 
@@ -153,6 +167,9 @@ These settings give you precise control over how your mixed colors appear in the
       - menu bar: Product => Scheme => Edit Scheme...
           - Run => Info tab => Build Configuration: `RelWithDebInfo`
           - Run => Options tab => Document Versions: uncheck `Allow debugging when browsing versions`
+
+</details>
+
       - menu bar: Product => Run
 
 - Ubuntu 

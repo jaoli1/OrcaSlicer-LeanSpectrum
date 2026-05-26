@@ -4146,6 +4146,57 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionStrings());
 
+    // ---------------------------------------------------------------------
+    // LeanSpectrum filament economy settings
+    // See doc/filament-economy/ARCHITECTURE.md for a full description of the
+    // optimization passes and their expected savings.
+    // ---------------------------------------------------------------------
+    def = this->add("filament_economy_enable", coBool);
+    def->label = L("Enable filament economy");
+    def->category = L("Multi-material");
+    def->tooltip = L("Master switch for the LeanSpectrum post-slicing filament economy module. "
+                     "When enabled, the produced G-code is analyzed and rewritten to reduce wasted "
+                     "filament in multi-color prints on the Snapmaker U1. Has no effect on single-material prints.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("filament_economy_remove_noop_swaps", coBool);
+    def->label = L("Remove no-op tool changes");
+    def->category = L("Multi-material");
+    def->tooltip = L("Detect and remove tool-change commands that resolve to the same physical extruder "
+                     "as the currently active one. Common in FullSpectrum mixed-color prints where consecutive "
+                     "layers may share a physical filament after bias/dithering resolution.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("filament_economy_shrink_purge", coBool);
+    def->label = L("Shrink purge volumes");
+    def->category = L("Multi-material");
+    def->tooltip = L("Reduce purge / wipe-tower extrusion when the previous use of the target extruder "
+                     "was recent enough that the nozzle did not cool significantly. The reduction is bounded "
+                     "by the percentage below.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("filament_economy_shrink_purge_pct", coInt);
+    def->label = L("Max purge reduction");
+    def->category = L("Multi-material");
+    def->tooltip = L("Maximum percentage by which a single purge can be reduced when the previous extrusion "
+                     "of the same filament was recent.");
+    def->sidetext = "%";
+    def->min = 0;
+    def->max = 100;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(30));
+
+    def = this->add("filament_economy_merge_travel", coBool);
+    def->label = L("Merge travel around swaps");
+    def->category = L("Multi-material");
+    def->tooltip = L("Collapse redundant retract / un-retract sequences and consecutive travel moves around "
+                     "kept tool changes. Experimental — disabled by default.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("mixed_color_layer_height_a", coFloat);
     def->label = L("Dithering cadence height A");
     def->category = L("Others");

@@ -42,7 +42,9 @@ pub enum Error {
 }
 
 impl serde::Serialize for Error {
-    fn serialize<S: serde::Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+    // Use the std path explicitly: the crate-local `Result<T>` alias below
+    // is one-arg and would shadow the trait's two-arg `Result<Ok, Err>`.
+    fn serialize<S: serde::Serializer>(&self, ser: S) -> std::result::Result<S::Ok, S::Error> {
         ser.serialize_str(self.to_string().as_str())
     }
 }

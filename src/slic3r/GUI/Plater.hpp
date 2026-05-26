@@ -502,6 +502,13 @@ public:
     // on success / failure (refused if already converted or fewer than
     // 5 inputs to convert).
     bool convert_bambu_to_u1();
+
+    // LeanSpectrum: one-click intent-driven profile generator. Opens a
+    // small dialog (Draft / Standard / High Quality / Strength /
+    // Decorative), then applies the corresponding AutoProfile bundle on
+    // top of the current print preset, with material-aware refinements
+    // derived from the active filament_type. Returns true if applied.
+    bool auto_generate_profile();
     bool confirm_auto_generated_gradients(size_t num_physical);
     void set_auto_generated_gradient_decision(size_t num_physical, bool create_auto_gradients);
     // BBS

@@ -72,6 +72,7 @@
 #include "libslic3r/Format/AMF.hpp"
 //#include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/Format/bbs_3mf.hpp"
+#include "libslic3r/AutoProfile.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/SLA/Hollowing.hpp"
@@ -20431,6 +20432,84 @@ bool Plater::convert_bambu_to_u1()
         result.physical_count, result.virtuals.size(),
         strat_name, result.total_overflow_delta_e, loser_de);
     ::wxMessageBox(done, _L("Bambu \xe2\x86\x92 U1 conversion"),
+                   wxOK | wxICON_INFORMATION);
+    return true;
+}
+
+// LeanSpectrum: auto-profile generator. Maps one of five high-level user
+// intents (Draft / Standard / High quality / Strength / Decorative) onto
+// a curated bundle of print-settings overrides, with material-aware
+// refinements derived from the active filament_type. The point is to
+// give non-expert users a one-click way to get a reasonable U1 result
+// without having to learn ~200 individual settings.
+//
+// See src/libslic3r/AutoProfile.hpp for the value tables and rationale.
+bool Plater::auto_generate_profile()
+{
+    // Build the choice list shown in the dialog. Order matches the
+    // AutoProfile::Intent enum so we can index directly into it.
+    const wxString choices[] = {
+        _L("Draft / Fast \xe2\x80\x94 thick layer, single wall, low infill"),
+        _L("Standard / Balanced \xe2\x80\x94 sensible default for everyday prints"),
+        _L("High quality / Detail \xe2\x80\x94 small layer, scarf seam, slow outer wall"),
+        _L("Strength / Functional \xe2\x80\x94 many walls, dense gyroid infill"),
+        _L("Decorative / Display \xe2\x80\x94 lightning infill, scarf seam, smooth surfaces"),
+    };
+    constexpr int n = sizeof(choices) / sizeof(choices[0]);
+
+    int selection = ::wxGetSingleChoiceIndex(
+        _L("Pick an intent for the auto-generated profile. Settings will be applied "
+           "on top of the active print preset and refined per the active filament's "
+           "polymer family."),
+        _L("Auto-generate profile"),
+        n, choices, this);
+    if (selection < 0 || selection >= n)
+        return false;
+
+    auto intent = static_cast<AutoProfile::Intent>(selection);
+
+    // Apply on the project's print config. AutoProfile reads filament_type
+    // out of it and picks the right Polymer-specific refinements.
+    auto &print_config = wxGetApp().preset_bundle->prints.get_edited_preset().config;
+    // Mirror the filament_type list into print_config temporarily so
+    // AutoProfile's auto-detection picks the right polymer. (PresetBundle
+    // tracks filament types on its filaments collection, not on prints.)
+    std::vector<std::string> filament_types;
+    for (const std::string &preset_name : wxGetApp().preset_bundle->filament_presets) {
+        std::string t = "PLA";
+        if (auto *p = wxGetApp().preset_bundle->filaments.find_preset(preset_name))
+            p->get_filament_type(t);
+        filament_types.push_back(t);
+    }
+    if (!filament_types.empty())
+        print_config.set_key_value("filament_type",
+                                   new ConfigOptionStrings(filament_types));
+
+    std::vector<std::string> notes = AutoProfile::apply(print_config, intent);
+
+    // Push the override down to the actual print preset so the GUI tabs
+    // pick it up. The dirty marker also lights up so the user knows the
+    // preset diverged from its base.
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->load_config(print_config);
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->update_dirty();
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
+
+    // Show the user a tidy summary of what changed.
+    wxString summary;
+    summary << _L("Auto-profile applied:") << "\n\n";
+    size_t emitted = 0;
+    for (const std::string &note : notes) {
+        summary << "  \xe2\x80\xa2 " << note << "\n";
+        if (++emitted >= 14) {
+            summary << "  \xe2\x80\xa6 (" << (notes.size() - emitted)
+                    << " more)\n";
+            break;
+        }
+    }
+    summary << "\n"
+            << _L("These overrides live on the print preset. Use \"Reset to "
+                  "default\" on a setting if you want to revert.");
+    ::wxMessageBox(summary, _L("Auto-generate profile"),
                    wxOK | wxICON_INFORMATION);
     return true;
 }

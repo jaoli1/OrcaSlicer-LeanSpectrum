@@ -1,20 +1,16 @@
 //! Tesseract OCR fallback for scanned PDFs.
 //!
-//! We do not bundle Tesseract. The user installs it via their package
-//! manager (brew / winget / apt). This module renders each PDF page to a
-//! temporary PNG (via pdfium when available, otherwise a placeholder
-//! rasterisation through the `image` crate), then feeds the PNGs through
-//! Tesseract with the user's preferred languages.
+//! Compiled in only when the `ocr` feature is enabled. Without the feature,
+//! `run()` returns a clear error pointing users to the rebuild instructions.
+//! We do not bundle Tesseract: when the feature IS enabled, the user
+//! installs the system Tesseract binary plus its trained-data files via
+//! their package manager (brew / winget / apt).
 
 use std::path::{Path, PathBuf};
 
 use crate::{Error, Result};
 
-/// Run OCR on every page of the PDF and concatenate the recognised text.
-///
-/// Languages requested by default: `fra+eng`. Tesseract will error out if
-/// either trained-data file is missing; the caller surfaces that to the UI
-/// so the user installs the right `tesseract-ocr-fra` / `-eng` package.
+#[cfg(feature = "ocr")]
 pub fn run(pdf_path: &Path) -> Result<String> {
     let pages = rasterise_pages(pdf_path)?;
     if pages.is_empty() {
@@ -43,15 +39,27 @@ pub fn run(pdf_path: &Path) -> Result<String> {
     Ok(joined)
 }
 
+#[cfg(not(feature = "ocr"))]
+pub fn run(_pdf_path: &Path) -> Result<String> {
+    Err(Error::Ocr(
+        "OCR fallback not compiled in. Rebuild with `cargo tauri build --features ocr` \
+         after installing the system Tesseract and Leptonica libraries (brew/apt/vcpkg)."
+            .into(),
+    ))
+}
+
+#[cfg(feature = "ocr")]
 fn ocr_one(image_path: &Path, langs: &str) -> Result<String> {
     let mut t = tesseract::Tesseract::new(None, Some(langs))
-        .map_err(|e| Error::Ocr(format!("Tesseract init failed ({e}). Is tesseract installed and are the language files present?")))?;
+        .map_err(|e| Error::Ocr(format!(
+            "Tesseract init failed ({e}). Is tesseract installed and are the language files present?"
+        )))?;
     t = t.set_image(image_path.to_str().ok_or_else(|| Error::Ocr("non-utf8 path".into()))?)
         .map_err(|e| Error::Ocr(format!("set_image: {e}")))?;
     t.get_text().map_err(|e| Error::Ocr(format!("get_text: {e}")))
 }
 
-#[cfg(feature = "pdfium")]
+#[cfg(all(feature = "ocr", feature = "pdfium"))]
 fn rasterise_pages(pdf_path: &Path) -> Result<Vec<PathBuf>> {
     use pdfium_render::prelude::*;
     let pdfium = Pdfium::default();
@@ -78,9 +86,9 @@ fn rasterise_pages(pdf_path: &Path) -> Result<Vec<PathBuf>> {
     Ok(out)
 }
 
-#[cfg(not(feature = "pdfium"))]
+#[cfg(all(feature = "ocr", not(feature = "pdfium")))]
 fn rasterise_pages(_pdf_path: &Path) -> Result<Vec<PathBuf>> {
     Err(Error::Ocr(
-        "pdfium feature disabled; rebuild with --features pdfium to enable OCR on scanned PDFs".into(),
+        "pdfium feature disabled; rebuild with --features pdfium,ocr to enable OCR on scanned PDFs".into(),
     ))
 }

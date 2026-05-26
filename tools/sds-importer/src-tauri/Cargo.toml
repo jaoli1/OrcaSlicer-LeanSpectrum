@@ -32,10 +32,12 @@ dirs         = "5"
 # PDF text extraction (born-digital documents).
 pdf-extract  = "0.7"
 
-# Tesseract OCR — fallback for scanned PDFs.
-# tesseract crate calls the system tesseract binary; we do not statically
-# link the lib so users keep upgrade control over their OCR engine.
-tesseract    = { version = "0.15", default-features = false }
+# Tesseract OCR — fallback for scanned PDFs. Optional because the
+# leptonica-sys + tesseract-sys system dependencies are non-trivial to
+# install across CI runners (apt vs brew vs vcpkg). Most vendor SDS/TDS are
+# born-digital, so prebuilt binaries ship without OCR and users who need it
+# rebuild with `cargo tauri build --features ocr`.
+tesseract    = { version = "0.15", default-features = false, optional = true }
 
 # Image conversion (PDF page -> PNG -> OCR).
 image        = "0.25"
@@ -50,6 +52,9 @@ default = ["pdfium"]
 # Use pdfium for higher-fidelity PDF rendering before OCR. Falls back to
 # pdf-extract text path when disabled.
 pdfium  = ["dep:pdfium-render"]
+# OCR via the system Tesseract install. Adds a system-library compile
+# dependency on leptonica.
+ocr     = ["dep:tesseract"]
 
 [profile.release]
 codegen-units = 1

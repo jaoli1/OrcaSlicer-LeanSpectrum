@@ -114,7 +114,42 @@ TEST_CASE("Adjacent same-tool changes are removed", "[FilamentEconomy]")
     REQUIRE(stats.modified == true);
 
     // The marker comment our Pass 1 leaves behind should be present.
-    REQUIRE_THAT(gc.read(), Catch::Matchers::Contains("LeanSpectrum: removed no-op T1"));
+    // (The wipe-tower-block refinement may format it as "removed no-op tool change (T1)"
+    // or "removed no-op wipe block (...)" depending on surrounding markers.)
+    REQUIRE_THAT(gc.read(), Catch::Matchers::Contains("LeanSpectrum: removed"));
+}
+
+TEST_CASE("Pass 1: removes the orphan wipe-tower block around a no-op T", "[FilamentEconomy]")
+{
+    // A CP TOOLCHANGE block targeting T0 while T0 is already active is a
+    // no-op. The refined Pass 1 should neutralise the WHOLE block (the
+    // T<n> + the surrounding purge geometry) so we save the extrusion
+    // inside it.
+    const std::string gcode =
+        "M83\n"
+        "T0\n"
+        "G1 X10 Y0 E1 F1200\n"
+        "; CP TOOLCHANGE START\n"
+        "T0\n"
+        "G1 X40 Y10 E2 F1500\n"
+        "G1 X50 Y10 E2 F1500\n"
+        "G1 X60 Y10 E2 F1500\n"
+        "; CP TOOLCHANGE END\n"
+        "G1 X70 Y20 E1 F1200\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.remove_noop_swaps = true;
+    s.curvature_lh      = false;
+    s.shrink_purge      = false;
+    s.merge_travel      = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE(stats.swaps_removed == 1);
+    // 3 purge segments * 2 mm each = 6 mm of filament reclaimed.
+    REQUIRE(stats.extrusion_saved_mm > 5.5);
+    REQUIRE(stats.extrusion_saved_mm < 6.5);
+    REQUIRE(stats.modified == true);
+    // Block lines all turned into LeanSpectrum comments.
+    REQUIRE_THAT(gc.read(), Catch::Matchers::Contains("removed no-op wipe block"));
 }
 
 TEST_CASE("Disabled module never modifies the file", "[FilamentEconomy]")

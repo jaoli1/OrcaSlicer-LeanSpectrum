@@ -91,6 +91,12 @@ enum class FeatureType : uint8_t {
     Travel,
 };
 
+// Forward declarations for helpers defined later in this anonymous namespace
+// but used by passes that appear earlier (Pass 1's wipe-tower cleanup needs
+// these — they were originally added for Pass 2).
+bool line_starts_toolchange_block(const std::string &raw);
+bool line_ends_toolchange_block(const std::string &raw);
+
 double feature_cap(FeatureType f)
 {
     switch (f) {
@@ -431,28 +437,87 @@ void verification_pass(Parsed &p, Stats &stats, const Settings &s)
     }
 }
 
-// Pass 1 — remove no-op tool changes.
+// Pass 1 — remove no-op tool changes AND their orphan wipe-tower block.
+//
+// A "no-op swap" is a `T<n>` that re-selects the currently active extruder.
+// Just commenting out the T<n> line leaves the surrounding wipe-tower
+// segment in place — the head still purges plastic, undoing the whole
+// point of the optimisation. The refined version walks outward from the
+// removed T to find the enclosing `CP TOOLCHANGE START..END` block (or
+// `WIPE_TOWER_START..END` equivalent) and comments out every line in it.
+//
+// Tracks two stats:
+//   stats.swaps_removed   — how many T<n> lines we neutralised
+//   stats.extrusion_saved_mm — total positive-E in the removed wipe blocks
 size_t pass_noop_swaps(Parsed &p, Stats &stats)
 {
-    size_t removed = 0;
-    int    current = -1;
-    for (Line &l : p.lines) {
+    auto comment_out = [](Line &l, const char *tag) {
+        // Preserve original text in the marker for debugging.
+        std::string trimmed = l.raw;
+        if (trimmed.size() > 80) trimmed.resize(80);
+        l.raw = std::string("; LeanSpectrum: removed ") + tag + " (" + trimmed + ")";
+        l.is_tool_change = false;
+        l.is_retract     = false;
+        l.is_unretract   = false;
+        l.is_extrusion   = false;
+        l.is_travel      = false;
+    };
+
+    size_t swap_count = 0;
+    double saved_mm   = 0.0;
+    int    current    = -1;
+    for (size_t i = 0; i < p.lines.size(); ++i) {
+        Line &l = p.lines[i];
         if (!l.is_tool_change)
             continue;
         if (current == -1) {
             current = l.tool;
             continue;
         }
-        if (l.tool == current) {
-            l.raw = "; LeanSpectrum: removed no-op T" + std::to_string(l.tool);
-            l.is_tool_change = false;
-            ++removed;
-        } else {
+        if (l.tool != current) {
             current = l.tool;
+            continue;
         }
+
+        // Found a no-op. Look outward for the enclosing wipe-tower block.
+        // Search backward up to 80 lines for a START marker (typical
+        // wipe-tower epilogue prologue is a few dozen lines).
+        size_t block_start = i;
+        size_t back_limit  = (i > 80) ? (i - 80) : 0;
+        for (size_t b = i; b-- > back_limit; ) {
+            if (line_starts_toolchange_block(p.lines[b].raw)) {
+                block_start = b;
+                break;
+            }
+        }
+        // Forward to END.
+        size_t block_end   = i;
+        size_t fwd_limit   = std::min(p.lines.size(), i + 200);
+        for (size_t f = i + 1; f < fwd_limit; ++f) {
+            if (line_ends_toolchange_block(p.lines[f].raw)) {
+                block_end = f;
+                break;
+            }
+        }
+
+        if (block_start < i && block_end > i) {
+            // Sum positive E inside the block before neutralising.
+            for (size_t k = block_start + 1; k < block_end; ++k) {
+                const Line &lk = p.lines[k];
+                if (lk.is_g1 && lk.has_e && lk.e > 0.0 && lk.is_extrusion)
+                    saved_mm += lk.e;
+            }
+            for (size_t k = block_start; k <= block_end; ++k)
+                comment_out(p.lines[k], "no-op wipe block");
+        } else {
+            // No surrounding block found — just neutralise the T<n> line.
+            comment_out(l, "no-op tool change");
+        }
+        ++swap_count;
     }
-    stats.swaps_removed += removed;
-    return removed;
+    stats.swaps_removed      += swap_count;
+    stats.extrusion_saved_mm += saved_mm;
+    return swap_count;
 }
 
 double angle_between(double ax, double ay, double bx, double by)
@@ -576,8 +641,6 @@ size_t pass_curvature_lh(Parsed &p, Stats &stats, const Settings &s)
 // primed correctly.
 // ---------------------------------------------------------------------------
 
-namespace {
-
 // Estimate wall-clock time consumed by a single G1 motion line using the
 // modal feedrate carried alongside it (mm/min). We do not model
 // acceleration; the resulting clock is rough but consistent across the file,
@@ -611,8 +674,6 @@ bool line_ends_toolchange_block(const std::string &raw)
 }
 
 constexpr size_t kMaxExtruders = 16;
-
-} // namespace
 
 size_t pass_shrink_purge(Parsed &p, Stats &stats, int max_pct)
 {

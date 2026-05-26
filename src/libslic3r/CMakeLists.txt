@@ -180,6 +180,8 @@ set(lisbslic3r_sources
     Format/AMF.hpp
     Format/bbs_3mf.cpp
     Format/bbs_3mf.hpp
+    Format/BambuConvert.cpp
+    Format/BambuConvert.hpp
     format.hpp
     Format/OBJ.cpp
     Format/OBJ.hpp

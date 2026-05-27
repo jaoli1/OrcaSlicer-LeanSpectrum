@@ -39,7 +39,8 @@ walls, infill, speeds, cooling, ...). The closest equivalent is the
 manual Temperature Tower workflow, which is too narrow to count.
 
 This is the design space LeanSpectrum landed an original feature in
-([AutoProfile](../../src/libslic3r/AutoProfile.hpp), May 2026).
+([AutoProfile](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/blob/feature/filament-economy/src/libslic3r/AutoProfile.hpp),
+May 2026).
 
 ## Ranked adoption candidates
 
@@ -96,7 +97,8 @@ Sourced from:
 | Prime tower brim | 3-8 mm (10+ for tall, 1.5-2× model brim for PETG/ABS) | Forum + wiki |
 | Z-hop type | **Normal, per-extruder** (NOT "Auto") | Mandatory on U1 IDEX per community guide |
 
-These numbers are baked into [AutoProfile.cpp](../../src/libslic3r/AutoProfile.cpp)
+These numbers are baked into
+[AutoProfile.cpp](https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/blob/feature/filament-economy/src/libslic3r/AutoProfile.cpp)
 (intent + polymer refine tables) so the one-click flow lands on values
 the U1 hardware was actually validated against.
 
@@ -135,4 +137,4 @@ big wins are already merged:
 All inspected forks are AGPL-3.0 (inherited from OrcaSlicer / Bambu
 Studio / PrusaSlicer / Slic3r). Re-derivative work in LeanSpectrum must
 retain AGPL-3.0 and credit the prior fork authors in commit messages
-and in [doc/THIRD_PARTY.md](../THIRD_PARTY.md) (TBD).
+and in the consolidated CHANGELOG_LEANSPECTRUM.md (at repo root).

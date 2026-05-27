@@ -20438,14 +20438,18 @@ bool Plater::convert_bambu_to_u1()
         if (v < 1000) return wxString::Format("%.0f", v);
         return wxString::Format("%.1fk", v / 1000.0);
     };
+    // MSVC parses \xCEx94E as a single hex escape (= 0x94E, out of byte
+    // range). Split each Δ-followed-by-E with a literal break so each
+    // \xNN escape consumes exactly two hex digits. The strings are still
+    // concatenated at compile time.
     wxString done = wxString::Format(
         _L("Conversion complete: %zu physical filaments, %zu virtual FullSpectrum recipes.\n\n"
-           "Picked: %s  (lowest weighted \xce\x94E)\n\n"
-           "                  raw \xce\x94E    weighted\n"
+           "Picked: %s  (lowest weighted \xce\x94" "E)\n\n"
+           "                  raw \xce\x94" "E    weighted\n"
            "  Usage:        %6.2f      %s\n"
            "  Chromatic:    %6.2f      %s\n"
            "  Balanced:     %6.2f      %s\n\n"
-           "Weighted = sum(\xce\x94E \xc3\x97 filament_used_mm), correlates with how "
+           "Weighted = sum(\xce\x94" "E \xc3\x97 filament_used_mm), correlates with how "
            "visibly wrong the print looks.\n"
            "Floyd-Steinberg dither activated for the FullSpectrum virtuals."),
         result.physical_count, result.virtuals.size(),

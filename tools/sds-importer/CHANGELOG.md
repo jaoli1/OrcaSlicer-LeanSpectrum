@@ -1,8 +1,38 @@
 # Changelog
 
-All notable changes to the LeanSpectrum SDS / TDS Importer are documented
-here. The format follows [Keep a Changelog](https://keepachangelog.com/);
-versions follow [SemVer](https://semver.org/).
+All notable changes to the **Custom Filament Profile Creator** (formerly
+"LeanSpectrum SDS Importer") are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/); versions follow
+[SemVer](https://semver.org/).
+
+> The directory `tools/sds-importer/` is retained for git-history
+> continuity but the product, binary, and bundle identifiers are now
+> `Custom Filament Profile Creator` (FR: *Créateur de profils filament
+> adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
+> still triggers the workflow for backward compatibility).
+
+## [0.1.2] — rename: Custom Filament Profile Creator
+
+What changed:
+- Product name **LeanSpectrum SDS Importer → Custom Filament Profile
+  Creator** (FR display: *Créateur de profils filament adaptés*) — the
+  new name reflects what the user actually gets: a Snapmaker_Orca
+  filament profile *tailored* to the specific vendor filament, not just
+  a generic SDS importer.
+- Cargo package `leanspectrum-sds-importer → custom-filament-profile-creator`
+- Tauri identifier `fork.leanspectrum.sds-importer → fork.leanspectrum.profile-creator`
+- Tauri lib name `leanspectrum_sds_importer_lib → custom_filament_profile_creator_lib`
+- npm package name + node-side workflow renamed to match
+- Window title + bundle product name updated
+- CI workflow trigger accepts both `profile-creator-v*` (new canonical)
+  and `sds-importer-v*` (legacy)
+
+Functional behaviour: unchanged from 0.1.1. Same SDS / TDS parser, same
+output profile schema, same OCR fallback, same vendor catalog crawler.
+
+The 0.1.0 and 0.1.1 release tags never published due to the icon bug
+chain (fixed in 0.1.1's `bundle.icon` array). 0.1.2 is the first
+publicly downloadable build.
 
 ## [0.1.1] — Windows bundle fix
 

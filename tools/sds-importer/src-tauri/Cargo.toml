@@ -1,14 +1,14 @@
 [package]
-name        = "leanspectrum-sds-importer"
-version     = "0.1.1"
+name        = "custom-filament-profile-creator"
+version     = "0.1.2"
 edition     = "2021"
-description = "Turns filament SDS/TDS PDFs into Snapmaker_Orca filament profiles"
+description = "Creates Snapmaker_Orca filament profiles tailored to each vendor's SDS/TDS PDF"
 license     = "AGPL-3.0-or-later"
 authors     = ["LeanSpectrum contributors"]
 publish     = false
 
 [lib]
-name       = "leanspectrum_sds_importer_lib"
+name       = "custom_filament_profile_creator_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

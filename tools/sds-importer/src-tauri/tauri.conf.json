@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
-  "productName": "LeanSpectrum SDS Importer",
-  "version": "0.1.1",
-  "identifier": "fork.leanspectrum.sds-importer",
+  "productName": "Custom Filament Profile Creator",
+  "version": "0.1.2",
+  "identifier": "fork.leanspectrum.profile-creator",
   "build": {
     "frontendDist": "../frontend",
     "devUrl": "http://localhost:1430",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "LeanSpectrum SDS Importer",
+        "title": "Custom Filament Profile Creator",
         "width": 920,
         "height": 680,
         "minWidth": 720,
@@ -38,8 +38,8 @@
       "icons/128x128@2x.png"
     ],
     "category": "DeveloperTool",
-    "shortDescription": "Filament SDS/TDS -> Snapmaker_Orca profile",
-    "longDescription": "Reads a manufacturer Safety or Technical Data Sheet PDF, extracts the relevant chemistry and printing parameters, and writes a ready-to-use filament profile into the Snapmaker_Orca user directory."
+    "shortDescription": "Filament SDS/TDS PDF -> tailored Snapmaker_Orca profile",
+    "longDescription": "Reads a manufacturer Safety or Technical Data Sheet PDF, extracts the relevant chemistry and printing parameters, and creates a Snapmaker_Orca filament profile tailored to the specific filament — ready to import. Companion app to LeanSpectrum."
   },
   "plugins": {}
 }

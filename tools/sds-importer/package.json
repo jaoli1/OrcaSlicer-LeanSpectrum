@@ -1,7 +1,7 @@
 {
-  "name": "leanspectrum-sds-importer",
-  "version": "0.1.0",
-  "description": "Companion app that turns filament SDS/TDS PDFs into Snapmaker_Orca profiles",
+  "name": "custom-filament-profile-creator",
+  "version": "0.1.2",
+  "description": "Companion app that creates Snapmaker_Orca filament profiles tailored to each vendor's SDS/TDS PDF",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "_note": "No build step needed — the frontend uses window.__TAURI__ globals (withGlobalTauri: true). To develop locally, install tauri-cli via `cargo install tauri-cli` then run `cargo tauri dev` from this directory."

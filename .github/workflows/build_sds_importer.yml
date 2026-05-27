@@ -1,4 +1,4 @@
-name: SDS Importer
+name: Custom Filament Profile Creator
 
 on:
   push:
@@ -9,6 +9,9 @@ on:
       - 'tools/sds-importer/**'
       - '.github/workflows/build_sds_importer.yml'
     tags:
+      # New canonical tag (post-rename, v0.1.2+).
+      - 'profile-creator-v*'
+      # Legacy tag prefix retained so historical tag pushes still build.
       - 'sds-importer-v*'
   pull_request:
     paths:
@@ -63,7 +66,7 @@ jobs:
   build-release:
     name: Build release (${{ matrix.os }})
     needs: test
-    if: startsWith(github.ref, 'refs/tags/sds-importer-v')
+    if: startsWith(github.ref, 'refs/tags/profile-creator-v') || startsWith(github.ref, 'refs/tags/sds-importer-v')
     strategy:
       fail-fast: false
       matrix:
@@ -131,7 +134,7 @@ jobs:
   publish-release:
     name: Publish GitHub release
     needs: build-release
-    if: startsWith(github.ref, 'refs/tags/sds-importer-v')
+    if: startsWith(github.ref, 'refs/tags/profile-creator-v') || startsWith(github.ref, 'refs/tags/sds-importer-v')
     runs-on: ubuntu-latest
     permissions:
       contents: write

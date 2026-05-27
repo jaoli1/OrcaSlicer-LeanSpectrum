@@ -11,7 +11,11 @@
   --border-hi:  #2c3947;
   --text:       #e6edf3;
   --text-soft:  #8b949e;
-  --text-dim:   #5a6370;
+  /* WCAG AA contrast: bumped from #5a6370 (3.9:1 against --bg) to
+     #7e8895 (5.0:1) so every "dim" surface (captions, table headers,
+     dl-meta, footer) clears the 4.5:1 normal-text threshold on both
+     --bg and the slightly lighter --bg-card / --bg-card-2 surfaces. */
+  --text-dim:   #7e8895;
 
   --green:      #00ff9c;       /* terminal green */
   --green-dim:  #00b870;
@@ -61,12 +65,51 @@ main, .topbar, footer { position: relative; z-index: 1; }
 a { color: var(--green); text-decoration: none; transition: color 0.1s; }
 a:hover { color: var(--amber); }
 
+/* Keyboard focus indicator — every interactive surface gets a visible
+   2 px amber outline at 2 px offset. Amber clears AA contrast against
+   both --bg (8.3:1) and --bg-card. Outline (not box-shadow) is used
+   so it survives clipping and inherits browser corner radius. */
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Skip-to-content link — invisible until keyboard focus brings it
+   into view at the top-left, where keyboard users expect bypass
+   controls per WCAG 2.4.1. */
+.skip-link {
+  position: absolute; left: 0; top: -100px;
+  background: var(--bg-card); color: var(--green);
+  padding: 10px 16px; border: 1px solid var(--green);
+  border-radius: var(--radius); font-family: var(--mono);
+  font-weight: 500; z-index: 50;
+  transition: top 0.15s;
+}
+.skip-link:focus-visible { top: 8px; left: 8px; outline-offset: 4px; }
+
 code, pre, .mono { font-family: var(--mono); }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0;
   margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;
 }
+
+/* Honour prefers-reduced-motion: suppress decorative animations and
+   transitions for vestibular users. The .cursor blink is also gated
+   in JS so the setInterval doesn't run at all. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Sticky topbar can obscure scrolled-into-view anchor targets; offset
+   the scroll position so the section's heading clears the topbar. */
+section[id] { scroll-margin-top: 72px; }
 
 /* ============================ topbar ============================ */
 

@@ -67,19 +67,22 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main" data-i18n-fr="Aller au contenu principal" data-i18n-en="Skip to main content">Aller au contenu principal</a>
+
 <header class="topbar">
-  <a href="#" class="brand"><span class="cursor">$</span>&nbsp;leanspectrum</a>
-  <nav>
+  <a href="#" class="brand"><span class="cursor" aria-hidden="true">$</span>&nbsp;leanspectrum</a>
+  <nav aria-label="Sections">
     <a href="#download" data-i18n-fr="Télécharger" data-i18n-en="Download">Télécharger</a>
     <a href="#piliers" data-i18n-fr="Stack" data-i18n-en="Stack">Stack</a>
     <a href="#pipeline" data-i18n-fr="Pipeline" data-i18n-en="Pipeline">Pipeline</a>
     <a href="#bambu" data-i18n-fr="Conversion Bambu" data-i18n-en="Bambu convert">Conversion Bambu</a>
     <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum" class="ext">github</a>
   </nav>
-  <button class="lang" id="lang-toggle" type="button">EN</button>
+  <button class="lang" id="lang-toggle" type="button"
+          aria-label="Switch to English" data-aria-fr="Switch to English" data-aria-en="Basculer en français">EN</button>
 </header>
 
-<main>
+<main id="main">
 
 <!-- ============================== hero ============================== -->
 <section class="hero">
@@ -99,20 +102,20 @@
   </p>
   <p class="meta">
     <span class="kbd">AGPL-3.0</span>
-    <span class="dot">·</span>
+    <span class="dot" aria-hidden="true">·</span>
     <span class="kbd">C++17</span>
-    <span class="dot">·</span>
+    <span class="dot" aria-hidden="true">·</span>
     <span class="kbd">wxWidgets</span>
-    <span class="dot">·</span>
+    <span class="dot" aria-hidden="true">·</span>
     <span class="kbd">Klipper</span>
-    <span class="dot">·</span>
+    <span class="dot" aria-hidden="true">·</span>
     <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum">github.com/jaoli1/OrcaSlicer-LeanSpectrum</a>
   </p>
 </section>
 
 <!-- =========================== big downloads ======================== -->
 <section id="download" class="download">
-  <h2><span class="hash">##</span> <span data-i18n-fr="Télécharger" data-i18n-en="Download">Télécharger</span></h2>
+  <h2><span class="hash" aria-hidden="true">##</span> <span data-i18n-fr="Télécharger" data-i18n-en="Download">Télécharger</span></h2>
   <p class="caption" data-i18n-fr="Builds matriciels CI sur tag. La page Releases GitHub liste tous les artefacts par version." data-i18n-en="Matrix CI builds on tag. The GitHub Releases page lists every artefact by version.">
     Builds matriciels CI sur tag. La page Releases GitHub liste tous les artefacts par version.
   </p>
@@ -133,7 +136,7 @@
           <span class="fmt-note" data-i18n-fr="NSIS portable" data-i18n-en="NSIS portable">NSIS portable</span>
         </div>
       </div>
-      <div class="dl-arrow">&rarr;</div>
+      <div class="dl-arrow" aria-hidden="true">&rarr;</div>
     </a>
 
     <a class="dl-big macos" href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases/latest">
@@ -151,7 +154,7 @@
           <span class="fmt-note">Intel</span>
         </div>
       </div>
-      <div class="dl-arrow">&rarr;</div>
+      <div class="dl-arrow" aria-hidden="true">&rarr;</div>
     </a>
 
     <a class="dl-big linux" href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases/latest">
@@ -169,7 +172,7 @@
           <span class="fmt">.rpm</span>
         </div>
       </div>
-      <div class="dl-arrow">&rarr;</div>
+      <div class="dl-arrow" aria-hidden="true">&rarr;</div>
     </a>
   </div>
 
@@ -188,14 +191,14 @@
         <div class="dl-small-title">SDS / TDS Importer</div>
         <div class="dl-small-meta" data-i18n-fr="3 OS · Tauri 2 · tag sds-importer-v*" data-i18n-en="3 OS · Tauri 2 · tag sds-importer-v*">3 OS · Tauri 2 · tag sds-importer-v*</div>
       </div>
-      <div class="dl-arrow">&rarr;</div>
+      <div class="dl-arrow" aria-hidden="true">&rarr;</div>
     </a>
   </div>
 </section>
 
 <!-- =========================== pipeline ============================ -->
 <section id="pipeline" class="pipeline">
-  <h2><span class="hash">##</span> <span data-i18n-fr="Pipeline G-code" data-i18n-en="G-code pipeline">Pipeline G-code</span></h2>
+  <h2><span class="hash" aria-hidden="true">##</span> <span data-i18n-fr="Pipeline G-code" data-i18n-en="G-code pipeline">Pipeline G-code</span></h2>
   <p class="caption" data-i18n-fr="Cinq passes post-slicing s'enchaînent automatiquement en sortie de slicer. Le gate de vérification rollback si quoi que ce soit dérive." data-i18n-en="Five post-slicing passes chained automatically at slicer export. The verification gate rolls back if anything drifts.">
     Cinq passes post-slicing s'enchaînent automatiquement en sortie de slicer. Le gate de vérification rollback si quoi que ce soit dérive.
   </p>
@@ -221,7 +224,7 @@
 
 <!-- ============================ stack / 3 piliers ================== -->
 <section id="piliers" class="piliers">
-  <h2><span class="hash">##</span> Stack</h2>
+  <h2><span class="hash" aria-hidden="true">##</span> Stack</h2>
   <div class="grid3">
     <article>
       <div class="card-tag">[ post-process ]</div>
@@ -254,12 +257,15 @@
 
 <!-- =========================== bambu demo =========================== -->
 <section id="bambu" class="demo">
-  <h2><span class="hash">##</span> <span data-i18n-fr="BambuConvert : benchmark" data-i18n-en="BambuConvert benchmark">BambuConvert : benchmark</span></h2>
+  <h2><span class="hash" aria-hidden="true">##</span> <span data-i18n-fr="BambuConvert : benchmark" data-i18n-en="BambuConvert benchmark">BambuConvert : benchmark</span></h2>
   <p data-i18n-fr="Vrai .3mf Bambu Lab X1 Carbon, 8 couleurs PLA. Le slicer fait tourner les 3 stratégies en parallèle et garde la meilleure sur la métrique pondérée." data-i18n-en="Real Bambu Lab X1 Carbon .3mf, 8 PLA colors. The slicer runs all 3 strategies in parallel and keeps the best one on the weighted metric.">
     Vrai .3mf Bambu Lab X1 Carbon, 8 couleurs PLA. Le slicer fait tourner les 3 stratégies en parallèle et garde la meilleure sur la métrique pondérée.
   </p>
   <div class="tablewrap">
   <table>
+    <caption class="sr-only" data-i18n-fr="Comparaison des 3 stratégies BambuConvert sur .3mf Bambu X1 Carbon 8 couleurs : somme et pondération des ΔE par couleur physique choisie" data-i18n-en="Comparison of the 3 BambuConvert strategies on a Bambu X1 Carbon 8-color .3mf: ΔE sum and weighted score per chosen physical color">
+      Comparaison des 3 stratégies BambuConvert sur .3mf Bambu X1 Carbon 8 couleurs : somme et pondération des ΔE par couleur physique choisie
+    </caption>
     <thead>
       <tr>
         <th data-i18n-fr="Stratégie" data-i18n-en="Strategy">Stratégie</th>
@@ -297,12 +303,15 @@
 
 <!-- =========================== auto-profile ========================= -->
 <section id="auto" class="auto">
-  <h2><span class="hash">##</span> Auto-Profile</h2>
+  <h2><span class="hash" aria-hidden="true">##</span> Auto-Profile</h2>
   <p data-i18n-fr="5 intents × paramètres clés (réf. PLA). Les vitesses sont multipliées par 0.4 (TPU) à 1.0 (PLA) selon le polymère détecté." data-i18n-en="5 intents × key parameters (PLA reference). Speeds are scaled 0.4 (TPU) to 1.0 (PLA) per detected polymer.">
     5 intents × paramètres clés (réf. PLA). Les vitesses sont multipliées par 0.4 (TPU) à 1.0 (PLA) selon le polymère détecté.
   </p>
   <div class="tablewrap">
   <table>
+    <caption class="sr-only" data-i18n-fr="Tableau Auto-Profile : 5 intents × paramètres clés (épaisseur, murs, infill, vitesse paroi externe, débit volumétrique max) en référence PLA" data-i18n-en="Auto-Profile table: 5 intents × key parameters (layer height, walls, infill, outer wall speed, max volumetric flow) for the PLA reference">
+      Tableau Auto-Profile : 5 intents × paramètres clés (épaisseur, murs, infill, vitesse paroi externe, débit volumétrique max) en référence PLA
+    </caption>
     <thead>
       <tr>
         <th>intent</th>
@@ -329,7 +338,7 @@
 
 <!-- ============================== credits =========================== -->
 <section class="credits">
-  <h2><span class="hash">##</span> <span data-i18n-fr="Crédits" data-i18n-en="Credits">Crédits</span></h2>
+  <h2><span class="hash" aria-hidden="true">##</span> <span data-i18n-fr="Crédits" data-i18n-en="Credits">Crédits</span></h2>
   <ul>
     <li><span class="kbd">economy</span> Al-Juboori 2026 <a href="https://doi.org/10.1007/s44444-026-00109-y">doi:10.1007/s44444-026-00109-y</a> · CC-BY 4.0</li>
     <li><span class="kbd">bambu</span> josuanbn/bl2u1 (concept) · Sharma 2005 CIEDE2000</li>
@@ -345,11 +354,11 @@
   <pre class="ascii small" aria-hidden="true">// AGPL-3.0-or-later · Snapmaker U1 · multi-color FDM</pre>
   <p>
     <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum">github</a>
-    <span class="dot">·</span>
+    <span class="dot" aria-hidden="true">·</span>
     <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/blob/feature/filament-economy/doc/leanspectrum/QUICK_START.md">quick-start</a>
-    <span class="dot">·</span>
+    <span class="dot" aria-hidden="true">·</span>
     <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/blob/feature/filament-economy/doc/leanspectrum/ROADMAP.md">roadmap</a>
-    <span class="dot">·</span>
+    <span class="dot" aria-hidden="true">·</span>
     <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases">releases</a>
   </p>
 </footer>
@@ -362,6 +371,13 @@
   function applyLang(lang) {
     html.lang = lang;
     btn.textContent = lang === 'fr' ? 'EN' : 'FR';
+    // Keep the toggle's accessible name in sync with the language it
+    // WILL switch to (mirrors the visible label). Screen readers
+    // re-announce on focus after this update.
+    btn.setAttribute(
+      'aria-label',
+      lang === 'fr' ? 'Switch to English' : 'Basculer en français'
+    );
     document.querySelectorAll('[data-i18n-fr], [data-i18n-en]').forEach(function (el) {
       var v = el.getAttribute('data-i18n-' + lang);
       if (v != null) el.textContent = v;
@@ -381,12 +397,17 @@
     applyLang(html.lang === 'fr' ? 'en' : 'fr');
   });
 
-  // Blink the cursor.
-  setInterval(function () {
-    document.querySelectorAll('.cursor').forEach(function (c) {
-      c.classList.toggle('blink-off');
-    });
-  }, 550);
+  // Blink the cursor. Cache the NodeList once (the set of .cursor
+  // elements does not change after applyLang). Respect prefers-
+  // reduced-motion — vestibular users opt out of the 550 ms loop.
+  var motionOk = !window.matchMedia ||
+                 !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (motionOk) {
+    var cursors = document.querySelectorAll('.cursor');
+    setInterval(function () {
+      cursors.forEach(function (c) { c.classList.toggle('blink-off'); });
+    }, 550);
+  }
 })();
 </script>
 

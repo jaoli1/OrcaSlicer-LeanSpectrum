@@ -17,6 +17,7 @@
 #define LOCALHOST_PORT      13618
 #define PAGE_HTTP_PORT      13619
 #define LOCALHOST_URL       "http://127.0.0.1:"
+#define WCP_DOWNLOAD_PREFIX "/wcp_download/"
 
 namespace Slic3r { namespace GUI {
 
@@ -106,9 +107,14 @@ public:
     class ResponseFile : public Response
     {
         std::string file_path;
+        // true when the path is already in native filesystem encoding (e.g.
+        // base64-decoded /wcp_download/ route) — skip the utf8 conversion
+        // and try the raw bytes first.
+        bool        m_native_path = false;
 
     public:
-        ResponseFile(const std::string& path) : file_path(path){}
+        ResponseFile(const std::string& path, bool native_path = false)
+            : file_path(path), m_native_path(native_path) {}
         ~ResponseFile() override = default;
 
         void write_response(std::stringstream& ssOut) override;

@@ -1,6 +1,7 @@
 // Implementation of web communication protocol for Slicer Studio
 #include "SSWCP.hpp"
 #include "GUI_App.hpp"
+#include "HttpServer.hpp"
 #include "MainFrame.hpp"
 #include "DownloadManager.hpp"
 #include "nlohmann/json.hpp"
@@ -659,6 +660,18 @@ void SSWCP_Instance::sw_GetActiveFile()
                 if (!(name_index == std::string::npos || path_index == std::string::npos)) {
                     self->m_res_data["file_name"] = file_name.substr(0, name_index) + ".zip";
                     self->m_res_data["file_path"] = wxString(zipname).ToUTF8();
+                    // Upstream-snap 1c2df8e498: emit "url" so the Flutter
+                    // downloadFileFromOrca path prefers HTTP streaming over
+                    // postMessage (which has a 512 MB ceiling). Normalize
+                    // backslashes on Windows so the URL is well-formed.
+                    {
+                        std::string zip_url_path = zipname;
+                        std::replace(zip_url_path.begin(), zip_url_path.end(), '\\', '/');
+                        self->m_res_data["url"] =
+                            std::string(LOCALHOST_URL) +
+                            std::to_string(wxGetApp().m_page_http_server.get_port()) +
+                            "/localfile/" + zip_url_path;
+                    }
                     SSWCP::m_file_size_mutex.lock();
                     self->m_res_data["origin_size"] = SSWCP::m_active_file_size;
                     SSWCP::m_file_size_mutex.unlock();
@@ -682,6 +695,17 @@ void SSWCP_Instance::sw_GetActiveFile()
         } else {
             m_res_data["file_name"] = file_name;
             m_res_data["file_path"] = file_path;
+            // See zip branch above — emit "url" so the Flutter side can
+            // stream via HTTP instead of falling back to the 512 MB
+            // postMessage path.
+            {
+                std::string url_path = file_path;
+                std::replace(url_path.begin(), url_path.end(), '\\', '/');
+                m_res_data["url"] =
+                    std::string(LOCALHOST_URL) +
+                    std::to_string(wxGetApp().m_page_http_server.get_port()) +
+                    "/localfile/" + url_path;
+            }
             send_to_js();
             finish_job();
         }

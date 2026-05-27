@@ -1,6 +1,6 @@
 {
   "name": "custom-filament-profile-creator",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Companion app that creates Snapmaker_Orca filament profiles tailored to each vendor's SDS/TDS PDF",
   "private": true,
   "license": "AGPL-3.0-or-later",

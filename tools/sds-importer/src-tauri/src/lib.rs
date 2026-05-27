@@ -86,6 +86,7 @@ pub struct ExtractedFilament {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportRequest {
     pub pdf_path: String,
     pub fetch_online: bool,
@@ -267,6 +268,7 @@ fn push_pdf(path: &std::path::Path, out: &mut Vec<CorpusPdf>) {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BatchImportRequest {
     pub urls:         Vec<String>,
     pub fetch_online: bool,

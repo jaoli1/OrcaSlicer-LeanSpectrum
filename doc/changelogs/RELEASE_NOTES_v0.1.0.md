@@ -119,15 +119,17 @@ the slicer's About dialog and below:
 
 ### Downloads
 
+The slicer ships as **one artifact per platform** (the build_all
+workflow produces a single bundle per OS, not multiple installer
+formats):
+
 | Platform | File |
 |---|---|
-| Windows | `OrcaSlicer-LeanSpectrum_windows-amd64.msi` (or `.exe` NSIS) |
-| macOS arm64 | `OrcaSlicer-LeanSpectrum_macos-arm64.dmg` |
-| macOS Intel | `OrcaSlicer-LeanSpectrum_macos-intel.dmg` |
-| Linux | `OrcaSlicer-LeanSpectrum_linux-amd64.AppImage` |
-| Linux (.deb) | `OrcaSlicer-LeanSpectrum_linux-amd64.deb` |
-| Linux (.rpm) | `OrcaSlicer-LeanSpectrum_linux-amd64.rpm` |
-| SDS Importer | see `sds-importer-v0.1.0` release |
+| Windows 10/11 x64 | `Snapmaker_Orca_Windows_V0.1.0_portable.zip` (NSIS-style portable — unzip and run, no MSI/EXE installer) |
+| macOS 13+ universal | `Snapmaker_Orca_Mac_universal_V0.1.0.dmg` (signed + Apple-notarized, runs on arm64 and Intel) |
+| Linux Ubuntu 24.04+ | `Snapmaker_Orca_Linux_AppImage_Ubuntu2404_V0.1.0.AppImage` (no .deb / .rpm at this release; chmod +x and run) |
+| SDS Importer companion | see `sds-importer-v0.1.1` release — ships Windows .msi+.exe, macOS arm64+Intel .dmg, Linux .AppImage+.deb+.rpm |
+| Profile validator (optional) | `Snapmaker_Orca_profile_validator*` — CI tool, end-users don't need it |
 
 ### Acknowledgements
 

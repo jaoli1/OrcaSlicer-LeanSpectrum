@@ -77,7 +77,7 @@ async function importPdfAndShow(path, online, resultEl, statusEl, logPanelEl, lo
   resultEl.style.display = "none";
   if (logPanelEl) logPanelEl.style.display = "none";
   try {
-    const r = await invoke("import_pdf", { req: { pdfPath: path, fetchOnline: online } });
+    const r = await invoke("import_pdf", { req: { pdf_path: path, fetch_online: online } });
     renderResult(r, resultEl, statusEl, logPanelEl, logElEl);
   } catch (e) {
     statusEl.textContent = `${tr("err_picker")}: ${e}`;
@@ -195,7 +195,7 @@ batchImportBtn.addEventListener("click", async () => {
   batchProgressBar.style.width = "10%";
   try {
     const r = await invoke("import_from_urls", {
-      req: { urls: selected, fetchOnline: catalogFetch.checked }
+      req: { urls: selected, fetch_online: catalogFetch.checked }
     });
     batchProgressBar.style.width = "100%";
     renderBatchResult(r);

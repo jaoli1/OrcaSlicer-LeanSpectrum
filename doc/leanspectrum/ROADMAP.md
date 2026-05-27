@@ -33,11 +33,22 @@ Updated 2026-05-27.
 - DIP flush-into-infill / support flipped on by default
 - GUI: **File → Auto-generate profile...**
 
-### Wave Overhangs (partial — Phases 1, 2, 3a, 6 landed)
-- Algorithm module (`src/libslic3r/WaveOverhangs/`, 1117 lines)
-- 37 config keys + 3 enum maps
-- Polygons output fields on Layer + PerimeterGenerator
-- ExtrusionPath flag propagation through copy/move
+### Wave Overhangs (Phases 1-6 on experimental branch, pending CI merge)
+- Phase 1 — Algorithm module (`src/libslic3r/WaveOverhangs/`, 1117 lines)
+- Phase 2 — 37 config keys + 3 enum maps
+- Phase 3a — Polygons output fields on Layer + PerimeterGenerator
+- Phase 3b — PerimeterGenerator + PrintObject + LayerRegion + Print.hpp
+  hook (5 files, 741 lines, 2 Arachne conflicts resolved)
+- Phase 4 — GCode.cpp + GCodeWriter + CoolingBuffer + Support + Fill
+  Hilbert + FilamentEconomy WaveOverhang protection (9 files,
+  513 lines, 4 GCode.cpp conflicts resolved)
+- Phase 5 — Tab.cpp "Wave overhangs" page + ConfigManipulation
+  conditional visibility (2 files, 133 lines, 1 conflict resolved)
+- Phase 6 — ExtrusionPath flag propagation through copy/move
+
+Lives on `experiment/wave-overhangs-phase3b` branch pending CI green
+on all 3 OS. Will merge into `feature/filament-economy` once builds
+validate.
 
 ### SDS / TDS Importer (Tauri 2 companion app)
 - Validated against 1600+ vendor PDFs (50+ brands)
@@ -45,7 +56,24 @@ Updated 2026-05-27.
 - Bilingual FR / EN, optional Tesseract OCR
 - Cross-platform CI release bundles
 
-## Next session — Wave Overhangs Phases 3b → 5
+## Next session — merge experimental branch + final polish
+
+If CI on `experiment/wave-overhangs-phase3b` is green:
+```
+git checkout feature/filament-economy
+git merge experiment/wave-overhangs-phase3b
+git push
+```
+
+Then the only remaining work is:
+- AboutDialog attribution (done in commit 62bba4e4e9 on main branch)
+- Real-print smoke test of a 45° overhang STL with `wave_overhangs = true`
+- Tag `leanspectrum-v0.1.0`
+
+If CI fails, the failure log points exactly which file / symbol broke
+and the fix is isolated to the experimental branch.
+
+## Below — pre-experiment-branch plan, kept for historical reference
 
 ### Phase 3b — PerimeterGenerator hook (HARDEST remaining task)
 Estimated 750-line integrated change across 5 files. Cannot be split

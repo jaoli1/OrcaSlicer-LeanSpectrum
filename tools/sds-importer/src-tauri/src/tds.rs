@@ -538,27 +538,32 @@ Drying Temp.                                  50
     /// fullwidth ） (U+FF09). The old &text[idx..idx+200] byte-slices panic
     /// when the +200 offset lands inside a multi-byte character, which
     /// killed the Tauri worker thread and closed the window silently.
-    /// safe_slice() must accept every byte position without panicking and
-    /// produce a parser-friendly window.
+    /// safe_slice() must accept every byte position without panicking, and
+    /// the parser must extract the ranges as usual despite the multi-byte
+    /// characters in the surrounding text.
+    ///
+    /// Layout note: the trailing ℃ unit reflects what real vendor PDFs
+    /// look like AFTER pdftotext extraction (vendors put the degree
+    /// glyph after the number, not between min and max). The RANGE_RX
+    /// regex requires an ASCII `-` or `to` / `–` between the two
+    /// numbers, so the test stays close to the wire format.
     #[test]
     fn parses_raw_unicode_temperature_tds_without_panic() {
         let tds = "Technical Data Sheet (TDS)\n\
                    PLA+\n\
-                   Nozzle temperature 190℃-220℃\n\
-                   Bed temperature 55℃-70℃\n\
-                   Density 1.23 g/cm³ at 21.5°C）\n";
+                   Nozzle temperature 190-220 ℃\n\
+                   Bed temperature 55-70 ℃\n\
+                   Filament density 1.23 g/cm³ at 21.5°C）\n";
         assert!(looks_like_tds(tds));
         // The parse itself must not panic with "byte index N is not a char
-        // boundary" on any byte position inside ℃ / ° / ）.
+        // boundary" on any byte position inside ℃ / ° / ） / ³.
         let r = parse(tds);
-        // We don't care that the numbers were extracted (the regexes only
-        // require ASCII digits + ASCII hyphen), only that the parse did
-        // not crash on the multi-byte slicing.
         assert_eq!(r.polymer, Some(Polymer::Pla));
         assert_eq!(r.nozzle_temp_min_c, Some(190.0));
         assert_eq!(r.nozzle_temp_max_c, Some(220.0));
         assert_eq!(r.bed_temp_min_c,    Some(55.0));
         assert_eq!(r.bed_temp_max_c,    Some(70.0));
+        assert_eq!(r.density_g_cm3,     Some(1.23));
     }
 
     /// ROSA3D PLA Speed TDS layout — pdftotext extracted the VALUE column

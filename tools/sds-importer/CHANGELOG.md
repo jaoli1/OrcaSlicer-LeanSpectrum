@@ -4,6 +4,23 @@ All notable changes to the LeanSpectrum SDS / TDS Importer are documented
 here. The format follows [Keep a Changelog](https://keepachangelog.com/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.1.1] — Windows bundle fix
+
+The 0.1.0 release tag's Windows binary failed to bundle because
+`tauri.conf.json` only listed `icons/icon.png` in `bundle.icon`,
+which Tauri's bundler can't use as the Windows shortcut/EXE icon
+(Windows requires `.ico` format). The `icons/icon.ico` file was
+already present in the repo but not referenced.
+
+0.1.1 lists all available icon variants (`icon.png`, `icon.ico`,
+`32x32.png`, `128x128.png`, `128x128@2x.png`) in `bundle.icon` so
+the Tauri bundler picks the right format per platform: `.ico` for
+Windows MSI and NSIS bundles, `.png` for Linux `.deb` / `.rpm` /
+`.AppImage`, the size variants for `.AppImage` icon-resolution
+matching.
+
+No other changes from 0.1.0. The Cargo source code is unchanged.
+
 ## [0.1.0] — first downloadable release
 
 ### What it does

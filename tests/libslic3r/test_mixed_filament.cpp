@@ -5,6 +5,7 @@
 #include "libslic3r/Print.hpp"
 #include "libslic3r/GCode/ToolOrdering.hpp"
 
+#include <algorithm>
 #include <sstream>
 #include <vector>
 
@@ -527,4 +528,162 @@ TEST_CASE("Extrusion loop and multipath entities preserve inset index", "[MixedF
 
     ExtrusionLoop loop_copy(loop_from_path);
     CHECK(loop_copy.inset_idx == 2);
+}
+
+// -----------------------------------------------------------------------------
+// FullSpectrum F1/F2 dither integration in MixedFilamentManager::resolve()
+// -----------------------------------------------------------------------------
+
+namespace {
+
+// Build a tiny 2-physical manager with one custom-cadence mixed row and
+// advanced dithering enabled. Returns (manager, num_physical).
+struct DitherFixture {
+    MixedFilamentManager mgr;
+    size_t num_physical = 2;
+    DitherFixture() {
+        std::vector<std::string> colors = {"#FF0000", "#0000FF"};
+        mgr.auto_generate(colors);
+        REQUIRE(!mgr.mixed_filaments().empty());
+        // gradient_mode = 0 (layer cycle) + advanced_dithering = true is
+        // the precondition for the dither branch.
+        mgr.apply_gradient_settings(0, 0.04f, 0.16f, /*advanced=*/true);
+        // Mark the row custom + force 1:1 AFTER apply_gradient_settings,
+        // which rewrites ratios on non-custom rows and runs gradient on
+        // custom ones. We want a clean 1:1 cadence for these tests.
+        MixedFilament &row = mgr.mixed_filaments().front();
+        row.custom  = true;
+        row.ratio_a = 1;
+        row.ratio_b = 1;
+        row.enabled = true;
+    }
+};
+
+} // namespace
+
+TEST_CASE("DitherMode default is Ordered (backward compat)", "[MixedFilament][Dither]")
+{
+    MixedFilamentManager mgr;
+    REQUIRE(mgr.dither_mode() == MixedFilamentManager::DitherMode::Ordered);
+}
+
+TEST_CASE("DitherMode FloydSteinberg routes through new helpers", "[MixedFilament][Dither]")
+{
+    // The virtual filament ID for the first mixed row is num_physical + 1 = 3.
+    DitherFixture f;
+    const unsigned int virtual_id = 3;
+
+    // Collect 20 resolutions in Ordered mode.
+    std::vector<unsigned int> ordered_seq;
+    for (int i = 0; i < 20; ++i)
+        ordered_seq.push_back(f.mgr.resolve(virtual_id, f.num_physical, i));
+
+    // Switch to FloydSteinberg and collect 20 more.
+    f.mgr.set_dither_mode(MixedFilamentManager::DitherMode::FloydSteinberg);
+    std::vector<unsigned int> fs_seq;
+    for (int i = 0; i < 20; ++i)
+        fs_seq.push_back(f.mgr.resolve(virtual_id, f.num_physical, i));
+
+    // For ratio 1:1 the Floyd-Steinberg path produces strict ABAB —
+    // it cannot match the Ordered path exactly for all i if Ordered
+    // uses a phase rotation. We don't require they differ on every i,
+    // just that the FloydSteinberg result is a strict alternation
+    // with no two consecutive same-component picks.
+    for (size_t i = 1; i < fs_seq.size(); ++i)
+        REQUIRE(fs_seq[i] != fs_seq[i - 1]);
+
+    // Both modes should yield the same long-run distribution (50/50)
+    // on 1:1 ratio — sanity-check Ordered too.
+    auto count_b = [&](const std::vector<unsigned int> &seq) {
+        return std::count(seq.begin(), seq.end(), (unsigned int)2);
+    };
+    REQUIRE(count_b(fs_seq)       == 10); // exactly 10 in strict ABAB
+    REQUIRE(count_b(ordered_seq)  >= 8);  // Ordered must be close to 10
+    REQUIRE(count_b(ordered_seq)  <= 12);
+}
+
+TEST_CASE("load_bambu_convert_recipe — parses entries and adds custom rows",
+          "[MixedFilament][BambuRecipe]")
+{
+    std::vector<std::string> colors = {"#FF0000", "#00FF00", "#0000FF", "#FFFFFF"};
+    MixedFilamentManager mgr;
+    mgr.auto_generate(colors); // gives the C(4,2) = 6 auto rows
+    const size_t auto_count = mgr.mixed_filaments().size();
+    REQUIRE(auto_count == 6);
+
+    // Two recipe entries pointing at slots {0,1} ratio 0.5 and {2,3} ratio 0.25.
+    const std::string recipe =
+        "target=#808000,a=0,b=1,ratio_a=0.5,achieved=#808000,de=1.2;"
+        "target=#404080,a=2,b=3,ratio_a=0.25,achieved=#404080,de=4.5";
+
+    const size_t added = mgr.load_bambu_convert_recipe(recipe, colors);
+    REQUIRE(added == 2);
+
+    // Auto rows + 2 new custom rows.
+    REQUIRE(mgr.mixed_filaments().size() == auto_count + 2);
+
+    // The two added rows are at the end and are marked custom.
+    const auto &rows = mgr.mixed_filaments();
+    const MixedFilament &r1 = rows[auto_count];
+    const MixedFilament &r2 = rows[auto_count + 1];
+
+    REQUIRE(r1.custom);
+    REQUIRE(r1.component_a == 1u); // slot 0 -> id 1
+    REQUIRE(r1.component_b == 2u); // slot 1 -> id 2
+    REQUIRE(r1.mix_b_percent == 50); // ratio_a 0.5 -> (1-0.5)*100 = 50
+
+    REQUIRE(r2.custom);
+    REQUIRE(r2.component_a == 3u); // slot 2 -> id 3
+    REQUIRE(r2.component_b == 4u); // slot 3 -> id 4
+    REQUIRE(r2.mix_b_percent == 75); // ratio_a 0.25 -> (1-0.25)*100 = 75
+}
+
+TEST_CASE("load_bambu_convert_recipe — skips malformed entries",
+          "[MixedFilament][BambuRecipe]")
+{
+    std::vector<std::string> colors = {"#000000", "#FFFFFF"};
+    MixedFilamentManager mgr;
+    mgr.auto_generate(colors);
+
+    // Entries: one missing required field, one with a/b out of range, one OK.
+    const std::string recipe =
+        "target=#888888,a=0,ratio_a=0.5;"
+        "target=#888888,a=5,b=7,ratio_a=0.5;"
+        "target=#888888,a=0,b=1,ratio_a=0.5";
+
+    const size_t added = mgr.load_bambu_convert_recipe(recipe, colors);
+    REQUIRE(added == 1);
+}
+
+TEST_CASE("FloydSteinberg + curvature gain biases transition rate",
+          "[MixedFilament][Dither][Curvature]")
+{
+    DitherFixture f;
+    const unsigned int virtual_id = 3;
+    f.mgr.set_dither_mode(MixedFilamentManager::DitherMode::FloydSteinberg);
+
+    // Per-layer curvature gain of -0.6 over the first 50 layers should
+    // suppress transitions (longer runs of A or B).
+    std::vector<float> damp(60, -0.6f);
+    f.mgr.set_layer_curvature_field(damp);
+
+    auto count_transitions = [&]() {
+        unsigned int prev = f.mgr.resolve(virtual_id, f.num_physical, 0);
+        int flips = 0;
+        for (int i = 1; i < 50; ++i) {
+            unsigned int cur = f.mgr.resolve(virtual_id, f.num_physical, i);
+            if (cur != prev) ++flips;
+            prev = cur;
+        }
+        return flips;
+    };
+    const int damped_flips = count_transitions();
+
+    // Clear the curvature field -> back to baseline (no gain) which on
+    // ratio 1:1 should produce strict ABAB = 49 transitions over 50 layers.
+    f.mgr.clear_layer_curvature_field();
+    const int baseline_flips = count_transitions();
+
+    REQUIRE(damped_flips < baseline_flips);
+    REQUIRE(baseline_flips == 49);
 }

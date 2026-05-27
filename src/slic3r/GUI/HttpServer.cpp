@@ -5,6 +5,7 @@
 #include "slic3r/Utils/Http.hpp"
 #include "slic3r/Utils/NetworkAgent.hpp"
 #include  "sentry_wrapper/SentryWrapper.hpp"
+#include <boost/beast/core/detail/base64.hpp>
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
@@ -717,7 +718,11 @@ std::shared_ptr<HttpServer::Response> HttpServer::web_server_handle_request(cons
     }
 
     BOOST_LOG_TRIVIAL(info) << "Handling file_path request for URL: " << file_path;
-    return std::make_shared<ResponseFile>(file_path);
+    // The /wcp_download/ route carries paths that were already encoded by
+    // the Flutter side as URL-safe base64; ResponseFile must use them raw
+    // (no second utf8 conversion).
+    bool native_path = (url.find(WCP_DOWNLOAD_PREFIX) != std::string::npos);
+    return std::make_shared<ResponseFile>(file_path, native_path);
 }
 
 std::string HttpServer::map_url_to_file_path(const std::string& url)
@@ -745,6 +750,29 @@ std::string HttpServer::map_url_to_file_path(const std::string& url)
         }
 
         return realUTF8Path;
+    }
+    else if (trimmed_url.find(WCP_DOWNLOAD_PREFIX) == 0) {
+        // Upstream-snap 1c2df8e498: /wcp_download/<base64-path> route
+        // bypasses the 512 MB postMessage limit by streaming the file
+        // through HTTP. The path component is URL-safe base64 ('+'→'-',
+        // '/'→'_'), so revert before decoding and pad to a multiple
+        // of 4.
+        auto b64 = std::string(trimmed_url.substr(strlen(WCP_DOWNLOAD_PREFIX))
+                                   .ToStdString(wxConvUTF8));
+        for (auto& c : b64) {
+            if (c == '-')      { c = '+'; }
+            else if (c == '_') { c = '/'; }
+        }
+        while (b64.size() % 4 != 0) {
+            b64 += '=';
+        }
+        std::string decoded;
+        decoded.resize(boost::beast::detail::base64::decoded_size(b64.size()));
+        auto result = boost::beast::detail::base64::decode(decoded.data(),
+                                                           b64.data(),
+                                                           b64.size());
+        decoded.resize(result.first);
+        return decoded;
     }
     auto data_web_path = boost::filesystem::path(data_dir()) / "web";
     if (!boost::filesystem::exists(data_web_path / "flutter_web")) {
@@ -804,9 +832,21 @@ void HttpServer::ResponseNotFound::write_response(std::stringstream& ssOut)
 void HttpServer::ResponseFile::write_response(std::stringstream& ssOut)
 {
     // 将UTF-8路径转换为适合文件系统操作的编码，自动适配Windows的UTF-8模式
-    std::string system_file_path = utf8_to_filesystem_encoding(file_path);
-    
-    std::ifstream file(system_file_path, std::ios::binary);
+    // Upstream-snap 1c2df8e498: m_native_path == true (set by the
+    // /wcp_download/ branch) means the path was already base64-decoded
+    // and is in native filesystem bytes — skip the utf8 conversion and
+    // open as-is. Otherwise try the converted path, then fall back to
+    // the raw bytes if that file doesn't exist either.
+    std::ifstream file;
+    if (m_native_path) {
+        file.open(file_path, std::ios::binary);
+    } else {
+        std::string system_file_path = utf8_to_filesystem_encoding(file_path);
+        file.open(system_file_path, std::ios::binary);
+        if (!file) {
+            file.open(file_path, std::ios::binary);
+        }
+    }
     if (!file) {
         ResponseNotFound notFoundResponse;
         notFoundResponse.write_response(ssOut);

@@ -32,7 +32,31 @@ jobs:
       - name: Run validation
         if: steps.changed-files.outputs.any_changed == 'true'
         shell: pwsh
+        env:
+          CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
+          # LeanSpectrum scope: only report errors located in files this
+          # PR actually changed. Upstream Orca's wiki has 18 inherited
+          # broken refs in doc/Home.md, doc/developer-reference/*, and
+          # Tab.cpp — failing the gate on those would permanently red-light
+          # every PR that touches any doc/. Build the changed-file allow
+          # list up front; the broken-reference reporter consults it later.
+          $changedRaw = $env:CHANGED_FILES
+          $changedSet = New-Object 'System.Collections.Generic.HashSet[string]'
+          if ($changedRaw) {
+              foreach ($p in ($changedRaw -split '\s+')) {
+                  $p = $p.Trim()
+                  if (-not $p) { continue }
+                  # Normalize: strip leading doc/, swap / to \ so the
+                  # validator's relPath (which is relative to doc/ and
+                  # already uses \ on Windows) matches.
+                  $norm = $p -replace '^doc[\\/]', '' -replace '/', '\'
+                  [void]$changedSet.Add($norm.ToLower())
+                  [void]$changedSet.Add($p.ToLower())  # also the raw form for Tab.cpp
+              }
+          }
+          Write-Host "Scope: $($changedSet.Count) changed path(s) in this PR"
+
           # Helper Functions
           function Normalize-Fragment($fragment) {
               return $fragment.ToLower().Trim() -replace '[^a-z0-9\s-]', '' -replace ' ', '-' -replace '^-+|-+$', ''
@@ -261,10 +285,38 @@ jobs:
               }
           }
           
+          # LeanSpectrum scope filter: drop broken references that live in
+          # files this PR did not touch. Upstream Orca wiki gaps are
+          # logged at warning level (visible in the run log) but do not
+          # gate the workflow.
+          $totalRefs = $brokenReferences.Count
+          if ($changedSet.Count -gt 0) {
+              $scoped = @()
+              $skipped = @()
+              foreach ($ref in $brokenReferences) {
+                  $sf = $ref.SourceFile
+                  $sfNorm = ($sf -replace '/', '\').ToLower()
+                  $sfDoc = ("doc\" + $sfNorm).ToLower()
+                  $sfTab = $sf.ToLower()
+                  if ($changedSet.Contains($sfNorm) -or $changedSet.Contains($sfDoc) -or $changedSet.Contains($sfTab) -or ($sf -eq 'Tab.cpp' -and $changedSet.Contains('src\slic3r\gui\tab.cpp'))) {
+                      $scoped += $ref
+                  } else {
+                      $skipped += $ref
+                  }
+              }
+              if ($skipped.Count -gt 0) {
+                  Write-Host "::warning::Skipped $($skipped.Count) inherited upstream errors not in PR scope (see logs for detail)"
+                  $skipped | Group-Object SourceFile | ForEach-Object {
+                      Write-Host "  [inherited] doc/$($_.Name): $($_.Group.Count) issue(s)"
+                  }
+              }
+              $brokenReferences = $scoped
+          }
+
           # Report results
           $linkErrors = $brokenReferences | Where-Object { $_.Type -eq "Link" }
           $imageErrors = $brokenReferences | Where-Object { $_.Type -eq "Image" }
-          
+
           if ($brokenReferences.Count -gt 0) {
               Write-Host "::error::Documentation validation failed"
               

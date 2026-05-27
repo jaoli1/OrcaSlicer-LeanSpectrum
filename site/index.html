@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeanSpectrum — OrcaSlicer fork for Snapmaker U1 multi-color FFF</title>
+<meta name="description" content="Fork OrcaSlicer pour Snapmaker U1 : économie filament post-slicing 5 passes, conversion Bambu .3mf → U1, Auto-Profile par intent matière. AGPL-3.0.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#0a0c10">
+<link rel="canonical" href="https://slicer.maisondrabiec.fr/">
+<link rel="alternate" hreflang="fr" href="https://slicer.maisondrabiec.fr/">
+<link rel="alternate" hreflang="en" href="https://slicer.maisondrabiec.fr/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://slicer.maisondrabiec.fr/">
+
+<!-- Open Graph / Facebook / Discord / Mastodon -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LeanSpectrum">
+<meta property="og:title" content="LeanSpectrum — OrcaSlicer fork for Snapmaker U1">
+<meta property="og:description" content="Less expertise required, less filament wasted. A C++ OrcaSlicer fork with 5-pass G-code economy, Bambu palette conversion and intent-based Auto-Profile, tuned for the Snapmaker U1 multi-color FFF.">
+<meta property="og:url" content="https://slicer.maisondrabiec.fr/">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_US">
+
+<!-- Twitter / X / Bluesky card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LeanSpectrum — OrcaSlicer fork for Snapmaker U1">
+<meta name="twitter:description" content="5-pass G-code economy + Bambu→U1 palette converter + Auto-Profile. AGPL-3.0. Windows, macOS, Linux.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<!-- Structured data: SoftwareApplication. Builds the rich SERP card
+     ("free, runs on Windows/macOS/Linux, AGPL-3.0"). Keep in sync with
+     release tags. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "LeanSpectrum",
+  "alternateName": "OrcaSlicer-LeanSpectrum",
+  "description": "OrcaSlicer fork for the Snapmaker U1 multi-color FFF printer. Ships a 5-pass G-code economy post-processor, a Bambu Lab .3mf palette converter, and an intent-based Auto-Profile module.",
+  "applicationCategory": "DesignApplication",
+  "applicationSubCategory": "3D Printing Slicer",
+  "operatingSystem": "Windows 10/11, macOS 13+, Linux (Glibc 2.31+)",
+  "downloadUrl": "https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases/latest",
+  "softwareRequirements": "OpenGL 3.3, 8 GB RAM",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "LeanSpectrum contributors",
+    "url": "https://github.com/jaoli1/OrcaSlicer-LeanSpectrum"
+  },
+  "sameAs": [
+    "https://github.com/jaoli1/OrcaSlicer-LeanSpectrum"
+  ],
+  "inLanguage": ["fr", "en"]
+}
+</script>
+</head>
+<body>
+
+<a class="skip-link" href="#main" data-i18n-fr="Aller au contenu principal" data-i18n-en="Skip to main content">Aller au contenu principal</a>
+
+<header class="topbar">
+  <a href="#" class="brand"><span class="cursor" aria-hidden="true">$</span>&nbsp;leanspectrum</a>
+  <nav aria-label="Sections">
+    <a href="#download" data-i18n-fr="Télécharger" data-i18n-en="Download">Télécharger</a>
+    <a href="#piliers" data-i18n-fr="Stack" data-i18n-en="Stack">Stack</a>
+    <a href="#pipeline" data-i18n-fr="Pipeline" data-i18n-en="Pipeline">Pipeline</a>
+    <a href="#bambu" data-i18n-fr="Conversion Bambu" data-i18n-en="Bambu convert">Conversion Bambu</a>
+    <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum" class="ext">github</a>
+  </nav>
+  <button class="lang" id="lang-toggle" type="button"
+          aria-label="Switch to English" data-aria-fr="Switch to English" data-aria-en="Basculer en français">EN</button>
+</header>
+
+<main id="main">
+
+<!-- ============================== hero ============================== -->
+<section class="hero">
+  <pre class="ascii" aria-hidden="true">
+   __                ____             __
+  / /__ ___ ____    / __/__  ___ ____/ /________ ____ _
+ / / -_) _ `/ _ \  _\ \/ _ \/ -_) __/ __/ __/ // /  ' \
+/_/\__/\_,_/_//_/ /___/ .__/\__/\__/\__/_/  \_,_/_/_/_/
+                     /_/
+  </pre>
+  <h1 class="sr-only">LeanSpectrum</h1>
+  <p class="prompt"><span class="cursor">&gt;_</span>
+    <span data-i18n-fr="Un fork OrcaSlicer pour Snapmaker U1." data-i18n-en="An OrcaSlicer fork for the Snapmaker U1.">Un fork OrcaSlicer pour Snapmaker U1.</span>
+  </p>
+  <p class="prompt"><span class="cursor">&gt;_</span>
+    <span class="text-accent" data-i18n-fr="Moins d'expertise requise, moins de filament gâché." data-i18n-en="Less expertise required, less filament wasted.">Moins d'expertise requise, moins de filament gâché.</span>
+  </p>
+  <p class="meta">
+    <span class="kbd">AGPL-3.0</span>
+    <span class="dot" aria-hidden="true">·</span>
+    <span class="kbd">C++17</span>
+    <span class="dot" aria-hidden="true">·</span>
+    <span class="kbd">wxWidgets</span>
+    <span class="dot" aria-hidden="true">·</span>
+    <span class="kbd">Klipper</span>
+    <span class="dot" aria-hidden="true">·</span>
+    <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum">github.com/jaoli1/OrcaSlicer-LeanSpectrum</a>
+  </p>
+</section>
+
+<!-- =========================== big downloads ======================== -->
+<section id="download" class="download">
+  <h2><span class="hash" aria-hidden="true">##</span> <span data-i18n-fr="Télécharger" data-i18n-en="Download">Télécharger</span></h2>
+  <p class="caption" data-i18n-fr="Builds matriciels CI sur tag. La page Releases GitHub liste tous les artefacts par version." data-i18n-en="Matrix CI builds on tag. The GitHub Releases page lists every artefact by version.">
+    Builds matriciels CI sur tag. La page Releases GitHub liste tous les artefacts par version.
+  </p>
+
+  <div class="dl-grid-big">
+    <a class="dl-big windows" href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases/latest">
+      <div class="dl-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+          <path d="M2 4.5l9-1.3v8.4H2V4.5zm10-1.4l11-1.6v10.1H12V3.1zM2 12h9v8.5l-9-1.3V12zm10 0h11v10.5l-11-1.6V12z"/>
+        </svg>
+      </div>
+      <div class="dl-body">
+        <h3>Windows</h3>
+        <p class="dl-meta" data-i18n-fr="Windows 10 / 11 · x64" data-i18n-en="Windows 10 / 11 · x64">Windows 10 / 11 · x64</p>
+        <div class="dl-formats">
+          <span class="fmt">.msi</span>
+          <span class="fmt">.exe</span>
+          <span class="fmt-note" data-i18n-fr="NSIS portable" data-i18n-en="NSIS portable">NSIS portable</span>
+        </div>
+      </div>
+      <div class="dl-arrow" aria-hidden="true">&rarr;</div>
+    </a>
+
+    <a class="dl-big macos" href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases/latest">
+      <div class="dl-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+          <path d="M16.5 12.3c0-2.5 2-3.7 2.1-3.8-1.1-1.7-2.9-1.9-3.5-2-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.2.9-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3.1 2.5 1.2 0 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.7-1-2.7-3.8zM14.1 4.8c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2-.5 2.7-1.3z"/>
+        </svg>
+      </div>
+      <div class="dl-body">
+        <h3>macOS</h3>
+        <p class="dl-meta" data-i18n-fr="macOS 13+ · arm64 + Intel" data-i18n-en="macOS 13+ · arm64 + Intel">macOS 13+ · arm64 + Intel</p>
+        <div class="dl-formats">
+          <span class="fmt">.dmg</span>
+          <span class="fmt-note">arm64</span>
+          <span class="fmt-note">Intel</span>
+        </div>
+      </div>
+      <div class="dl-arrow" aria-hidden="true">&rarr;</div>
+    </a>
+
+    <a class="dl-big linux" href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases/latest">
+      <div class="dl-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+          <path d="M12 2c-2.2 0-4 1.8-4 4 0 1.2.5 2.2 1.3 3 .2.2.3.4.3.6 0 .7-.4 1.3-1 1.6-3 1.6-5 4.8-5 8.4 0 .6.4 1 1 1h1.5c.3 0 .5-.1.7-.4l1.1-1.6c.6.6 1.3 1.1 2.1 1.5v.5c0 .3.2.5.5.5h2.8c.3 0 .5-.2.5-.5v-.5c.8-.4 1.5-.9 2.1-1.5l1.1 1.6c.2.3.4.4.7.4H18c.6 0 1-.4 1-1 0-3.6-2-6.8-5-8.4-.6-.3-1-.9-1-1.6 0-.2.1-.4.3-.6.8-.8 1.3-1.8 1.3-3 0-2.2-1.8-4-4-4zm-1.5 4c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1zm3 0c.6 0 1 .4 1 1s-.4 1-1 1-1-.4-1-1 .4-1 1-1z"/>
+        </svg>
+      </div>
+      <div class="dl-body">
+        <h3>Linux</h3>
+        <p class="dl-meta" data-i18n-fr="Glibc 2.31+ · x64" data-i18n-en="Glibc 2.31+ · x64">Glibc 2.31+ · x64</p>
+        <div class="dl-formats">
+          <span class="fmt">.AppImage</span>
+          <span class="fmt">.deb</span>
+          <span class="fmt">.rpm</span>
+        </div>
+      </div>
+      <div class="dl-arrow" aria-hidden="true">&rarr;</div>
+    </a>
+  </div>
+
+  <div class="dl-aside">
+    <h3 class="aside-title" data-i18n-fr="App compagnon" data-i18n-en="Companion app">App compagnon</h3>
+    <a class="dl-small" href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases">
+      <div class="dl-small-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="9" y1="13" x2="15" y2="13"/>
+          <line x1="9" y1="17" x2="15" y2="17"/>
+        </svg>
+      </div>
+      <div>
+        <div class="dl-small-title">SDS / TDS Importer</div>
+        <div class="dl-small-meta" data-i18n-fr="3 OS · Tauri 2 · tag sds-importer-v*" data-i18n-en="3 OS · Tauri 2 · tag sds-importer-v*">3 OS · Tauri 2 · tag sds-importer-v*</div>
+      </div>
+      <div class="dl-arrow" aria-hidden="true">&rarr;</div>
+    </a>
+  </div>
+</section>
+
+<!-- =========================== pipeline ============================ -->
+<section id="pipeline" class="pipeline">
+  <h2><span class="hash" aria-hidden="true">##</span> <span data-i18n-fr="Pipeline G-code" data-i18n-en="G-code pipeline">Pipeline G-code</span></h2>
+  <p class="caption" data-i18n-fr="Cinq passes post-slicing s'enchaînent automatiquement en sortie de slicer. Le gate de vérification rollback si quoi que ce soit dérive." data-i18n-en="Five post-slicing passes chained automatically at slicer export. The verification gate rolls back if anything drifts.">
+    Cinq passes post-slicing s'enchaînent automatiquement en sortie de slicer. Le gate de vérification rollback si quoi que ce soit dérive.
+  </p>
+  <pre class="diagram" aria-label="G-code economy pipeline">
+┌─────────────┐   ┌──────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│   slicer    │ → │ Pass 5   │ → │   Pass 1     │ → │   Pass 4     │ → │   Pass 2     │ → │   Pass 3     │
+│   .gcode    │   │ M82→M83  │   │ no-op tool   │   │ curvature E  │   │ shrink purge │   │ retract      │
+│   raw       │   │ + flow   │   │ swap + wipe  │   │ scaling      │   │ wipe-tower   │   │ collapse     │
+│             │   │ cap I5   │   │ block strip  │   │ + 1st layer  │   │ per idle     │   │ no-XY pairs  │
+└─────────────┘   └─────┬────┘   └──────────────┘   └──────────────┘   └──────────────┘   └──────┬───────┘
+                        │                                                                          │
+                        ↓ fail                                                                     ↓
+                  ┌──────────────┐                                                          ┌──────────────┐
+                  │ revert input │                                                          │ verify I2+I3 │ → ┌──────────┐
+                  │ stats notes  │                                                          │ rollback if  │   │ optimised│
+                  └──────────────┘                                                          │ drift &gt; tol │   │  .gcode  │
+                                                                                            └──────────────┘   └──────────┘
+  </pre>
+  <p class="caption" data-i18n-fr="Sur impression multi-couleur typique : –15 à –30 % filament, –5 à –15 % temps. Logué à la fin du slice via stats.extrusion_saved_mm + swaps_removed + segments_scaled." data-i18n-en="On typical multi-color prints: –15 to –30% filament, –5 to –15% time. Logged at slice end via stats.extrusion_saved_mm + swaps_removed + segments_scaled.">
+    Sur impression multi-couleur typique : –15 à –30 % filament, –5 à –15 % temps. Logué à la fin du slice via <code>stats.extrusion_saved_mm</code> + <code>swaps_removed</code> + <code>segments_scaled</code>.
+  </p>
+</section>
+
+<!-- ============================ stack / 3 piliers ================== -->
+<section id="piliers" class="piliers">
+  <h2><span class="hash" aria-hidden="true">##</span> Stack</h2>
+  <div class="grid3">
+    <article>
+      <div class="card-tag">[ post-process ]</div>
+      <h3 data-i18n-fr="Économie filament" data-i18n-en="Filament economy">Économie filament</h3>
+      <p data-i18n-fr="5 passes C++ qui réécrivent le G-code. Mass-conservation gate avec rollback. Basé sur Al-Juboori 2026." data-i18n-en="5 C++ passes that rewrite the G-code. Mass-conservation gate with rollback. Based on Al-Juboori 2026.">
+        5 passes C++ qui réécrivent le G-code. Mass-conservation gate avec rollback. Basé sur Al-Juboori 2026.
+      </p>
+      <code class="metric">stats.extrusion_saved_mm ↑</code>
+    </article>
+
+    <article>
+      <div class="card-tag">[ palette → U1 ]</div>
+      <h3>BambuConvert</h3>
+      <p data-i18n-fr="Importe n'importe quel .3mf Bambu, mappe sur 4 extrudeurs U1, synthétise les virtuels FullSpectrum. 3 stratégies, 19 ratios, dither Floyd-Steinberg." data-i18n-en="Imports any Bambu .3mf, maps onto 4 U1 extruders, synthesises FullSpectrum virtuals. 3 strategies, 19 ratios, Floyd-Steinberg dither.">
+        Importe n'importe quel .3mf Bambu, mappe sur 4 extrudeurs U1, synthétise les virtuels FullSpectrum. 3 stratégies, 19 ratios, dither Floyd-Steinberg.
+      </p>
+      <code class="metric">Σ ΔE 91 → 48 (−47%)</code>
+    </article>
+
+    <article>
+      <div class="card-tag">[ one click ]</div>
+      <h3>Auto-Profile</h3>
+      <p data-i18n-fr="5 intents × 9 polymères = 45 bundles calibrés sur le wiki Snapmaker U1. PLA / PETG / ABS / PC / PA / TPU / HIPS / PP / Unknown détectés depuis filament_type." data-i18n-en="5 intents × 9 polymers = 45 bundles tuned to the Snapmaker U1 wiki. PLA / PETG / ABS / PC / PA / TPU / HIPS / PP / Unknown auto-detected from filament_type.">
+        5 intents × 9 polymères = 45 bundles calibrés sur le wiki Snapmaker U1. PLA / PETG / ABS / PC / PA / TPU / HIPS / PP / Unknown détectés depuis filament_type.
+      </p>
+      <code class="metric">File → Auto-generate profile…</code>
+    </article>
+  </div>
+</section>
+
+<!-- =========================== bambu demo =========================== -->
+<section id="bambu" class="demo">
+  <h2><span class="hash" aria-hidden="true">##</span> <span data-i18n-fr="BambuConvert : benchmark" data-i18n-en="BambuConvert benchmark">BambuConvert : benchmark</span></h2>
+  <p data-i18n-fr="Vrai .3mf Bambu Lab X1 Carbon, 8 couleurs PLA. Le slicer fait tourner les 3 stratégies en parallèle et garde la meilleure sur la métrique pondérée." data-i18n-en="Real Bambu Lab X1 Carbon .3mf, 8 PLA colors. The slicer runs all 3 strategies in parallel and keeps the best one on the weighted metric.">
+    Vrai .3mf Bambu Lab X1 Carbon, 8 couleurs PLA. Le slicer fait tourner les 3 stratégies en parallèle et garde la meilleure sur la métrique pondérée.
+  </p>
+  <div class="tablewrap">
+  <table>
+    <caption class="sr-only" data-i18n-fr="Comparaison des 3 stratégies BambuConvert sur .3mf Bambu X1 Carbon 8 couleurs : somme et pondération des ΔE par couleur physique choisie" data-i18n-en="Comparison of the 3 BambuConvert strategies on a Bambu X1 Carbon 8-color .3mf: ΔE sum and weighted score per chosen physical color">
+      Comparaison des 3 stratégies BambuConvert sur .3mf Bambu X1 Carbon 8 couleurs : somme et pondération des ΔE par couleur physique choisie
+    </caption>
+    <thead>
+      <tr>
+        <th data-i18n-fr="Stratégie" data-i18n-en="Strategy">Stratégie</th>
+        <th>Σ ΔE</th>
+        <th data-i18n-fr="Pondéré (ΔE × m)" data-i18n-en="Weighted (ΔE × m)">Pondéré (ΔE × m)</th>
+        <th data-i18n-fr="4 physiques choisis" data-i18n-en="4 physicals picked">4 physiques choisis</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Usage</code></td>
+        <td>91.17</td>
+        <td>310</td>
+        <td>beige · noir · jaune · blanc</td>
+      </tr>
+      <tr>
+        <td><code>Chromatic</code></td>
+        <td><strong>48.26</strong></td>
+        <td>482</td>
+        <td>rouge · noir · jaune · blanc</td>
+      </tr>
+      <tr class="highlight">
+        <td><code>Balanced</code> <span class="badge" data-i18n-fr="choisi" data-i18n-en="picked">choisi</span></td>
+        <td>61.81</td>
+        <td><strong>285</strong></td>
+        <td>beige · noir · jaune · violet</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="caption" data-i18n-fr="ΔE 30 sur 2 m de filament rare fait moins de dégâts visibles qu'un ΔE 5 sur 40 m. Balanced minimise Σ(ΔE × used_mm)." data-i18n-en="ΔE 30 on 2 m of a rare filament hurts less visibly than ΔE 5 on 40 m. Balanced minimises Σ(ΔE × used_mm).">
+    ΔE 30 sur 2 m de filament rare fait moins de dégâts visibles qu'un ΔE 5 sur 40 m. Balanced minimise Σ(ΔE × used_mm).
+  </p>
+</section>
+
+<!-- =========================== auto-profile ========================= -->
+<section id="auto" class="auto">
+  <h2><span class="hash" aria-hidden="true">##</span> Auto-Profile</h2>
+  <p data-i18n-fr="5 intents × paramètres clés (réf. PLA). Les vitesses sont multipliées par 0.4 (TPU) à 1.0 (PLA) selon le polymère détecté." data-i18n-en="5 intents × key parameters (PLA reference). Speeds are scaled 0.4 (TPU) to 1.0 (PLA) per detected polymer.">
+    5 intents × paramètres clés (réf. PLA). Les vitesses sont multipliées par 0.4 (TPU) à 1.0 (PLA) selon le polymère détecté.
+  </p>
+  <div class="tablewrap">
+  <table>
+    <caption class="sr-only" data-i18n-fr="Tableau Auto-Profile : 5 intents × paramètres clés (épaisseur, murs, infill, vitesse paroi externe, débit volumétrique max) en référence PLA" data-i18n-en="Auto-Profile table: 5 intents × key parameters (layer height, walls, infill, outer wall speed, max volumetric flow) for the PLA reference">
+      Tableau Auto-Profile : 5 intents × paramètres clés (épaisseur, murs, infill, vitesse paroi externe, débit volumétrique max) en référence PLA
+    </caption>
+    <thead>
+      <tr>
+        <th>intent</th>
+        <th>layer</th>
+        <th data-i18n-fr="murs" data-i18n-en="walls">murs</th>
+        <th>infill</th>
+        <th data-i18n-fr="vit. extérieur" data-i18n-en="outer speed">vit. extérieur</th>
+        <th>max_vol</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>draft</code></td><td>0.28 mm</td><td>1</td><td>8 %</td><td>80 mm/s</td><td>28 mm³/s</td></tr>
+      <tr><td><code>standard</code></td><td>0.20 mm</td><td>2</td><td>15 %</td><td>60 mm/s</td><td>22 mm³/s</td></tr>
+      <tr><td><code>quality</code></td><td>0.12 mm</td><td>3</td><td>20 %</td><td>40 mm/s</td><td>15 mm³/s</td></tr>
+      <tr><td><code>strength</code></td><td>0.20 mm</td><td>4</td><td>35 %</td><td>50 mm/s</td><td>20 mm³/s</td></tr>
+      <tr><td><code>decorative</code></td><td>0.16 mm</td><td>2</td><td>10 % lightning</td><td>45 mm/s</td><td>18 mm³/s</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="caption" data-i18n-fr="Plafond hardware U1 : 32 mm³/s. Toutes les valeurs sont sous le plafond." data-i18n-en="U1 hardware ceiling: 32 mm³/s. All values are below the cap.">
+    Plafond hardware U1 : 32 mm³/s. Toutes les valeurs sont sous le plafond.
+  </p>
+</section>
+
+<!-- ============================== credits =========================== -->
+<section class="credits">
+  <h2><span class="hash" aria-hidden="true">##</span> <span data-i18n-fr="Crédits" data-i18n-en="Credits">Crédits</span></h2>
+  <ul>
+    <li><span class="kbd">economy</span> Al-Juboori 2026 <a href="https://doi.org/10.1007/s44444-026-00109-y">doi:10.1007/s44444-026-00109-y</a> · CC-BY 4.0</li>
+    <li><span class="kbd">bambu</span> josuanbn/bl2u1 (concept) · Sharma 2005 CIEDE2000</li>
+    <li><span class="kbd">wave</span> Janis A. Andersons · Steven McCulloch · dennisklappe</li>
+    <li><span class="kbd">fullspectrum</span> <a href="https://github.com/ratdoux/OrcaSlicer-FullSpectrum">ratdoux/OrcaSlicer-FullSpectrum</a></li>
+    <li><span class="kbd">base</span> <a href="https://github.com/Snapmaker/OrcaSlicer">Snapmaker_Orca</a> ← <a href="https://github.com/SoftFever/OrcaSlicer">OrcaSlicer</a> ← <a href="https://github.com/bambulab/BambuStudio">Bambu Studio</a> ← <a href="https://github.com/prusa3d/PrusaSlicer">PrusaSlicer</a> ← <a href="https://github.com/slic3r/Slic3r">Slic3r</a></li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <pre class="ascii small" aria-hidden="true">// AGPL-3.0-or-later · Snapmaker U1 · multi-color FDM</pre>
+  <p>
+    <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum">github</a>
+    <span class="dot" aria-hidden="true">·</span>
+    <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/blob/feature/filament-economy/doc/leanspectrum/QUICK_START.md">quick-start</a>
+    <span class="dot" aria-hidden="true">·</span>
+    <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/blob/feature/filament-economy/doc/leanspectrum/ROADMAP.md">roadmap</a>
+    <span class="dot" aria-hidden="true">·</span>
+    <a href="https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases">releases</a>
+  </p>
+</footer>
+
+<script>
+(function() {
+  var html = document.documentElement;
+  var btn = document.getElementById('lang-toggle');
+
+  function applyLang(lang) {
+    html.lang = lang;
+    btn.textContent = lang === 'fr' ? 'EN' : 'FR';
+    // Keep the toggle's accessible name in sync with the language it
+    // WILL switch to (mirrors the visible label). Screen readers
+    // re-announce on focus after this update.
+    btn.setAttribute(
+      'aria-label',
+      lang === 'fr' ? 'Switch to English' : 'Basculer en français'
+    );
+    document.querySelectorAll('[data-i18n-fr], [data-i18n-en]').forEach(function (el) {
+      var v = el.getAttribute('data-i18n-' + lang);
+      if (v != null) el.textContent = v;
+    });
+    try { localStorage.setItem('leanspectrum-lang', lang); } catch (e) {}
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem('leanspectrum-lang'); } catch (e) {}
+  if (!saved) {
+    var nav = (navigator.language || 'fr').toLowerCase();
+    saved = nav.indexOf('fr') === 0 ? 'fr' : 'en';
+  }
+  applyLang(saved);
+
+  btn.addEventListener('click', function () {
+    applyLang(html.lang === 'fr' ? 'en' : 'fr');
+  });
+
+  // Blink the cursor. Cache the NodeList once (the set of .cursor
+  // elements does not change after applyLang). Respect prefers-
+  // reduced-motion — vestibular users opt out of the 550 ms loop.
+  var motionOk = !window.matchMedia ||
+                 !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (motionOk) {
+    var cursors = document.querySelectorAll('.cursor');
+    setInterval(function () {
+      cursors.forEach(function (c) { c.classList.toggle('blink-off'); });
+    }, 550);
+  }
+})();
+</script>
+
+</body>
+</html>

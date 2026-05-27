@@ -64,6 +64,29 @@ enum AuthorizationType {
     atKeyPassword, atUserPassword
 };
 
+// LeanSpectrum: enums ported from dennisklappe/OrcaSlicer-WaveOverhangs
+// (itself a port of stmcculloch/PrusaSlicer-WaveOverhangs). Algorithm by
+// Janis A. Andersons. AGPL-3.0. These are used by
+// src/libslic3r/WaveOverhangs/ but the rest of the slicer integration
+// (config keys, hooks) is not landed yet — see
+// doc/leanspectrum/PORT_WAVE_OVERHANGS.md for the staged plan.
+enum WaveOverhangSpacingMode {
+    wosmUniform,
+    wosmProgressive
+};
+
+enum WaveOverhangSeamMode {
+    woseAlternating,
+    woseAligned,
+    woseRandom
+};
+
+enum class WaveOverhangPattern : int {
+    Monotonic,
+    ZigZag,
+    Smart
+};
+
 enum InfillPattern : int {
     ipMonotonic, ipMonotonicLine,
     ipRectilinear, ipAlignedRectilinear, ipZigZag, ipCrossZag, ipLockedZag,
@@ -454,6 +477,9 @@ static std::string get_bed_temp_1st_layer_key(const BedType type)
 
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(PrinterTechnology)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(GCodeFlavor)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(WaveOverhangSpacingMode)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(WaveOverhangSeamMode)
+CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(WaveOverhangPattern)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(FuzzySkinType)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(FuzzySkinMode)
 CONFIG_OPTION_ENUM_DECLARE_STATIC_MAPS(NoiseType)
@@ -1032,6 +1058,45 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionFloat, ironing_angle))
     // Detect bridging perimeters
     ((ConfigOptionBool, detect_overhang_wall))
+    // LeanSpectrum: Wave Overhangs port — 37 fields. See
+    // doc/leanspectrum/PORT_WAVE_OVERHANGS.md.
+    ((ConfigOptionBool,                 wave_overhangs))
+    ((ConfigOptionBool,                 wave_overhangs_instead_of_bridges))
+    ((ConfigOptionInt,                  wave_overhang_outer_perimeters))
+    ((ConfigOptionFloat,                wave_overhang_perimeter_overlap))
+    ((ConfigOptionFloat,                wave_overhang_minimum_width))
+    ((ConfigOptionEnum<WaveOverhangPattern>, wave_overhang_pattern))
+    ((ConfigOptionFloat,                wave_overhang_line_spacing))
+    ((ConfigOptionFloat,                wave_overhang_flow_mm3_per_mm))
+    ((ConfigOptionFloat,                wave_overhang_print_speed))
+    ((ConfigOptionFloat,                wave_overhang_perimeter_speed))
+    ((ConfigOptionFloat,                wave_overhang_travel_speed))
+    ((ConfigOptionInt,                  wave_overhang_fan_speed))
+    ((ConfigOptionInt,                  wave_overhang_aux_fan_speed))
+    ((ConfigOptionInt,                  wave_overhang_floor_layers))
+    ((ConfigOptionBool,                 wave_overhang_floor_use_hilbert))
+    ((ConfigOptionInt,                  wave_overhang_floor_hilbert_layers))
+    ((ConfigOptionInt,                  wave_overhang_floor_hilbert_density))
+    ((ConfigOptionFloat,                wave_overhang_floor_print_speed))
+    ((ConfigOptionFloat,                wave_overhang_floor_perimeter_speed))
+    ((ConfigOptionInt,                  wave_overhang_floor_fan_speed))
+    ((ConfigOptionInt,                  wave_overhang_floor_aux_fan_speed))
+    ((ConfigOptionInt,                  wave_overhang_nozzle_temp))
+    ((ConfigOptionFloat,                wave_overhang_min_wave_time))
+    ((ConfigOptionFloat,                wave_overhang_min_layer_time))
+    ((ConfigOptionFloat,                wave_overhang_min_angle))
+    ((ConfigOptionEnum<WaveOverhangSpacingMode>, wave_overhang_spacing_mode))
+    ((ConfigOptionEnum<WaveOverhangSeamMode>,    wave_overhang_seam_mode))
+    ((ConfigOptionBool,                 wave_overhang_debug_gcode))
+    ((ConfigOptionFloat,                wave_overhang_min_length))
+    ((ConfigOptionInt,                  wave_overhang_max_iterations))
+    ((ConfigOptionFloat,                wave_overhang_min_new_area))
+    ((ConfigOptionBool,                 wave_overhang_corner_taper_enable))
+    ((ConfigOptionFloat,                wave_overhang_line_spacing_corner))
+    ((ConfigOptionFloat,                wave_overhang_corner_taper_distance))
+    ((ConfigOptionFloat,                wave_overhang_corner_angle_threshold))
+    ((ConfigOptionFloat,                wave_overhang_end_retract_length))
+    ((ConfigOptionBool,                 support_remaining_areas_after_wave_overhangs))
     ((ConfigOptionInt, wall_filament))
     ((ConfigOptionFloatOrPercent, inner_wall_line_width))
     ((ConfigOptionFloat, inner_wall_speed))
@@ -1354,6 +1419,19 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionBool,               ooze_prevention))
     ((ConfigOptionString,             filename_format))
     ((ConfigOptionStrings,            post_process))
+    // LeanSpectrum filament economy settings (see doc/filament-economy/ARCHITECTURE.md)
+    ((ConfigOptionBool,               filament_economy_enable))
+    ((ConfigOptionBool,               filament_economy_remove_noop_swaps))
+    ((ConfigOptionBool,               filament_economy_shrink_purge))
+    ((ConfigOptionInt,                filament_economy_shrink_purge_pct))
+    ((ConfigOptionBool,               filament_economy_merge_travel))
+    ((ConfigOptionBool,               filament_economy_curvature_lh))
+    ((ConfigOptionFloat,              filament_economy_curvature_low_deg))
+    ((ConfigOptionFloat,              filament_economy_curvature_high_deg))
+    ((ConfigOptionInt,                filament_economy_curvature_max_pct))
+    ((ConfigOptionInt,                filament_economy_curvature_filter_window))
+    ((ConfigOptionBool,               filament_economy_force_m83))
+    ((ConfigOptionFloat,              filament_economy_mass_tolerance_pct))
     ((ConfigOptionFloat,              mixed_color_layer_height_a))
     ((ConfigOptionFloat,              mixed_color_layer_height_b))
     ((ConfigOptionBool,               mixed_filament_gradient_mode))

@@ -157,6 +157,18 @@ public:
     // BBS
     ExPolygons              loverhangs;
     BoundingBox             loverhangs_bbox;
+
+    // LeanSpectrum: Wave-Overhang per-layer footprints. Populated by
+    // PerimeterGenerator in Phase 3b; consumed by detect_surfaces_type +
+    // support pipeline. Empty until that wire-up lands.
+    //
+    // wave_overhang_floor_polygons   — promote stInternal -> stBottomBridge on the floor_layers above
+    // wave_overhang_covered_polygons — full wave coverage, used to subtract support areas
+    // wave_overhang_shadow_polygons  — promoted bottom-bridge subset, blocks vertical-shell propagation above
+    Polygons                wave_overhang_floor_polygons;
+    Polygons                wave_overhang_covered_polygons;
+    Polygons                wave_overhang_shadow_polygons;
+
     size_t                  region_count() const { return m_regions.size(); }
     const LayerRegion*      get_region(int idx) const { return m_regions[idx]; }
     LayerRegion*            get_region(int idx) { return m_regions[idx]; }

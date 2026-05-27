@@ -8987,5 +8987,120 @@ std::optional<EmbossShape> read_emboss_shape(const char **attributes, unsigned i
     return EmbossShape{std::move(shapes), std::move(final_shape), scale, std::move(projection), std::move(fix_tr_mat), std::move(svg)};
 }
 
+// ---------------------------------------------------------------------------
+// LeanSpectrum: Bambu .3mf -> Snapmaker U1 palette conversion adapter
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// Pack one VirtualFilament into the compact recipe string format described
+// in bbs_3mf.hpp. Round-tripped by the slicer's runtime FullSpectrum layer
+// (TBD), so the format is part of the file-format-stable surface.
+std::string serialize_virtual_recipe(const BambuConvert::VirtualFilament &v) {
+    std::ostringstream ss;
+    ss.precision(4);
+    ss << "target=" << BambuConvert::format_srgb_hex(v.target)
+       << ",a=" << v.physical_a
+       << ",b=" << v.physical_b
+       << ",ratio_a=" << v.ratio_a
+       << ",achieved=" << BambuConvert::format_srgb_hex(v.achieved)
+       << ",de=" << v.delta_e;
+    return ss.str();
+}
+
+} // namespace
+
+bool apply_bambu_to_u1_conversion(PlateData                   &plate,
+                                  BambuConvert::Strategy       strategy,
+                                  BambuConvert::ConvertResult &out_result) {
+    // Idempotency guard: if the plate already carries a non-empty
+    // bambu_convert_recipe the conversion has already been applied
+    // (and slice_filaments_info has already been truncated to the 4
+    // physical slots). Re-running would not be a no-op — it would
+    // overwrite the existing recipe with a meaningless identity, so
+    // refuse loudly. Callers who want to redo the conversion must
+    // clear the recipe first.
+    if (const auto *prior = plate.config.option<ConfigOptionString>("bambu_convert_recipe");
+        prior != nullptr && !prior->value.empty())
+        return false;
+
+    // Build BambuConvert input from slice_filaments_info. The slicer
+    // populates FilamentInfo from <filament .../> entries in
+    // Metadata/slice_info.config; if that wasn't sliced (no slice_info)
+    // we fall back to the project config's filament_colour list with a
+    // flat usage of 1 mm — chromatic search still picks something sane.
+    std::vector<BambuConvert::InputFilament> inputs;
+
+    if (!plate.slice_filaments_info.empty()) {
+        inputs.reserve(plate.slice_filaments_info.size());
+        for (const FilamentInfo &fi : plate.slice_filaments_info) {
+            BambuConvert::InputFilament in;
+            in.color_hex = fi.color;
+            in.used_mm   = fi.used_m * 1000.0;
+            in.type      = fi.type;
+            inputs.push_back(std::move(in));
+        }
+    } else {
+        const auto *colors = plate.config.option<ConfigOptionStrings>("filament_colour");
+        const auto *types  = plate.config.option<ConfigOptionStrings>("filament_type");
+        if (colors == nullptr || colors->values.empty())
+            return false;
+        for (size_t i = 0; i < colors->values.size(); ++i) {
+            BambuConvert::InputFilament in;
+            in.color_hex = colors->values[i];
+            in.used_mm   = 1.0; // flat fallback
+            in.type      = (types != nullptr && i < types->values.size())
+                ? types->values[i] : std::string("PLA");
+            inputs.push_back(std::move(in));
+        }
+    }
+
+    if (inputs.empty())
+        return false;
+
+    out_result = BambuConvert::convert_filament_list(inputs, strategy);
+
+    // Rewrite filament_colour / filament_type to only the 4 chosen physicals,
+    // in slot order. The original Bambu list (which contained the overflow
+    // entries) is replaced; the overflow recipes go into bambu_convert_recipe.
+    std::vector<std::string> new_colors;
+    std::vector<std::string> new_types;
+    new_colors.reserve(out_result.physical_count);
+    new_types.reserve(out_result.physical_count);
+    for (size_t i = 0; i < out_result.physical_count; ++i) {
+        const size_t idx = out_result.physical_indices[i];
+        new_colors.push_back(inputs[idx].color_hex);
+        new_types.push_back(inputs[idx].type);
+    }
+
+    plate.config.set_key_value("filament_colour", new ConfigOptionStrings(new_colors));
+    plate.config.set_key_value("filament_type",   new ConfigOptionStrings(new_types));
+
+    // Encode the FullSpectrum virtuals as a single string. One recipe per
+    // semicolon-separated entry.
+    std::ostringstream recipe;
+    for (size_t i = 0; i < out_result.virtuals.size(); ++i) {
+        if (i) recipe << ";";
+        recipe << serialize_virtual_recipe(out_result.virtuals[i]);
+    }
+    plate.config.set_key_value("bambu_convert_recipe", new ConfigOptionString(recipe.str()));
+
+    // Also rebuild slice_filaments_info to mirror the new physical-only list,
+    // so any UI / report that walks it sees the converted state. We preserve
+    // tray_info_id from the source physical input, drop usage figures (no
+    // longer accurate after the assignment).
+    std::vector<FilamentInfo> new_slice_info;
+    new_slice_info.reserve(out_result.physical_count);
+    for (size_t i = 0; i < out_result.physical_count; ++i) {
+        FilamentInfo fi;
+        fi.id    = static_cast<int>(i);
+        fi.color = new_colors[i];
+        fi.type  = new_types[i];
+        new_slice_info.push_back(std::move(fi));
+    }
+    plate.slice_filaments_info = std::move(new_slice_info);
+
+    return true;
+}
 
 } // namespace Slic3r

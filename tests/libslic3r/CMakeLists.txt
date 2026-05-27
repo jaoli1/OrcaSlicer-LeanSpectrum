@@ -4,6 +4,9 @@ add_executable(${_TEST_NAME}_tests
 	${_TEST_NAME}_tests.cpp
 	test_3mf.cpp
 	test_aabbindirect.cpp
+	test_auto_profile.cpp
+	test_bambu_convert.cpp
+	test_fullspectrum_dither.cpp
 	test_clipper_offset.cpp
 	test_clipper_utils.cpp
 	test_config.cpp

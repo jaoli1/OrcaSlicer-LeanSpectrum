@@ -72,6 +72,7 @@
 #include "libslic3r/Format/AMF.hpp"
 //#include "libslic3r/Format/3mf.hpp"
 #include "libslic3r/Format/bbs_3mf.hpp"
+#include "libslic3r/AutoProfile.hpp"
 #include "libslic3r/GCode/ThumbnailData.hpp"
 #include "libslic3r/Model.hpp"
 #include "libslic3r/SLA/Hollowing.hpp"
@@ -20290,6 +20291,253 @@ void Plater::on_filaments_delete(size_t num_filaments, size_t filament_id, int r
                 item.extruder--;
         }
     }
+}
+
+
+// LeanSpectrum: Bambu .3mf -> Snapmaker U1 palette conversion entry point.
+// Reads filament_colour / filament_type from project_config, runs the
+// BambuConvert assignment algorithm, reduces the palette to the 4 U1
+// physical slots, and writes the FullSpectrum overflow recipes into
+// project_config["bambu_convert_recipe"]. Triggered from the File menu
+// item added in MainFrame.cpp.
+bool Plater::convert_bambu_to_u1()
+{
+    auto &project_config = wxGetApp().preset_bundle->project_config;
+
+    if (const auto *prior = project_config.option<ConfigOptionString>("bambu_convert_recipe");
+        prior != nullptr && !prior->value.empty()) {
+        ::wxMessageBox(_L("The current project's palette has already been converted to Snapmaker U1. "
+                          "Reset the bambu_convert_recipe config option to re-run the conversion."),
+                       _L("Bambu \xe2\x86\x92 U1 conversion"),
+                       wxOK | wxICON_INFORMATION);
+        return false;
+    }
+
+    const auto *colors_opt = project_config.option<ConfigOptionStrings>("filament_colour");
+    const auto *types_opt  = project_config.option<ConfigOptionStrings>("filament_type");
+    if (colors_opt == nullptr || colors_opt->values.size() <= 4) {
+        ::wxMessageBox(_L("This project has 4 or fewer filaments — no Bambu \xe2\x86\x92 U1 "
+                          "conversion is needed (the Snapmaker U1 has 4 physical extruders)."),
+                       _L("Bambu \xe2\x86\x92 U1 conversion"),
+                       wxOK | wxICON_INFORMATION);
+        return false;
+    }
+
+    // Confirm with the user before mutating the preset.
+    wxString summary = wxString::Format(
+        _L("Convert this project's %zu-color palette to the Snapmaker U1's 4 physical extruders?\n\n"
+           "Colors beyond the first 4 will be synthesised as FullSpectrum virtual filaments using "
+           "two-physical mixes at runtime. The original palette is replaced — undo or reset "
+           "the recipe to revert."),
+        colors_opt->values.size());
+    if (::wxMessageBox(summary, _L("Bambu \xe2\x86\x92 U1 conversion"),
+                       wxYES_NO | wxICON_QUESTION) != wxYES)
+        return false;
+
+    std::vector<BambuConvert::InputFilament> inputs;
+    inputs.reserve(colors_opt->values.size());
+    for (size_t i = 0; i < colors_opt->values.size(); ++i) {
+        BambuConvert::InputFilament in;
+        in.color_hex = colors_opt->values[i];
+        in.used_mm   = 1.0; // no slice info at the project level — flat usage
+        in.type      = (types_opt != nullptr && i < types_opt->values.size())
+            ? types_opt->values[i] : std::string("PLA");
+        inputs.push_back(std::move(in));
+    }
+
+    // Auto-pick the best of three strategies, scored on the
+    // usage-WEIGHTED deltaE sum (perceptual mismatch multiplied by how
+    // much of that color the print actually deposits). This is what
+    // "how visually wrong the print looks" actually correlates with —
+    // a deltaE 30 drift on 2 m of filament hurts much less than a
+    // deltaE 5 drift on 40 m. All three strategies are cheap (well
+    // under 100 ms for N <= 16), so we just run them all and pick.
+    BambuConvert::ConvertResult via_usage =
+        BambuConvert::convert_filament_list(inputs, BambuConvert::Strategy::Usage);
+    BambuConvert::ConvertResult via_chromatic =
+        BambuConvert::convert_filament_list(inputs, BambuConvert::Strategy::Chromatic);
+    BambuConvert::ConvertResult via_balanced =
+        BambuConvert::convert_filament_list(inputs, BambuConvert::Strategy::Balanced);
+    BambuConvert::ConvertResult result = via_usage;
+    if (via_chromatic.total_overflow_weighted_delta_e <
+        result.total_overflow_weighted_delta_e)
+        result = via_chromatic;
+    if (via_balanced.total_overflow_weighted_delta_e <
+        result.total_overflow_weighted_delta_e)
+        result = via_balanced;
+
+    // Reorder the preset_bundle so the 4 physicals come first, in slot order.
+    std::vector<std::string> new_colors;
+    std::vector<std::string> new_types;
+    new_colors.reserve(result.physical_count);
+    new_types.reserve(result.physical_count);
+    for (size_t i = 0; i < result.physical_count; ++i) {
+        const size_t idx = result.physical_indices[i];
+        new_colors.push_back(inputs[idx].color_hex);
+        new_types.push_back(inputs[idx].type);
+    }
+
+    wxGetApp().preset_bundle->set_num_filaments(result.physical_count,
+        new_colors.empty() ? std::string("#FFFFFF") : new_colors.front());
+    project_config.set_key_value("filament_colour", new ConfigOptionStrings(new_colors));
+    project_config.set_key_value("filament_type",   new ConfigOptionStrings(new_types));
+
+    // Encode virtuals into bambu_convert_recipe (semicolon-separated entries).
+    std::ostringstream recipe;
+    for (size_t i = 0; i < result.virtuals.size(); ++i) {
+        if (i) recipe << ";";
+        const auto &v = result.virtuals[i];
+        recipe.precision(4);
+        recipe << "target=" << BambuConvert::format_srgb_hex(v.target)
+               << ",a=" << v.physical_a
+               << ",b=" << v.physical_b
+               << ",ratio_a=" << v.ratio_a
+               << ",achieved=" << BambuConvert::format_srgb_hex(v.achieved)
+               << ",de=" << v.delta_e;
+    }
+    project_config.set_key_value("bambu_convert_recipe", new ConfigOptionString(recipe.str()));
+
+    // Register the FullSpectrum virtual recipes as custom mixed-filament
+    // rows so the slicer actually uses them — without this, the recipe
+    // is just metadata sitting in the project config and the U1 keeps
+    // printing with the 4 physicals only.
+    auto &mgr = wxGetApp().preset_bundle->mixed_filaments;
+    mgr.load_bambu_convert_recipe(recipe.str(), new_colors);
+    // Activate the dither path so the new custom rows actually drive
+    // layer-by-layer A/B choice at slicing time. apply_gradient_settings
+    // is the only API that flips m_advanced_dithering; we keep
+    // gradient_mode = 0 (layer cycle) and reuse the project's bounds
+    // (defaults are sensible).
+    mgr.apply_gradient_settings(/*gradient_mode=*/0,
+                                /*lower_bound=*/0.04f,
+                                /*upper_bound=*/0.16f,
+                                /*advanced_dithering=*/true);
+    mgr.set_dither_mode(MixedFilamentManager::DitherMode::FloydSteinberg);
+    // Persist via the existing mixed_filament_definitions path so the
+    // custom rows survive .3mf save / load (PresetBundle's load flow
+    // already round-trips this key through load_custom_entries).
+    project_config.set_key_value("mixed_filament_definitions",
+        new ConfigOptionString(mgr.serialize_custom_entries()));
+
+    // Refresh the GUI.
+    on_filaments_change(result.physical_count);
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
+    force_filament_colors_update();
+
+    // Compose the result summary including which of the three strategies won.
+    auto strat_name = [](BambuConvert::Strategy s) {
+        switch (s) {
+            case BambuConvert::Strategy::Usage:     return "Usage";
+            case BambuConvert::Strategy::Chromatic: return "Chromatic";
+            case BambuConvert::Strategy::Balanced:  return "Balanced";
+        }
+        return "?";
+    };
+    // Helper: print 1000 as 1.0k, 12345 as 12.3k for readable weighted scores.
+    auto fmt_w = [](double v) {
+        if (v < 1000) return wxString::Format("%.0f", v);
+        return wxString::Format("%.1fk", v / 1000.0);
+    };
+    // MSVC parses \xCEx94E as a single hex escape (= 0x94E, out of byte
+    // range). Split each Δ-followed-by-E with a literal break so each
+    // \xNN escape consumes exactly two hex digits. The strings are still
+    // concatenated at compile time.
+    wxString done = wxString::Format(
+        _L("Conversion complete: %zu physical filaments, %zu virtual FullSpectrum recipes.\n\n"
+           "Picked: %s  (lowest weighted \xce\x94" "E)\n\n"
+           "                  raw \xce\x94" "E    weighted\n"
+           "  Usage:        %6.2f      %s\n"
+           "  Chromatic:    %6.2f      %s\n"
+           "  Balanced:     %6.2f      %s\n\n"
+           "Weighted = sum(\xce\x94" "E \xc3\x97 filament_used_mm), correlates with how "
+           "visibly wrong the print looks.\n"
+           "Floyd-Steinberg dither activated for the FullSpectrum virtuals."),
+        result.physical_count, result.virtuals.size(),
+        strat_name(result.strategy),
+        via_usage.total_overflow_delta_e,     fmt_w(via_usage.total_overflow_weighted_delta_e),
+        via_chromatic.total_overflow_delta_e, fmt_w(via_chromatic.total_overflow_weighted_delta_e),
+        via_balanced.total_overflow_delta_e,  fmt_w(via_balanced.total_overflow_weighted_delta_e));
+    ::wxMessageBox(done, _L("Bambu \xe2\x86\x92 U1 conversion"),
+                   wxOK | wxICON_INFORMATION);
+    return true;
+}
+
+// LeanSpectrum: auto-profile generator. Maps one of five high-level user
+// intents (Draft / Standard / High quality / Strength / Decorative) onto
+// a curated bundle of print-settings overrides, with material-aware
+// refinements derived from the active filament_type. The point is to
+// give non-expert users a one-click way to get a reasonable U1 result
+// without having to learn ~200 individual settings.
+//
+// See src/libslic3r/AutoProfile.hpp for the value tables and rationale.
+bool Plater::auto_generate_profile()
+{
+    // Build the choice list shown in the dialog. Order matches the
+    // AutoProfile::Intent enum so we can index directly into it.
+    const wxString choices[] = {
+        _L("Draft / Fast \xe2\x80\x94 thick layer, single wall, low infill"),
+        _L("Standard / Balanced \xe2\x80\x94 sensible default for everyday prints"),
+        _L("High quality / Detail \xe2\x80\x94 small layer, scarf seam, slow outer wall"),
+        _L("Strength / Functional \xe2\x80\x94 many walls, dense gyroid infill"),
+        _L("Decorative / Display \xe2\x80\x94 lightning infill, scarf seam, smooth surfaces"),
+    };
+    constexpr int n = sizeof(choices) / sizeof(choices[0]);
+
+    int selection = ::wxGetSingleChoiceIndex(
+        _L("Pick an intent for the auto-generated profile. Settings will be applied "
+           "on top of the active print preset and refined per the active filament's "
+           "polymer family."),
+        _L("Auto-generate profile"),
+        n, choices, this);
+    if (selection < 0 || selection >= n)
+        return false;
+
+    auto intent = static_cast<AutoProfile::Intent>(selection);
+
+    // Apply on the project's print config. AutoProfile reads filament_type
+    // out of it and picks the right Polymer-specific refinements.
+    auto &print_config = wxGetApp().preset_bundle->prints.get_edited_preset().config;
+    // Mirror the filament_type list into print_config temporarily so
+    // AutoProfile's auto-detection picks the right polymer. (PresetBundle
+    // tracks filament types on its filaments collection, not on prints.)
+    std::vector<std::string> filament_types;
+    for (const std::string &preset_name : wxGetApp().preset_bundle->filament_presets) {
+        std::string t = "PLA";
+        if (auto *p = wxGetApp().preset_bundle->filaments.find_preset(preset_name))
+            p->get_filament_type(t);
+        filament_types.push_back(t);
+    }
+    if (!filament_types.empty())
+        print_config.set_key_value("filament_type",
+                                   new ConfigOptionStrings(filament_types));
+
+    std::vector<std::string> notes = AutoProfile::apply(print_config, intent);
+
+    // Push the override down to the actual print preset so the GUI tabs
+    // pick it up. The dirty marker also lights up so the user knows the
+    // preset diverged from its base.
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->load_config(print_config);
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->update_dirty();
+    wxGetApp().get_tab(Preset::TYPE_PRINT)->update();
+
+    // Show the user a tidy summary of what changed.
+    wxString summary;
+    summary << _L("Auto-profile applied:") << "\n\n";
+    size_t emitted = 0;
+    for (const std::string &note : notes) {
+        summary << "  \xe2\x80\xa2 " << note << "\n";
+        if (++emitted >= 14) {
+            summary << "  \xe2\x80\xa6 (" << (notes.size() - emitted)
+                    << " more)\n";
+            break;
+        }
+    }
+    summary << "\n"
+            << _L("These overrides live on the print preset. Use \"Reset to "
+                  "default\" on a setting if you want to revert.");
+    ::wxMessageBox(summary, _L("Auto-generate profile"),
+                   wxOK | wxICON_INFORMATION);
+    return true;
 }
 
 

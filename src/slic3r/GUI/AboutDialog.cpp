@@ -253,9 +253,15 @@ AboutDialog::AboutDialog()
         wxStaticText* sm_version = new wxStaticText(this, wxID_ANY, sm_version_label, wxDefaultPosition, wxSize(title_wrap_width, -1), wxALIGN_CENTER_HORIZONTAL);
         wxStaticText* fs_version = new wxStaticText(this, wxID_ANY, fs_version_label, wxDefaultPosition, wxSize(title_wrap_width, -1), wxALIGN_CENTER_HORIZONTAL);
         wxStaticText* bs_version = new wxStaticText(this, wxID_ANY, wxString::Format("Based on Orca Slicer"), wxDefaultPosition, wxDefaultSize);
+        wxStaticText* ls_credits = new wxStaticText(this, wxID_ANY,
+            wxString::Format("LeanSpectrum: filament-economy passes (Al-Juboori 2026),\n"
+                             "BambuConvert (josuanbn/bl2u1 + Sharma 2005 CIEDE2000),\n"
+                             "Wave Overhangs (Andersons / McCulloch / Klappe)"),
+            wxDefaultPosition, wxSize(title_wrap_width, -1), wxALIGN_CENTER_HORIZONTAL);
         bs_version->SetFont(Label::Body_12);
         sm_version->SetFont(Label::Body_12);
         fs_version->SetFont(Label::Body_12);
+        ls_credits->SetFont(Label::Body_12);
         wxFont version_font = GetFont();
         #ifdef __WXMSW__
         version_font.SetPointSize(version_font.GetPointSize()-1);
@@ -269,16 +275,19 @@ AboutDialog::AboutDialog()
         sm_version->SetForegroundColour(wxColour("#FFFFFD"));
         fs_version->SetForegroundColour(wxColour("#FFFFFD"));
         bs_version->SetForegroundColour(wxColour("#FFFFFD"));
+        ls_credits->SetForegroundColour(wxColour("#FFFFFD"));
         version->SetBackgroundColour(wxColour("#4d4d4d"));
         sm_version->SetBackgroundColour(wxColour("#4d4d4d"));
         fs_version->SetBackgroundColour(wxColour("#4d4d4d"));
         bs_version->SetBackgroundColour(wxColour("#4d4d4d"));
+        ls_credits->SetBackgroundColour(wxColour("#4d4d4d"));
 
 
         vesizer->Add(version, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, FromDIP(5));
         vesizer->Add(sm_version, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, FromDIP(2));
         vesizer->Add(fs_version, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, FromDIP(2));
         vesizer->Add(bs_version, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, FromDIP(5));
+        vesizer->Add(ls_credits, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, FromDIP(5));
 // #if BBL_INTERNAL_TESTING
 //         wxString build_time = wxString::Format("Build Time: %s", std::string(SLIC3R_BUILD_TIME));
 //         wxStaticText* build_time_text = new wxStaticText(this, wxID_ANY, build_time, wxDefaultPosition, wxDefaultSize);

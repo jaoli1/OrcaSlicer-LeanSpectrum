@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LeanSpectrum SDS Importer</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #fafafa;
+      --fg: #1a1a1a;
+      --accent: #d35400;
+      --muted: #777;
+      --panel: #fff;
+      --border: #e4e4e4;
+      --tag-sds: #2980b9;
+      --tag-tds: #16a085;
+      --tag-unknown: #95a5a6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#181818; --fg:#eee; --panel:#222; --border:#333; }
+    }
+    html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--fg);
+                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 24px; }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
+    .topbar h1 { font-weight: 600; font-size: 1.4rem; margin: 0 0 4px; }
+    .lang-picker { display: flex; gap: 4px; align-items: center; font-size: 0.85rem; color: var(--muted); }
+    .lang-picker button {
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 0.85rem;
+    }
+    .lang-picker button.active { background: var(--accent); color: white; border-color: var(--accent); }
+    h2 { font-weight: 600; font-size: 1.05rem; margin: 0 0 12px; }
+    p.sub { color: var(--muted); margin-top: 0; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .tab { padding: 10px 16px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); }
+    .tab.active { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .drop {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 40px;
+      text-align: center; cursor: pointer; transition: border-color .15s;
+    }
+    .drop.hover { border-color: var(--accent); }
+    .row { display: flex; gap: 12px; align-items: center; margin: 12px 0; }
+    input[type=url], input[type=text] {
+      flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--panel); color: var(--fg); font-size: 0.95rem;
+    }
+    button {
+      background: var(--accent); color: white; border: 0; padding: 10px 18px;
+      border-radius: 8px; font-weight: 600; cursor: pointer;
+    }
+    button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .panel {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px; margin-top: 16px;
+    }
+    code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    .log { font-size: 0.85rem; max-height: 180px; overflow-y: auto;
+           background: rgba(0,0,0,0.04); padding: 10px; border-radius: 8px; }
+    .field { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+    .field span:first-child { color: var(--muted); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; color: white; }
+    .badge.review { background: #f39c12; }
+    .badge.ok     { background: #27ae60; }
+    .badge.sds    { background: var(--tag-sds); }
+    .badge.tds    { background: var(--tag-tds); }
+    .badge.unknown{ background: var(--tag-unknown); }
+    ul.catalog { list-style: none; padding: 0; max-height: 350px; overflow-y: auto;
+                 border: 1px solid var(--border); border-radius: 8px; }
+    ul.catalog li {
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    ul.catalog li:last-child { border-bottom: 0; }
+    ul.catalog li:hover { background: rgba(0,0,0,0.03); }
+    ul.catalog input[type=checkbox] { width: 18px; height: 18px; }
+    ul.catalog .meta { display: flex; gap: 8px; align-items: center; font-size: 0.85rem; }
+    ul.catalog .anchor { font-weight: 500; word-break: break-word; }
+    ul.catalog .url { color: var(--muted); font-size: 0.78rem; word-break: break-all; }
+    .progress {
+      width: 100%; height: 6px; background: var(--border); border-radius: 3px;
+      overflow: hidden; margin-top: 8px;
+    }
+    .progress .bar { height: 100%; background: var(--accent); width: 0%; transition: width .2s; }
+    .brand-group { margin-bottom: 14px; }
+    .brand-name { font-weight: 600; padding: 6px 0; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+    .brand-pdfs { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; }
+    .brand-pdfs li {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 4px 8px; cursor: pointer; border-radius: 4px;
+    }
+    .brand-pdfs li:hover { background: rgba(0,0,0,0.05); }
+    .brand-pdfs .size { color: var(--muted); font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1 data-i18n="app_title">LeanSpectrum SDS / TDS Importer</h1>
+        <p class="sub" data-i18n="app_subtitle">Turn filament safety / technical data sheets into Snapmaker_Orca profiles.</p>
+      </div>
+      <div class="lang-picker">
+        <span data-i18n="lang_label">Language</span>
+        <button data-lang-pick="en">EN</button>
+        <button data-lang-pick="fr">FR</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="single"   data-i18n="tab_single">Single PDF</div>
+      <div class="tab"        data-tab="catalog"  data-i18n="tab_catalog">Vendor catalog</div>
+      <div class="tab"        data-tab="database" data-i18n="tab_database">Local database</div>
+    </div>
+
+    <!-- ============ Single PDF tab ============ -->
+    <div id="tab-single" class="tab-panel active">
+      <div id="drop" class="drop">
+        <div data-i18n="drop_hint">Drop a .pdf here, or click to pick a file.</div>
+        <div id="pickedPath" class="sub" style="margin-top: 8px;"></div>
+      </div>
+
+      <div class="row">
+        <label><input id="fetchOnline" type="checkbox" checked />
+               <span data-i18n="fetch_online">Also look for the manufacturer's TDS online (recommended)</span></label>
+      </div>
+
+      <div class="row">
+        <button id="run" disabled data-i18n="create_profile">Create filament profile</button>
+        <span id="status" class="sub"></span>
+      </div>
+
+      <div id="result" class="panel" style="display:none;"></div>
+      <div id="logPanel" class="panel" style="display:none;">
+        <strong data-i18n="log_heading">Log</strong>
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+
+    <!-- ============ Catalog tab ============ -->
+    <div id="tab-catalog" class="tab-panel">
+      <p class="sub" data-i18n="catalog_intro">
+        Paste a vendor's certificates or downloads page URL. The app fetches the
+        page, lists every SDS / TDS PDF it can identify, and lets you batch-import
+        them in a single click.
+      </p>
+      <div class="row">
+        <input id="catalogUrl" type="url" data-i18n-placeholder="catalog_placeholder" placeholder="https://<vendor>/path/to/certificates" />
+        <button id="crawlBtn" data-i18n="catalog_discover">Discover PDFs</button>
+      </div>
+      <div class="row">
+        <label><input id="catalogFetchOnline" type="checkbox" />
+               <span data-i18n="catalog_fetch">Also try to fetch related TDS for each downloaded PDF</span></label>
+      </div>
+
+      <div id="catalogPanel" class="panel" style="display:none;">
+        <h2 data-i18n="catalog_discovered">Discovered documents</h2>
+        <div class="row" style="margin-top:0;">
+          <button id="selectAll"  class="secondary" data-i18n="catalog_select_all">Select all</button>
+          <button id="selectNone" class="secondary" data-i18n="catalog_select_none">Select none</button>
+          <button id="batchImport" data-i18n="catalog_import_btn">Import selected</button>
+          <span id="catalogStatus" class="sub"></span>
+        </div>
+        <div class="progress" style="display:none;" id="batchProgress"><div class="bar"></div></div>
+        <ul id="catalogList" class="catalog"></ul>
+        <div id="catalogSkipped" class="sub" style="margin-top: 10px;"></div>
+      </div>
+
+      <div id="batchResult" class="panel" style="display:none;"></div>
+    </div>
+
+    <!-- ============ Local database tab ============ -->
+    <div id="tab-database" class="tab-panel">
+      <p class="sub" data-i18n="database_intro">
+        Browse PDFs already downloaded on this machine. Defaults to the corpus folder
+        under your Downloads directory; change the path if your collection lives
+        elsewhere.
+      </p>
+      <div class="row">
+        <input id="corpusPath" type="text" />
+        <button id="corpusScanBtn" data-i18n="database_scan">Scan folder</button>
+      </div>
+
+      <div id="corpusPanel" class="panel" style="display:none;">
+        <div id="corpusStatus" class="sub" style="margin-bottom: 12px;"></div>
+        <div id="corpusBrands"></div>
+      </div>
+
+      <div id="corpusResult" class="panel" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script src="./src/i18n.js"></script>
+  <script src="./src/main.js"></script>
+</body>
+</html>

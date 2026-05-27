@@ -174,12 +174,23 @@ set(lisbslic3r_sources
     Flow.hpp
     FlushVolCalc.cpp
     FlushVolCalc.hpp
+    FullSpectrumDither.cpp
+    FullSpectrumDither.hpp
+    AutoProfile.cpp
+    AutoProfile.hpp
+    WaveOverhangs/AndersonsGenerator.cpp
+    WaveOverhangs/AndersonsGenerator.hpp
+    WaveOverhangs/IGenerator.hpp
+    WaveOverhangs/WaveOverhangs.cpp
+    WaveOverhangs/WaveOverhangs.hpp
     Format/3mf.cpp
     Format/3mf.hpp
     Format/AMF.cpp
     Format/AMF.hpp
     Format/bbs_3mf.cpp
     Format/bbs_3mf.hpp
+    Format/BambuConvert.cpp
+    Format/BambuConvert.hpp
     format.hpp
     Format/OBJ.cpp
     Format/OBJ.hpp
@@ -209,6 +220,8 @@ set(lisbslic3r_sources
     GCode/ExtrusionProcessor.hpp
     GCode/FanMover.cpp
     GCode/FanMover.hpp
+    GCode/FilamentEconomy.cpp
+    GCode/FilamentEconomy.hpp
     GCode/GCodeProcessor.cpp
     GCode/GCodeProcessor.hpp
     GCode.hpp

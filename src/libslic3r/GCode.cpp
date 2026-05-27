@@ -2244,9 +2244,13 @@ void GCode::_do_export(Print& print, GCodeOutputStream& file, ThumbnailsGenerato
                 // nozzle/bed temps, flow ratio and support flags are all emitted by
                 // Orca below; the website parser's config-block fallback reads them
                 // from there so duplicating here just made the header noisy.
+                // WAVE_OVERHANGS_VERSION and SoftFever_VERSION are dennisklappe
+                // fork-local CMake macros that don't exist in Snapmaker_Orca. Use a
+                // pinned port string + our SLIC3R_VERSION so the line still parses
+                // for the wave-overhangs.com website's diagnostic flow.
                 file.write_format(
                     "; WAVE_OVERHANG_BUILD wave_overhangs_version=%s orca_base=%s\n",
-                    WAVE_OVERHANGS_VERSION, SoftFever_VERSION);
+                    "0.5.0-leanspectrum-port", SLIC3R_VERSION);
 
                 size_t region_idx = 0;
                 for (const PrintRegion *region : print.m_print_regions) {

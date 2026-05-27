@@ -14,7 +14,15 @@ on:
      - 'doc/changelogs/**'
      - 'localization/**'
      - 'resources/**'
-     - ".github/workflows/build_*.yml"
+     # Explicit list of slicer-related workflow files. The previous
+     # glob '.github/workflows/build_*.yml' accidentally matched
+     # build_sds_importer.yml, which cancelled the slicer build_all
+     # via concurrency every time the SDS companion app's workflow
+     # was touched.
+     - '.github/workflows/build_all.yml'
+     - '.github/workflows/build_check_cache.yml'
+     - '.github/workflows/build_deps.yml'
+     - '.github/workflows/build_orca.yml'
      - 'scripts/flatpak/**'
 
   workflow_dispatch: # allows for manual dispatch

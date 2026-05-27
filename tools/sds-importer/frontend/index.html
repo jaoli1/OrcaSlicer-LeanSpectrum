@@ -98,6 +98,43 @@
   </style>
 </head>
 <body>
+
+  <!-- Visible JS error trap. If any script throws during init the user
+       sees it instead of staring at a frozen UI. v0.1.4 added so we
+       can diagnose Tauri 2 runtime issues without opening DevTools. -->
+  <div id="__boot_error" style="display:none; background:#c0392b; color:white; padding:12px 16px; font-family:ui-monospace,monospace; font-size:13px; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow:auto; border-bottom:3px solid #7d251a;"></div>
+  <script>
+    (function () {
+      var box = document.getElementById('__boot_error');
+      function show(label, detail) {
+        box.style.display = 'block';
+        box.textContent += '[' + label + '] ' + detail + '\n';
+      }
+      window.addEventListener('error', function (e) {
+        show('uncaught', (e.message || '') + ' @ ' + (e.filename || '?') + ':' + (e.lineno || '?'));
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        show('promise', (e.reason && e.reason.message) || String(e.reason));
+      });
+      // Sanity check: did Tauri inject the global ?
+      window.addEventListener('DOMContentLoaded', function () {
+        var t = window.__TAURI__;
+        if (!t) {
+          show('TAURI', 'window.__TAURI__ is undefined at DOMContentLoaded (withGlobalTauri + CSP problem).');
+        } else {
+          show('TAURI', 'present — keys: [' + Object.keys(t).join(', ') + ']' + (t.core ? ' core.invoke=' + (typeof t.core.invoke) : ''));
+          // Auto-hide if Tauri is fine AND no error fired after 800 ms
+          setTimeout(function () {
+            // Only hide if no error rows were added (we know the row above is the only one).
+            if (box.textContent.indexOf('uncaught') < 0 && box.textContent.indexOf('promise') < 0) {
+              box.style.display = 'none';
+            }
+          }, 800);
+        }
+      });
+    })();
+  </script>
+
   <div class="wrap">
     <div class="topbar">
       <div>

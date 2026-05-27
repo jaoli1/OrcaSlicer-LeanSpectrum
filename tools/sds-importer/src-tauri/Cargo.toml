@@ -1,6 +1,6 @@
 [package]
 name        = "custom-filament-profile-creator"
-version     = "0.1.3"
+version     = "0.1.4"
 edition     = "2021"
 description = "Creates Snapmaker_Orca filament profiles tailored to each vendor's SDS/TDS PDF"
 license     = "AGPL-3.0-or-later"

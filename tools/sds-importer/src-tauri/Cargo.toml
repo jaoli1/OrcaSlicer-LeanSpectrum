@@ -1,6 +1,6 @@
 [package]
 name        = "leanspectrum-sds-importer"
-version     = "0.1.0"
+version     = "0.1.1"
 edition     = "2021"
 description = "Turns filament SDS/TDS PDFs into Snapmaker_Orca filament profiles"
 license     = "AGPL-3.0-or-later"

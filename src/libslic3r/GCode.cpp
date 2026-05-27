@@ -893,6 +893,13 @@ std::string WipeTowerIntegration::post_process_wipe_tower_moves(const WipeTower:
                 line.replace(line.find(cur_gcode_start), 3, oss.str());
                 old_pos = transformed_pos;
             }
+            else {
+                // Upstream-snap 948f46e6ba: when a G1/G2/G3 has no XY delta
+                // and isn't never_skip tagged, drop it entirely instead of
+                // emitting a no-op move. Without this skip the wipe tower
+                // can exceed its allocated byte budget and gets truncated.
+                continue;
+            }
         }
 
         gcode_out += line + "\n";

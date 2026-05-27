@@ -11,6 +11,93 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.1.8] — fix: window closed silently on PDF import (UTF-8 panic)
+
+The 0.1.7 release installed and launched correctly, but clicking
+"Créer le profil filament" after dropping a PDF closed the application
+window immediately. No error dialog, no log entry. Tested PDF:
+ERYONE PLA+ TDS, which contains 9× `℃` (U+2103, 3 bytes UTF-8) plus
+`°` (U+00B0, 2 bytes), fullwidth `）` (U+FF09), fullwidth `，` (U+FF0C),
+and en-dashes.
+
+**Root cause** (three senior-agent audits converged): the TDS / SDS
+parsers slice the extracted text by **byte** index — `&text[idx..idx+200]`
+to look at a 200-byte window after a label, `&text[..text.len().min(1500)]`
+for the header, etc. When a bound lands inside a multi-byte UTF-8
+sequence, Rust panics `"byte index N is not a char boundary"`. The
+panic propagates out of the Tauri command worker thread, kills the
+WebView2 host, and the window vanishes — exactly the symptom the user
+saw, with no surviving stderr trace because the host died too fast for
+env_logger to flush.
+
+Fixes:
+
+- **`text_utils.rs` (new module)**: `safe_slice(s, start, end)` clamps
+  both bounds to the string length and snaps `start` DOWN / `end` UP
+  to the nearest valid char boundary. Never panics. Comprehensive
+  tests cover empty input, pure ASCII, U+2103 ℃, U+00B0 °, and the
+  exact "label window after a degree sign" pattern from `tds.rs`.
+- **`normalize_unicode(text)` (same module)**: folds `℃ → °C`, `℉ → °F`,
+  en-dash / em-dash → ASCII hyphen, fullwidth parens / comma / colon /
+  semicolon → ASCII, non-breaking space → space. Runs once on the
+  extracted text before either parser sees it, so the regexes no
+  longer have to carry per-pattern Unicode classes and the slice
+  surface area shrinks.
+- **`tds.rs`**: all 10 byte-slice sites refactored to `safe_slice(...)`
+  (degree-sign tail check, label-forward / label-backward windows,
+  header window for manufacturer + product, glass-transition window,
+  print-speed window).
+- **`sds.rs`**: all 5 byte-slice sites refactored to `safe_slice(...)`
+  (section split, density window forward + backward, two Section-9
+  range snippets).
+- **`lib.rs`** — `run_command(...)` wrapper: every Tauri command
+  (`import_pdf`, `import_from_urls`, `crawl_catalog`, `scan_corpus`)
+  runs its body inside `std::panic::catch_unwind`. Any future panic
+  surfaces as a structured `Error::Other("internal panic: …")`
+  returned to the JS frontend instead of taking the worker thread
+  down. The single safety net beneath the UTF-8 fix.
+- **`lib.rs`** — persistent log file at
+  `%LOCALAPPDATA%\Custom Filament Profile Creator\app.log` (Windows),
+  `~/Library/Application Support/Custom Filament Profile Creator/app.log`
+  (macOS), `~/.local/share/Custom Filament Profile Creator/app.log`
+  (Linux). `env_logger` targets this file when running as a packaged
+  app; a custom panic hook also appends panic info + location, so
+  the next time something goes wrong the user has a file to send
+  back. The release build no longer relies on stderr that nobody
+  reads.
+
+If you installed 0.1.7 and saw the window-closes-on-click symptom,
+0.1.8 fixes it in place — the bundle identifier is unchanged
+(`fork.leanspectrum.profile-creator`) so the new MSI / `.deb` / `.rpm`
+upgrades over 0.1.7.
+
+## [0.1.4–0.1.7] — IPC + serde plumbing (no functional changes)
+
+Four rapid-fire bugfix releases to make the v0.1.2 build actually
+usable end-to-end:
+
+- **0.1.4** — visible boot-error trap so a JS syntax error in the
+  loader script no longer paints a blank app window. Surfaced the
+  v0.1.2-era scope collision below.
+- **0.1.5** — fix `const t` from `main.js` colliding with `function t`
+  from `i18n.js` at global scope (`Identifier 't' has already been
+  declared`). Renamed the i18n helper to `tr` to free up the symbol.
+  The drop zone, the three tabs and the language picker all start
+  responding again.
+- **0.1.6** — `invoke('import_pdf', { pdf_path })` reverted to the
+  snake-case argument name expected by the Rust struct literal,
+  removing the `missing field pdf_path` error.
+- **0.1.7** — belt-and-suspenders: added
+  `#[serde(rename_all = "camelCase")]` to `ImportRequest` /
+  `BatchImportRequest` so both `pdf_path` and `pdfPath` deserialize
+  correctly. The JS side is back to camelCase to keep the wire
+  format consistent with Tauri's documented convention.
+
+These four iterations shared a single underlying cause (a single
+unaccounted-for runtime error blanked the entire frontend) and are
+collapsed here for readability. The 0.1.8 entry above is where the
+*data* path was made correct.
+
 ## [0.1.3] — CSP fix: drop zone + tabs were silently broken in 0.1.2
 
 The 0.1.2 release installed correctly on Windows (MSI valid, app

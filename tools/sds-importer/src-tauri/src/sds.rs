@@ -7,6 +7,7 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 
+use crate::text_utils::safe_slice;
 use crate::{polymer, ExtractedFilament};
 
 static SECTION_HEADING: Lazy<Regex> = Lazy::new(|| {
@@ -91,7 +92,7 @@ fn split_sections(text: &str) -> Sections<'_> {
 
     for (i, &(n, start)) in bounds.iter().enumerate() {
         let end = bounds.get(i + 1).map(|&(_, e)| e).unwrap_or(text.len());
-        sections.by_number[n] = Some(&text[start..end]);
+        sections.by_number[n] = Some(safe_slice(text, start, end));
     }
     sections
 }
@@ -139,9 +140,9 @@ fn parse_density(text: &str) -> Option<f64> {
     // same line as the label). Backward window is wider (400 chars) for
     // reverse-column TDS layouts where the value sits several lines
     // above the label.
-    let forward = &text[idx..text.len().min(idx + 200)];
+    let forward = safe_slice(text, idx, idx + 200);
     let before_start = idx.saturating_sub(400);
-    let backward = &text[before_start..idx];
+    let backward = safe_slice(text, before_start, idx);
 
     // Prefer unit-aware matches (g/cm, kg/m). They reject false friends
     // like "1.5 mm" (thickness) or "1.51 ohm-cm" (resistivity) that share
@@ -268,7 +269,7 @@ pub fn parse(text: &str) -> ExtractedFilament {
         let scan = |label_patterns: &[&str]| -> Option<(f64, f64)> {
             for pat in label_patterns {
                 if let Some(idx) = s9.to_ascii_lowercase().find(&pat.to_ascii_lowercase()) {
-                    let snippet = &s9[idx..s9.len().min(idx + 160)];
+                    let snippet = safe_slice(s9, idx, idx + 160);
                     let (lo, hi) = parse_temp_range(snippet);
                     if lo.is_some() || hi.is_some() {
                         return Some((lo.unwrap_or(hi.unwrap_or(0.0)), hi.unwrap_or(lo.unwrap_or(0.0))));
@@ -297,7 +298,7 @@ pub fn parse(text: &str) -> ExtractedFilament {
         let scan_low = |label_patterns: &[&str], floor: f64, ceiling: f64| -> Option<(f64, f64)> {
             for pat in label_patterns {
                 if let Some(idx) = s9.to_ascii_lowercase().find(&pat.to_ascii_lowercase()) {
-                    let snippet = &s9[idx..s9.len().min(idx + 160)];
+                    let snippet = safe_slice(s9, idx, idx + 160);
                     let (lo, hi) = parse_temp_range_with_floor(snippet, floor, ceiling);
                     if lo.is_some() || hi.is_some() {
                         return Some((lo.unwrap_or(hi.unwrap_or(0.0)), hi.unwrap_or(lo.unwrap_or(0.0))));

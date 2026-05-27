@@ -6,6 +6,7 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 
+use crate::text_utils::safe_slice;
 use crate::{polymer, ExtractedFilament};
 
 static RANGE_RX: Lazy<Regex> = Lazy::new(|| {
@@ -87,7 +88,7 @@ fn first_range_with_unit_check(window: &str, expect_c: bool) -> Option<(f64, f64
 
         // Look at the 6 chars after the match for a disqualifying unit.
         let tail_start = m.end();
-        let tail = &window[tail_start..window.len().min(tail_start + 8)];
+        let tail = safe_slice(window, tail_start, tail_start + 8);
         let tail_low = tail.to_ascii_lowercase();
         if expect_c {
             if tail_low.contains('%') || tail_low.contains("mm/s") || tail_low.contains("mm /s") {
@@ -121,7 +122,7 @@ fn scan_range_with_hint(
     let lower = text.to_ascii_lowercase();
     for label in labels {
         if let Some(idx) = lower.find(&label.to_ascii_lowercase()) {
-            let forward = &text[idx + label.len()..text.len().min(idx + label.len() + 200)];
+            let forward = safe_slice(text, idx + label.len(), idx + label.len() + 200);
             let forward_result = first_range_with_unit_check(forward, expect_c);
 
             let try_backward = match forward_result {
@@ -131,7 +132,7 @@ fn scan_range_with_hint(
 
             if try_backward {
                 let before_start = idx.saturating_sub(200);
-                let backward = &text[before_start..idx];
+                let backward = safe_slice(text, before_start, idx);
                 if let Some((lo, hi)) = first_range_with_unit_check(backward, expect_c) {
                     if expected_min.map(|m| lo >= m).unwrap_or(true) {
                         return (Some(lo), Some(hi));
@@ -161,9 +162,9 @@ fn scan_density(text: &str) -> Option<f64> {
     // official TDS where the 1.23 value sits ~270 chars above the label
     // because pdftotext extracts the data column ahead of the property
     // column.
-    let forward = &text[idx..text.len().min(idx + 200)];
+    let forward = safe_slice(text, idx, idx + 200);
     let before_start = idx.saturating_sub(400);
-    let backward = &text[before_start..idx];
+    let backward = safe_slice(text, before_start, idx);
 
     // Prefer unit-aware matches (g/cm, kg/m). Rejects false-friends like
     // "1.5 mm" (thickness) and "1.51 ohm-cm" (resistivity) that share the
@@ -180,7 +181,7 @@ fn scan_density(text: &str) -> Option<f64> {
 
 fn scan_manufacturer(text: &str) -> Option<String> {
     // Prefer the first match within the first ~1000 chars (header area).
-    let head = &text[..text.len().min(1500)];
+    let head = safe_slice(text, 0, 1500);
     MANUFACTURER_RX.captures(head)
         .and_then(|c| c.get(1).map(|m| m.as_str().trim().to_string()))
 }
@@ -227,7 +228,7 @@ fn strip_trailing_noise(s: &str) -> String {
 }
 
 fn scan_product_name(text: &str, manufacturer: Option<&str>) -> Option<String> {
-    let head = &text[..text.len().min(1200)];
+    let head = safe_slice(text, 0, 1200);
 
     // Labelled form ("Product Name: PLA", "PRODUCT NAME:  FILAMENT 3D PLA Speed Matt")
     // takes precedence — it carries the explicit value.
@@ -279,7 +280,7 @@ fn scan_glass_transition(text: &str) -> Option<f64> {
     for label in ["glass transition", "transition vitreuse",
                   "vicat softening", "vicat", "heat distortion"] {
         if let Some(idx) = lower.find(label) {
-            let window = &text[idx..text.len().min(idx + 200)];
+            let window = safe_slice(text, idx, idx + 200);
             for m in WORD_BOUNDED_NUM_RX.find_iter(window) {
                 if let Ok(v) = m.as_str().parse::<f64>() {
                     if (30.0..200.0).contains(&v) {
@@ -289,7 +290,7 @@ fn scan_glass_transition(text: &str) -> Option<f64> {
                         // the value is immediately preceded by "D" or "ISO"
                         // to avoid astm-style designators).
                         let prefix_start = idx + m.start().saturating_sub(8);
-                        let prefix = &text[prefix_start..idx + m.start()].to_ascii_lowercase();
+                        let prefix = safe_slice(text, prefix_start, idx + m.start()).to_ascii_lowercase();
                         if prefix.ends_with("d") || prefix.ends_with("iso ")
                            || prefix.ends_with("astm ") || prefix.ends_with("gb/t ")
                         {
@@ -311,7 +312,7 @@ fn scan_print_speed(text: &str) -> (Option<f64>, Option<f64>) {
     let labels = ["printing speed", "print speed", "vitesse d'impression", "vitesse"];
     for label in labels {
         if let Some(idx) = lower.find(label) {
-            let window = &text[idx..text.len().min(idx + 200)];
+            let window = safe_slice(text, idx, idx + 200);
             if SPEED_UNIT_RX.is_match(window)
                 || lower.get(idx + label.len()..idx + label.len() + 4).map(|s| s.contains("mm")).unwrap_or(false)
             {
@@ -529,6 +530,34 @@ Drying Temp.                                  50
         assert_eq!(r.nozzle_temp_min_c, Some(200.0));
         assert_eq!(r.nozzle_temp_max_c, Some(210.0));
         assert_eq!(r.bed_temp_min_c,    Some(60.0));
+        assert_eq!(r.bed_temp_max_c,    Some(70.0));
+    }
+
+    /// Regression test for the v0.1.7 → v0.1.8 fix: the ERYONE PLA+ TDS
+    /// contains 9× U+2103 ℃ (3-byte UTF-8) plus U+00B0 ° (2-byte UTF-8) and
+    /// fullwidth ） (U+FF09). The old &text[idx..idx+200] byte-slices panic
+    /// when the +200 offset lands inside a multi-byte character, which
+    /// killed the Tauri worker thread and closed the window silently.
+    /// safe_slice() must accept every byte position without panicking and
+    /// produce a parser-friendly window.
+    #[test]
+    fn parses_raw_unicode_temperature_tds_without_panic() {
+        let tds = "Technical Data Sheet (TDS)\n\
+                   PLA+\n\
+                   Nozzle temperature 190℃-220℃\n\
+                   Bed temperature 55℃-70℃\n\
+                   Density 1.23 g/cm³ at 21.5°C）\n";
+        assert!(looks_like_tds(tds));
+        // The parse itself must not panic with "byte index N is not a char
+        // boundary" on any byte position inside ℃ / ° / ）.
+        let r = parse(tds);
+        // We don't care that the numbers were extracted (the regexes only
+        // require ASCII digits + ASCII hyphen), only that the parse did
+        // not crash on the multi-byte slicing.
+        assert_eq!(r.polymer, Some(Polymer::Pla));
+        assert_eq!(r.nozzle_temp_min_c, Some(190.0));
+        assert_eq!(r.nozzle_temp_max_c, Some(220.0));
+        assert_eq!(r.bed_temp_min_c,    Some(55.0));
         assert_eq!(r.bed_temp_max_c,    Some(70.0));
     }
 

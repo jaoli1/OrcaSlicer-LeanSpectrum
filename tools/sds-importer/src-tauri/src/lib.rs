@@ -16,6 +16,7 @@ mod polymer;
 mod profile;
 mod sds;
 mod tds;
+mod text_utils;
 
 pub use crawler::{CatalogEntry, CrawlResult, DocType};
 pub use polymer::Polymer;
@@ -100,27 +101,69 @@ pub struct ImportResult {
     pub log: Vec<String>,
 }
 
+/// Run a sync command body inside `catch_unwind` so a Rust panic inside any
+/// helper (regex, byte-slice, PDF parser) becomes a structured `Error` returned
+/// to the JS frontend instead of crashing the Tauri worker thread and tearing
+/// the WebView2 host down. This is the safety net that prevents the
+/// "window closes silently when I click Import" failure mode.
+fn run_command<R, F>(op: F) -> std::result::Result<R, Error>
+where
+    F: FnOnce() -> std::result::Result<R, Error>,
+{
+    use std::panic::{catch_unwind, AssertUnwindSafe};
+    match catch_unwind(AssertUnwindSafe(op)) {
+        Ok(r) => r,
+        Err(payload) => {
+            let msg = panic_message(&payload);
+            log::error!("Tauri command panicked: {msg}");
+            eprintln!("Tauri command panicked: {msg}");
+            Err(Error::Other(format!("internal panic: {msg}")))
+        }
+    }
+}
+
+fn panic_message(payload: &Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = payload.downcast_ref::<&'static str>() {
+        return (*s).to_string();
+    }
+    if let Some(s) = payload.downcast_ref::<String>() {
+        return s.clone();
+    }
+    "panic with unknown payload".to_string()
+}
+
 #[tauri::command]
 fn import_pdf(req: ImportRequest) -> std::result::Result<ImportResult, Error> {
+    run_command(|| import_pdf_impl(req))
+}
+
+fn import_pdf_impl(req: ImportRequest) -> std::result::Result<ImportResult, Error> {
     let path = PathBuf::from(&req.pdf_path);
     let mut log = Vec::new();
 
     log.push(format!("Reading {}", path.display()));
-    let text = pdf::extract_text(&path).unwrap_or_default();
+    let raw_text = pdf::extract_text(&path).unwrap_or_default();
 
-    let text = if text.trim().len() < 200 {
+    let raw_text = if raw_text.trim().len() < 200 {
         log.push("Direct text extraction yielded little; falling back to OCR.".to_string());
         match ocr::run(&path) {
             Ok(t) => t,
             Err(e) => {
                 log.push(format!("OCR failed: {e}"));
-                text
+                raw_text
             }
         }
     } else {
-        log.push(format!("Extracted {} chars of native PDF text.", text.len()));
-        text
+        log.push(format!("Extracted {} chars of native PDF text.", raw_text.len()));
+        raw_text
     };
+
+    // Normalize the unicode punctuation that vendor PDFs use interchangeably
+    // with ASCII before the regex parsers run. This folds ℃→°C, ）→), en-dash→-,
+    // fullwidth comma→, etc. Reduces the surface area for byte-slice surprises
+    // and lets ASCII-friendly regexes match more matches without per-pattern
+    // unicode classes.
+    let text = text_utils::normalize_unicode(&raw_text);
 
     // Try SDS parsing first; if a TDS-like header dominates, switch.
     let (mut extracted, kind) = if tds::looks_like_tds(&text) {
@@ -138,6 +181,7 @@ fn import_pdf(req: ImportRequest) -> std::result::Result<ImportResult, Error> {
             match fetcher::try_fetch_tds(&url) {
                 Ok(Some(tds_text)) => {
                     log.push(format!("Found additional datasheet ({} chars).", tds_text.len()));
+                    let tds_text = text_utils::normalize_unicode(&tds_text);
                     let extra = tds::parse(&tds_text);
                     profile::merge(&mut extracted, extra);
                 }
@@ -164,7 +208,7 @@ fn import_pdf(req: ImportRequest) -> std::result::Result<ImportResult, Error> {
 
 #[tauri::command]
 fn crawl_catalog(url: String) -> std::result::Result<CrawlResult, Error> {
-    crawler::crawl_vendor_page(&url)
+    run_command(|| crawler::crawl_vendor_page(&url))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -203,6 +247,10 @@ fn corpus_default_path() -> std::result::Result<String, Error> {
 
 #[tauri::command]
 fn scan_corpus(path: String) -> std::result::Result<CorpusIndex, Error> {
+    run_command(|| scan_corpus_impl(path))
+}
+
+fn scan_corpus_impl(path: String) -> std::result::Result<CorpusIndex, Error> {
     let root = PathBuf::from(&path);
     if !root.is_dir() {
         return Err(Error::Other(format!("Not a directory: {}", root.display())));
@@ -282,6 +330,10 @@ pub struct BatchImportResult {
 
 #[tauri::command]
 fn import_from_urls(req: BatchImportRequest) -> std::result::Result<BatchImportResult, Error> {
+    run_command(|| import_from_urls_impl(req))
+}
+
+fn import_from_urls_impl(req: BatchImportRequest) -> std::result::Result<BatchImportResult, Error> {
     let mut succeeded = Vec::with_capacity(req.urls.len());
     let mut failed    = Vec::new();
     for url in &req.urls {
@@ -292,6 +344,8 @@ fn import_from_urls(req: BatchImportRequest) -> std::result::Result<BatchImportR
                     pdf_path: path.display().to_string(),
                     fetch_online: req.fetch_online,
                 };
+                // Call the panic-safe wrapper so one bad PDF in the batch
+                // doesn't take down the whole batch.
                 match import_pdf(sub) {
                     Ok(r)  => succeeded.push(r),
                     Err(e) => failed.push((url.clone(), e.to_string())),
@@ -317,9 +371,80 @@ fn pick_pdf(app: tauri::AppHandle) -> std::result::Result<Option<String>, Error>
     Ok(path.map(|p| p.display().to_string()))
 }
 
+/// Build the path to the persistent log file:
+///   Windows: %LOCALAPPDATA%\Custom Filament Profile Creator\app.log
+///   macOS:   ~/Library/Application Support/Custom Filament Profile Creator/app.log
+///   Linux:   ~/.local/share/Custom Filament Profile Creator/app.log
+/// Falls back to `None` if no data directory can be located — logger then
+/// stays on stderr.
+fn log_file_path() -> Option<PathBuf> {
+    let dir = dirs::data_local_dir()?.join("Custom Filament Profile Creator");
+    if std::fs::create_dir_all(&dir).is_err() {
+        return None;
+    }
+    Some(dir.join("app.log"))
+}
+
+/// Install a panic hook that appends the panic info to the log file (so a
+/// user can send it back after a crash). Also keeps the original hook so
+/// stderr / RUST_BACKTRACE behaviour is preserved.
+fn install_panic_hook(log_path: Option<PathBuf>) {
+    let prev = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let msg = format!(
+            "[{}] PANIC: {} at {:?}",
+            chrono::Local::now().to_rfc3339(),
+            info.payload()
+                .downcast_ref::<&str>()
+                .copied()
+                .or_else(|| info.payload().downcast_ref::<String>().map(|s| s.as_str()))
+                .unwrap_or("?"),
+            info.location(),
+        );
+        eprintln!("{msg}");
+        if let Some(path) = &log_path {
+            if let Ok(mut f) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path)
+            {
+                use std::io::Write;
+                let _ = writeln!(f, "{msg}");
+            }
+        }
+        prev(info);
+    }));
+}
+
+/// Initialise env_logger. Writes to the log file when one is available
+/// (production), otherwise stays on stderr (dev with `cargo tauri dev`).
+fn init_logger(log_path: Option<&std::path::Path>) {
+    let mut builder = env_logger::Builder::from_env(
+        env_logger::Env::default().default_filter_or("info"),
+    );
+    if let Some(path) = log_path {
+        if let Ok(file) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+        {
+            builder.target(env_logger::Target::Pipe(Box::new(file)));
+        }
+    }
+    let _ = builder.try_init();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    let log_path = log_file_path();
+    init_logger(log_path.as_deref());
+    install_panic_hook(log_path.clone());
+
+    log::info!(
+        "Custom Filament Profile Creator v{} starting (log file: {:?})",
+        env!("CARGO_PKG_VERSION"),
+        log_path,
+    );
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -329,7 +454,10 @@ pub fn run() {
             corpus_default_path, scan_corpus
         ])
         .setup(|app| {
-            log::info!("LeanSpectrum SDS Importer starting; main window id = {}", app.get_webview_window("main").map(|_| "main").unwrap_or("?"));
+            log::info!(
+                "main window ready: {}",
+                app.get_webview_window("main").map(|_| "main").unwrap_or("?"),
+            );
             Ok(())
         })
         .run(tauri::generate_context!())

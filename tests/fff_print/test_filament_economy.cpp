@@ -152,6 +152,41 @@ TEST_CASE("Pass 1: removes the orphan wipe-tower block around a no-op T", "[Fila
     REQUIRE_THAT(gc.read(), Catch::Matchers::Contains("removed no-op wipe block"));
 }
 
+TEST_CASE("Pass 5: volumetric flow ceiling rejects aggressive feedrates",
+          "[FilamentEconomy]")
+{
+    // G-code with a feedrate that produces volumetric flow well above the
+    // ~13.5 mm^3/s safety cap (0.9 * min(PLA 15, PETG 11, ABS 12, Nylon 12)).
+    // Pass 5's I5 check should set verification_ok = false and skip all
+    // downstream passes that would otherwise have run.
+    //
+    //  Q = layer_height * extrusion_width * (F / 60)
+    //    = 0.20 * 0.40 * (F / 60)  mm^3/s
+    //  To reach Q = 30 mm^3/s we need F = 30 * 60 / (0.2 * 0.4) = 22500 mm/min.
+    //  We use F = 30000 mm/min for a comfortable margin.
+    const std::string gcode =
+        ";TYPE:Sparse infill\n"
+        "M83\n"
+        "G1 X10 Y0 Z2.0 F30000 E1.000\n"
+        "G1 X20 Y0      F30000 E1.000\n"
+        "G1 X30 Y0      F30000 E1.000\n";
+    TempGcode gc(gcode);
+    Settings  s = default_settings();
+    s.remove_noop_swaps  = true;
+    s.curvature_lh       = true;
+    s.shrink_purge       = true;
+    s.force_m83          = false;
+    Stats stats = process(gc.path.string(), s);
+    REQUIRE_FALSE(stats.verification_ok);
+    REQUIRE(stats.modified == false);
+    // Downstream passes should NOT have run despite being enabled.
+    REQUIRE(stats.swaps_removed == 0);
+    REQUIRE(stats.segments_scaled == 0);
+    REQUIRE(stats.purges_shrunk == 0);
+    // The volumetric flow stat reflects the observed peak.
+    REQUIRE(stats.max_flow_mm3s > 13.5);
+}
+
 TEST_CASE("Disabled module never modifies the file", "[FilamentEconomy]")
 {
     const std::string gcode =

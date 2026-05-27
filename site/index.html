@@ -3,12 +3,67 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LeanSpectrum — slicer Snapmaker U1 multi-couleur</title>
-<meta name="description" content="Fork OrcaSlicer pour Snapmaker U1 : économie filament post-slicing, conversion Bambu .3mf vers U1, Auto-Profile par intent matière.">
+<title>LeanSpectrum — OrcaSlicer fork for Snapmaker U1 multi-color FFF</title>
+<meta name="description" content="Fork OrcaSlicer pour Snapmaker U1 : économie filament post-slicing 5 passes, conversion Bambu .3mf → U1, Auto-Profile par intent matière. AGPL-3.0.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#0a0c10">
+<link rel="canonical" href="https://slicer.maisondrabiec.fr/">
+<link rel="alternate" hreflang="fr" href="https://slicer.maisondrabiec.fr/">
+<link rel="alternate" hreflang="en" href="https://slicer.maisondrabiec.fr/?lang=en">
+<link rel="alternate" hreflang="x-default" href="https://slicer.maisondrabiec.fr/">
+
+<!-- Open Graph / Facebook / Discord / Mastodon -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LeanSpectrum">
+<meta property="og:title" content="LeanSpectrum — OrcaSlicer fork for Snapmaker U1">
+<meta property="og:description" content="Less expertise required, less filament wasted. A C++ OrcaSlicer fork with 5-pass G-code economy, Bambu palette conversion and intent-based Auto-Profile, tuned for the Snapmaker U1 multi-color FFF.">
+<meta property="og:url" content="https://slicer.maisondrabiec.fr/">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_US">
+
+<!-- Twitter / X / Bluesky card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LeanSpectrum — OrcaSlicer fork for Snapmaker U1">
+<meta name="twitter:description" content="5-pass G-code economy + Bambu→U1 palette converter + Auto-Profile. AGPL-3.0. Windows, macOS, Linux.">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+
+<!-- Structured data: SoftwareApplication. Builds the rich SERP card
+     ("free, runs on Windows/macOS/Linux, AGPL-3.0"). Keep in sync with
+     release tags. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "LeanSpectrum",
+  "alternateName": "OrcaSlicer-LeanSpectrum",
+  "description": "OrcaSlicer fork for the Snapmaker U1 multi-color FFF printer. Ships a 5-pass G-code economy post-processor, a Bambu Lab .3mf palette converter, and an intent-based Auto-Profile module.",
+  "applicationCategory": "DesignApplication",
+  "applicationSubCategory": "3D Printing Slicer",
+  "operatingSystem": "Windows 10/11, macOS 13+, Linux (Glibc 2.31+)",
+  "downloadUrl": "https://github.com/jaoli1/OrcaSlicer-LeanSpectrum/releases/latest",
+  "softwareRequirements": "OpenGL 3.3, 8 GB RAM",
+  "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "LeanSpectrum contributors",
+    "url": "https://github.com/jaoli1/OrcaSlicer-LeanSpectrum"
+  },
+  "sameAs": [
+    "https://github.com/jaoli1/OrcaSlicer-LeanSpectrum"
+  ],
+  "inLanguage": ["fr", "en"]
+}
+</script>
 </head>
 <body>
 
@@ -199,7 +254,7 @@
 
 <!-- =========================== bambu demo =========================== -->
 <section id="bambu" class="demo">
-  <h2><span class="hash">##</span> <span data-i18n-fr="BambuConvert : benchmark" data-i18n-en="BambuConvert benchmark">BambuConvert : benchmark</h2>
+  <h2><span class="hash">##</span> <span data-i18n-fr="BambuConvert : benchmark" data-i18n-en="BambuConvert benchmark">BambuConvert : benchmark</span></h2>
   <p data-i18n-fr="Vrai .3mf Bambu Lab X1 Carbon, 8 couleurs PLA. Le slicer fait tourner les 3 stratégies en parallèle et garde la meilleure sur la métrique pondérée." data-i18n-en="Real Bambu Lab X1 Carbon .3mf, 8 PLA colors. The slicer runs all 3 strategies in parallel and keeps the best one on the weighted metric.">
     Vrai .3mf Bambu Lab X1 Carbon, 8 couleurs PLA. Le slicer fait tourner les 3 stratégies en parallèle et garde la meilleure sur la métrique pondérée.
   </p>

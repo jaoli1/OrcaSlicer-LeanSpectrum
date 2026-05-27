@@ -89,6 +89,12 @@ enum class FeatureType : uint8_t {
     WipeTower,
     Custom,
     Travel,
+    // LeanSpectrum: Wave-Overhang segments are cantilevered into open space
+    // with no support beneath. Pass 4 (curvature E scaling) must NOT thin
+    // these traces — they need full extrusion to anchor the next wave.
+    // Detected via the ";TYPE:Wave overhang" comment emitted by GCode.cpp
+    // (Phase 4).
+    WaveOverhang,
 };
 
 // Forward declarations for helpers defined later in this anonymous namespace
@@ -108,6 +114,7 @@ double feature_cap(FeatureType f)
         case FeatureType::SparseInfill:  return 0.35;
         case FeatureType::Bridge:        return 0.0;
         case FeatureType::WipeTower:     return 0.0;
+        case FeatureType::WaveOverhang:  return 0.0;
         case FeatureType::Support:       return 0.30;
         case FeatureType::Custom:        return 0.0;
         default:                         return 0.0;
@@ -221,6 +228,7 @@ void parse_line(Line &out, FeatureType &current_feature)
             else if (raw.find(";TYPE:Bridge")         != std::string::npos) current_feature = FeatureType::Bridge;
             else if (raw.find(";TYPE:Support")        != std::string::npos) current_feature = FeatureType::Support;
             else if (raw.find(";TYPE:Wipe tower")     != std::string::npos) current_feature = FeatureType::WipeTower;
+            else if (raw.find(";TYPE:Wave overhang")  != std::string::npos) current_feature = FeatureType::WaveOverhang;
             else if (raw.find(";TYPE:Custom")         != std::string::npos) current_feature = FeatureType::Custom;
         }
         if (raw.find("CP TOOLCHANGE START") != std::string::npos ||

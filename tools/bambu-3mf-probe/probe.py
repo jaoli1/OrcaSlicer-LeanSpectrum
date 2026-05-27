@@ -267,50 +267,63 @@ def read_bambu_3mf(path):
 
 # --- main ------------------------------------------------------------------
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("file")
-    p.add_argument("--extra", action="append", default=[],
-                   help="extra synthetic filament '#RRGGBB[:used_mm[:type]]'")
-    p.add_argument("--strategy", default="usage",
-                   choices=["usage", "chromatic", "balanced", "all"],
-                   help="physical selection strategy (default: usage)")
-    args = p.parse_args()
-
-    info = read_bambu_3mf(args.file)
+def process_one(path, extras, strategies):
+    """Run convert_filament_list on one .3mf file. Returns a dict
+    suitable for both human display and JSON serialisation."""
+    info = read_bambu_3mf(path)
     has_usage = bool(info["usage_mm"])
-    print(f"file:           {args.file}")
-    print(f"printer_model:  {info['printer_model']}")
-    print(f"filament count: {info['filament_count']}"
-          + ("  (real usage from slice_info.config)" if has_usage
-             else "  (no slice_info, using flat usage = 100mm)"))
-    for i, (c, t) in enumerate(zip(info["colours"], info["types"])):
-        if has_usage:
-            u = info["usage_mm"].get(i, 0.0)
-            print(f"  [{i}] {c}  {t:5s}  used = {u/1000:6.2f} m")
-        else:
-            print(f"  [{i}] {c}  {t}")
-    print()
 
     inputs = []
     for i, (c, t) in enumerate(zip(info["colours"], info["types"])):
         used = info["usage_mm"].get(i, 100.0) if has_usage else 100.0
-        inputs.append({"color_hex": c, "used_mm": used, "type": t or "PLA"})
-
-    for x in args.extra:
+        inputs.append({"index": i, "color_hex": c, "used_mm": used,
+                       "type": t or "PLA"})
+    for x in extras:
         parts = x.split(":")
-        color = parts[0]
-        used = float(parts[1]) if len(parts) > 1 else 100.0
-        ftype = parts[2] if len(parts) > 2 else "PLA"
-        inputs.append({"color_hex": color, "used_mm": used, "type": ftype})
+        inputs.append({"index": len(inputs),
+                       "color_hex": parts[0],
+                       "used_mm": float(parts[1]) if len(parts) > 1 else 100.0,
+                       "type": parts[2] if len(parts) > 2 else "PLA",
+                       "synthetic": True})
 
-    if args.extra:
-        print(f"+ {len(args.extra)} synthetic extras injected for overflow test")
-        for x in args.extra:
-            print(f"  {x}")
-        print()
+    results = {}
+    for strat in strategies:
+        results[strat] = convert_filament_list(inputs, strategy=strat)
 
-    def print_result(res):
+    return {
+        "file": str(path),
+        "printer_model": info["printer_model"],
+        "filament_count": info["filament_count"],
+        "has_slice_info_usage": has_usage,
+        "extras_injected": len(extras),
+        "inputs": inputs,
+        "strategies": results,
+    }
+
+
+def print_human(report):
+    """Render a process_one() result as human-readable text."""
+    inputs = report["inputs"]
+    print(f"file:           {report['file']}")
+    print(f"printer_model:  {report['printer_model']}")
+    suffix = ("  (real usage from slice_info.config)"
+              if report["has_slice_info_usage"]
+              else "  (no slice_info, using flat usage = 100mm)")
+    print(f"filament count: {report['filament_count']}{suffix}")
+    for f in inputs[: report["filament_count"]]:
+        if report["has_slice_info_usage"]:
+            print(f"  [{f['index']}] {f['color_hex']}  {f['type']:5s}  "
+                  f"used = {f['used_mm']/1000:6.2f} m")
+        else:
+            print(f"  [{f['index']}] {f['color_hex']}  {f['type']}")
+    if report["extras_injected"]:
+        print(f"+ {report['extras_injected']} synthetic extras injected")
+        for f in inputs[report["filament_count"]:]:
+            print(f"  [{f['index']}] {f['color_hex']}  {f['type']}  "
+                  f"used = {f['used_mm']:.0f} mm")
+    print()
+
+    for strat, res in report["strategies"].items():
         tag = res["strategy"]
         if "candidates_considered" in res:
             tag += f" ({res['candidates_considered']} candidates)"
@@ -330,13 +343,51 @@ def main():
                       f"achieved={v['achieved_hex']}  deltaE={v['delta_e']:.2f}")
         if "total_overflow_delta_e" in res:
             print(f"  sum overflow deltaE = {res['total_overflow_delta_e']:.2f}")
+        print()
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("files", nargs="+",
+                   help="one or more .3mf paths (or a directory to scan "
+                        "recursively for .3mf)")
+    p.add_argument("--extra", action="append", default=[],
+                   help="extra synthetic filament '#RRGGBB[:used_mm[:type]]'")
+    p.add_argument("--strategy", default="usage",
+                   choices=["usage", "chromatic", "balanced", "all"],
+                   help="physical selection strategy (default: usage)")
+    p.add_argument("--json", action="store_true",
+                   help="emit machine-readable JSON to stdout instead of "
+                        "the human-readable summary")
+    args = p.parse_args()
 
     strategies = (["usage", "chromatic", "balanced"]
                   if args.strategy == "all" else [args.strategy])
-    for i, strat in enumerate(strategies):
-        if i:
-            print()
-        print_result(convert_filament_list(inputs, strategy=strat))
+
+    # Expand directories into the .3mf files they contain (one level deep).
+    paths = []
+    for f in args.files:
+        path = Path(f)
+        if path.is_dir():
+            paths.extend(sorted(path.glob("*.3mf")))
+        else:
+            paths.append(path)
+
+    if not paths:
+        print("no .3mf files found", file=sys.stderr)
+        sys.exit(1)
+
+    reports = [process_one(p, args.extra, strategies) for p in paths]
+
+    if args.json:
+        json.dump(reports if len(reports) > 1 else reports[0],
+                  sys.stdout, indent=2)
+        print()
+    else:
+        for i, r in enumerate(reports):
+            if i:
+                print("\n" + "=" * 60 + "\n")
+            print_human(r)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,20 @@
-// Tauri global (exposed via withGlobalTauri: true).
-const { invoke } = window.__TAURI__.core;
+// Tauri global (exposed via withGlobalTauri: true). Tauri 2 stable puts
+// invoke at window.__TAURI__.core.invoke; some older builds expose it at
+// window.__TAURI__.invoke. Probe both so a runtime version drift doesn't
+// silently kill the whole script (which would in turn break the tabs,
+// the drop zone, the i18n picker — i.e. everything).
+function resolveInvoke() {
+  const t = window.__TAURI__;
+  if (!t) {
+    console.error("[Custom Filament Profile Creator] window.__TAURI__ is undefined — Tauri runtime did not inject the global. Check tauri.conf.json withGlobalTauri + CSP script-src.");
+    return null;
+  }
+  if (t.core && typeof t.core.invoke === "function") return t.core.invoke;
+  if (typeof t.invoke === "function")                return t.invoke;
+  console.error("[Custom Filament Profile Creator] Could not find invoke() on window.__TAURI__. Keys:", Object.keys(t));
+  return null;
+}
+const invoke = resolveInvoke();
 // i18n helpers loaded from i18n.js (window.leanspectrumI18n.t / setLang).
 const t = (key, vars) => window.leanspectrumI18n.t(key, vars);
 

@@ -11,6 +11,41 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.1.3] — CSP fix: drop zone + tabs were silently broken in 0.1.2
+
+The 0.1.2 release installed correctly on Windows (MSI valid, app
+launched, window painted) but neither the file drop zone nor the
+three navigation tabs responded to user input. Root cause: the
+Content-Security-Policy `script-src 'self'` blocked Tauri 2's
+runtime injection of the `window.__TAURI__` global. The very first
+line of `frontend/src/main.js` then threw
+`TypeError: Cannot read properties of undefined (reading 'core')`,
+which halted the entire script before any event listener
+(tabs, drop zone, language picker, run button) could attach.
+
+Fixes:
+- **tauri.conf.json `security.csp`** rewritten to the Tauri 2
+  recommended baseline:
+  `default-src 'self' ipc: http://ipc.localhost; img-src 'self' data: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost`
+  — adds `'unsafe-inline'` to `script-src`, opens `ipc:` +
+  `http://ipc.localhost` for the IPC bridge, opens
+  `asset: http://asset.localhost` for in-app asset URLs.
+- **frontend/src/main.js** now resolves the invoke handle defensively
+  via `resolveInvoke()` that probes both `window.__TAURI__.core.invoke`
+  (Tauri 2 stable) and `window.__TAURI__.invoke` (legacy fallback),
+  and logs a console error with diagnostic info if neither is found.
+  The tabs and i18n picker work even when invoke is null — useful
+  for triaging future runtime issues.
+- **windows[0]**: `devtools: true` (so users can open F12 / right-click
+  Inspect to debug) and `dragDropEnabled: true` (explicit, since Tauri
+  2 stable changed the default).
+
+If you installed v0.1.2 and saw the dead drop zone, uninstall it (the
+app identifier changed across the rename so the v0.1.3 MSI installs
+side-by-side, but the v0.1.2 entry in Add/Remove Programs is the same
+ID `fork.leanspectrum.profile-creator` so the new MSI upgrades it
+in-place).
+
 ## [0.1.2] — rename: Custom Filament Profile Creator
 
 What changed:

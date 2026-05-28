@@ -324,3 +324,62 @@ if (genLibraryBtn) {
     }
   });
 }
+
+// ============================================================
+// Update checker (v0.1.17) — manual button + silent launch check.
+// The database is downloaded automatically when newer; a newer APP is only
+// proposed (button opens the download page in the browser).
+// ============================================================
+const updateBtn    = document.getElementById("updateBtn");
+const updateStatus = document.getElementById("updateStatus");
+const updateBanner = document.getElementById("updateBanner");
+
+function renderUpdate(st, manual) {
+  if (st.error) {
+    updateStatus.textContent = `${tr("update_error")}: ${st.error}`;
+  } else if (st.dbDownloaded) {
+    updateStatus.textContent = `${tr("update_db_done")} ${st.latestDbVersion}`;
+  } else if (st.upToDate) {
+    updateStatus.textContent = manual ? tr("update_uptodate") : "";
+  } else {
+    updateStatus.textContent = "";
+  }
+  if (st.appUpdateAvailable && st.downloadUrl) {
+    updateBanner.style.display = "block";
+    updateBanner.innerHTML = "";
+    const msg = document.createElement("div");
+    msg.innerHTML = `<strong>${tr("update_app_available")}</strong> `
+      + `${escapeHtml(st.latestAppVersion)} (${tr("update_current")} ${escapeHtml(st.currentAppVersion)}).`
+      + (st.notes ? ` <span class="sub">${escapeHtml(st.notes)}</span>` : "");
+    const row = document.createElement("div");
+    row.className = "row";
+    const dl = document.createElement("button");
+    dl.textContent = tr("update_download_btn");
+    dl.addEventListener("click", () => invoke("open_external", { url: st.downloadUrl }).catch(() => {}));
+    const dismiss = document.createElement("button");
+    dismiss.className = "secondary";
+    dismiss.textContent = tr("update_dismiss");
+    dismiss.addEventListener("click", () => { updateBanner.style.display = "none"; });
+    row.appendChild(dl);
+    row.appendChild(dismiss);
+    updateBanner.appendChild(msg);
+    updateBanner.appendChild(row);
+  } else {
+    updateBanner.style.display = "none";
+  }
+}
+
+async function checkUpdates(manual) {
+  if (!invoke) return;
+  if (manual) updateStatus.textContent = tr("update_checking");
+  try {
+    const st = await invoke("check_updates");
+    renderUpdate(st, manual);
+  } catch (e) {
+    updateStatus.textContent = `${tr("update_error")}: ${e}`;
+  }
+}
+
+if (updateBtn) updateBtn.addEventListener("click", () => checkUpdates(true));
+// Silent background check at launch — only surfaces something if found.
+checkUpdates(false);

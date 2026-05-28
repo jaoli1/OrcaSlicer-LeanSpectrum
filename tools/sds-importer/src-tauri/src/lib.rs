@@ -18,6 +18,7 @@ mod project_process;
 mod sds;
 mod tds;
 mod text_utils;
+mod update;
 
 pub use crawler::{CatalogEntry, CrawlResult, DocType};
 pub use polymer::Polymer;
@@ -414,6 +415,24 @@ fn generate_process_library() -> std::result::Result<ProcessLibraryResult, Error
     })
 }
 
+/// v0.1.17 — check the Maison Drabiec server for a newer app and/or filament
+/// database. A newer DATABASE is downloaded automatically; a newer APP is only
+/// reported (the frontend offers to open the download page).
+#[tauri::command]
+fn check_updates() -> std::result::Result<update::UpdateStatus, Error> {
+    run_command(|| update::check(true))
+}
+
+/// Open a URL in the user's default browser (used by the app-update flow to
+/// reach the download page — never auto-replaces the binary).
+#[tauri::command]
+fn open_external(url: String) -> std::result::Result<(), Error> {
+    run_command(move || {
+        open::that(&url).map_err(|e| Error::Other(e.to_string()))?;
+        Ok(())
+    })
+}
+
 /// Build the path to the persistent log file:
 ///   Windows: %LOCALAPPDATA%\Custom Filament Profile Creator\app.log
 ///   macOS:   ~/Library/Application Support/Custom Filament Profile Creator/app.log
@@ -494,7 +513,8 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             import_pdf, pick_pdf, crawl_catalog, import_from_urls,
-            corpus_default_path, scan_corpus, generate_process_library
+            corpus_default_path, scan_corpus, generate_process_library,
+            check_updates, open_external
         ])
         .setup(|app| {
             log::info!(

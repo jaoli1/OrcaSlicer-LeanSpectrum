@@ -1,7 +1,7 @@
-# LeanSpectrum landing page
+# OptimusOrca landing page
 
-Static one-page presentation site for the LeanSpectrum slicer, designed
-to deploy at https://slicer.maisondrabiec.fr.
+Static one-page presentation site for the OptimusOrca slicer (by Maison
+Drabiec), designed to deploy at https://slicer.maisondrabiec.fr.
 
 ## Files
 

@@ -1,7 +1,7 @@
 # Fiche produit — Optimisateur de filament et de profils d'impression by Maison Drabiec
 
 > Document de travail destiné au propriétaire pour relecture. **Ne pas publier en l'état.**
-> Tous les chiffres sont formulés en « jusqu'à » et reflètent l'état réel du logiciel (v0.1.16).
+> Tous les chiffres sont formulés en « jusqu'à » et reflètent l'état réel du logiciel (v0.1.19).
 
 ---
 
@@ -51,7 +51,7 @@ Quand vous importez un PDF, l'analyseur ne se contente pas du tableau de paramè
 
 ### Une bibliothèque de profils PROCESS par type de projet
 
-Au-delà du profil filament, l'Optimisateur génère une **bibliothèque de 28 profils de process** organisés par **type de projet**, chacun décliné pour les **4 diamètres de buse** du Snapmaker U1 :
+Au-delà du profil filament, l'Optimisateur génère des **profils de process par type de projet** pour **n'importe quelle imprimante** prise en charge par OrcaSlicer (Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…) : vous choisissez **marque → modèle → buse** et l'app produit les 7 profils calibrés pour cette machine. Un bouton génère aussi, en un clic, le jeu complet **Snapmaker U1** (7 types × 4 buses = 28 profils) :
 
 - **Prototype rapide** — couches épaisses, vitesse maximale, accélérations élevées
 - **Objet du quotidien** — l'équilibre solidité / vitesse / finition
@@ -83,12 +83,12 @@ La base de données reçoit des **mises à jour régulières** : l'application e
 |---|---|
 | Type de produit | Application de bureau (utilitaire pour l'impression 3D FDM) |
 | Systèmes d'exploitation | Windows · macOS (Apple Silicon & Intel) · Linux |
-| Formats de distribution | Windows : `.msi` (recommandé) ou `.exe` · macOS : `.dmg` · Linux : `.AppImage`, `.deb`, `.rpm` |
-| Slicer cible | Snapmaker_Orca / OptimusOrca (profils écrits dans le dossier utilisateur du slicer) |
+| Format de distribution | **Un ZIP unique** avec trois dossiers : Windows (**`.exe`**), macOS (**`.dmg`**), Linux (**`.AppImage`**) |
+| Slicers cibles | **Famille OrcaSlicer** : OrcaSlicer · Creality Print · Bambu Studio · SnapmakerOrca / OptimusOrca (profils écrits dans le dossier utilisateur du slicer) |
 | Entrées acceptées | PDF de fiche fabricant (SDS / TDS), URL de page catalogue/certificats, dossier local de PDF |
-| Sorties générées | Profil filament `.json` + profils de process `.json` (jeu par type de projet, 4 diamètres de buse) |
+| Sorties générées | Profil filament `.json` + profils de process `.json` (par type de projet, pour l'imprimante choisie) |
 | Base de données | 700+ matériaux (709 réf., 122 marques), priorité aux données officielles fabricant |
-| Diamètres de buse couverts | 0.2 / 0.4 / 0.6 / 0.8 mm |
+| Imprimantes couvertes | Famille OrcaSlicer — 57 marques / 326 modèles (Creality, Bambu, Snapmaker, Anycubic, Prusa…) ; toutes leurs buses |
 | Langues de l'interface | Français · Anglais (commutable, mémorisé) |
 | Technologie | Tauri (binaire léger, ≈ 10 Mo par OS) |
 | OCR (PDF scannés) | Pris en charge via Tesseract installé sur le système (les PDF « texte » fonctionnent sans) |
@@ -104,7 +104,8 @@ La base de données reçoit des **mises à jour régulières** : l'application e
 - L'application **Optimisateur MD** pour votre système (Windows / macOS / Linux).
 - La **base de données de 700+ matériaux** (températures, densité, séchage, couleurs, liens vers les fiches officielles).
 - Le **générateur de profil filament** depuis un PDF SDS/TDS, une URL catalogue ou un dossier local.
-- La **bibliothèque de 28 profils de process** par type de projet × 4 diamètres de buse, prête à générer en un clic.
+- La **génération de profils de process** par type de projet pour n'importe quelle imprimante de la famille OrcaSlicer (+ le jeu complet Snapmaker U1).
+- Le **vérificateur de mise à jour** (base de données auto + nouvelle version proposée) et des réglages **supports / anti-warping** adaptés à la matière.
 - L'**activation des fonctions du fork** : économie de filament, coutures scarf, préparation au mélange de couleurs.
 - L'**import par lot** depuis une page « certificats » de fabricant.
 - L'interface **bilingue FR / EN**.
@@ -127,7 +128,7 @@ La base de données reçoit des **mises à jour régulières** : l'application e
 ## 8. FAQ
 
 **Est-ce compatible avec mon imprimante / mon slicer ?**
-Le logiciel écrit ses profils pour **Snapmaker_Orca / OptimusOrca** et est calibré pour la **Snapmaker U1** (buses 0.2 / 0.4 / 0.6 / 0.8). Les profils apparaissent directement dans les menus du slicer après génération. Si vous utilisez un autre slicer ou une autre machine, l'outil n'est pour l'instant pas garanti compatible.
+Oui, pour toute la **famille OrcaSlicer** : OrcaSlicer, Creality Print, Bambu Studio, SnapmakerOrca / OptimusOrca. L'app couvre **leurs imprimantes** (57 marques, 326 modèles) — vous choisissez marque, modèle et buse, et les profils apparaissent dans les menus du slicer après génération. PrusaSlicer (format `.ini`) est prévu prochainement.
 
 **D'où viennent les données ? Sont-elles fiables ?**
 La base privilégie **les sites et fiches officiels des fabricants**. Quand une donnée fabricant existe, elle prime toujours sur toute autre source. Pour chaque matériau, vous avez accès aux **liens vers les fiches officielles** (TDS / MSDS / RoHS) hébergées par le fabricant. Le logiciel ne réhéberge jamais ces PDF.

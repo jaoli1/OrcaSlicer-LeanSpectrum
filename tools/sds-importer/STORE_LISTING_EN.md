@@ -1,7 +1,7 @@
 # Product Listing — Filament & Print-Profile Optimiser by Maison Drabiec
 
 > Working document for the owner to review. **Do not publish as-is.**
-> All figures are phrased as "up to" and reflect the software's real state (v0.1.16).
+> All figures are phrased as "up to" and reflect the software's real state (v0.1.19).
 
 ---
 
@@ -51,7 +51,7 @@ When you import a PDF, the parser doesn't stop at the parameter table. It also r
 
 ### A library of PROCESS profiles by project type
 
-Beyond the filament profile, the MD Optimiser generates a **library of 28 process profiles** organised by **project type**, each available for the Snapmaker U1's **4 nozzle diameters**:
+Beyond the filament profile, the MD Optimiser generates **process profiles by project type** for **any printer** supported by OrcaSlicer (Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…): you pick **brand → model → nozzle** and the app produces the 7 profiles tuned for that machine. A one-click button also generates the full **Snapmaker U1** set (7 types × 4 nozzles = 28 profiles):
 
 - **Fast prototype** — thick layers, top speed, high accelerations
 - **Everyday object** — the strength / speed / finish balance
@@ -83,12 +83,12 @@ The database receives **regular updates**: the app ships an offline-capable snap
 |---|---|
 | Product type | Desktop application (utility for FDM 3D printing) |
 | Operating systems | Windows · macOS (Apple Silicon & Intel) · Linux |
-| Distribution formats | Windows: `.msi` (recommended) or `.exe` · macOS: `.dmg` · Linux: `.AppImage`, `.deb`, `.rpm` |
-| Target slicer | Snapmaker_Orca / OptimusOrca (profiles written to the slicer's user folder) |
+| Distribution format | **A single ZIP** with three folders: Windows (**`.exe`**), macOS (**`.dmg`**), Linux (**`.AppImage`**) |
+| Target slicers | **OrcaSlicer family**: OrcaSlicer · Creality Print · Bambu Studio · SnapmakerOrca / OptimusOrca (profiles written to the slicer's user folder) |
 | Accepted inputs | Manufacturer spec-sheet PDF (SDS / TDS), catalog/certificates page URL, local PDF folder |
-| Generated outputs | Filament profile `.json` + process profiles `.json` (set by project type, 4 nozzle diameters) |
+| Generated outputs | Filament profile `.json` + process profiles `.json` (by project type, for the chosen printer) |
 | Database | 700+ materials (709 entries, 122 brands), official manufacturer data prioritised |
-| Nozzle diameters covered | 0.2 / 0.4 / 0.6 / 0.8 mm |
+| Printers covered | OrcaSlicer family — 57 brands / 326 models (Creality, Bambu, Snapmaker, Anycubic, Prusa…); all their nozzles |
 | Interface languages | French · English (switchable, remembered) |
 | Technology | Tauri (lightweight binary, ≈ 10 MB per OS) |
 | OCR (scanned PDFs) | Supported via system-installed Tesseract (text PDFs work without it) |
@@ -104,7 +104,8 @@ The database receives **regular updates**: the app ships an offline-capable snap
 - The **MD Optimiser** application for your system (Windows / macOS / Linux).
 - The **database of 700+ materials** (temperatures, density, drying, colours, links to official sheets).
 - The **filament-profile generator** from an SDS/TDS PDF, a catalog URL, or a local folder.
-- The **library of 28 process profiles** by project type × 4 nozzle diameters, ready to generate in one click.
+- **Process-profile generation** by project type for any OrcaSlicer-family printer (+ the full Snapmaker U1 set).
+- The **update checker** (auto database + new-version prompt) and material-adaptive **supports / anti-warp** settings.
 - **Fork features enabled**: filament economy, scarf seams, colour-mixing readiness.
 - **Batch import** from a manufacturer's "certificates" page.
 - The **bilingual FR / EN** interface.
@@ -127,7 +128,7 @@ The database receives **regular updates**: the app ships an offline-capable snap
 ## 8. FAQ
 
 **Is it compatible with my printer / slicer?**
-The software writes its profiles for **Snapmaker_Orca / OptimusOrca** and is tuned for the **Snapmaker U1** (0.2 / 0.4 / 0.6 / 0.8 nozzles). Profiles appear directly in the slicer's menus once generated. If you use a different slicer or machine, the tool is not currently guaranteed to be compatible.
+Yes, for the whole **OrcaSlicer family**: OrcaSlicer, Creality Print, Bambu Studio, SnapmakerOrca / OptimusOrca. The app covers **their printers** (57 brands, 326 models) — you pick brand, model and nozzle, and the profiles appear in the slicer's menus once generated. PrusaSlicer (`.ini` format) is planned next.
 
 **Where does the data come from? Is it reliable?**
 The database prioritises **official manufacturer sites and sheets**. Whenever manufacturer data exists, it always takes precedence over any other source. For each material you get **links to the official sheets** (TDS / MSDS / RoHS) hosted by the manufacturer. The software never re-hosts those PDFs.

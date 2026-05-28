@@ -156,10 +156,31 @@ jobs:
             -exec cp {} release-assets/ \;
           ls -la release-assets
 
+      - name: Assemble client ZIP (Windows .exe / MacOS .dmg / Linux AppImage)
+        run: |
+          base="Optimisateur-MD-${GITHUB_REF_NAME#profile-creator-}"
+          base="${base#sds-importer-}"
+          mkdir -p "$base/Windows" "$base/MacOS" "$base/Linux"
+          # Windows: ship the NSIS installer (.exe) only — the .msi is excluded
+          # on purpose (the general public does not recognise .msi).
+          find artifacts -name '*.exe' -exec cp {} "$base/Windows/" \;
+          find artifacts -name '*.dmg' -exec cp {} "$base/MacOS/" \;
+          find artifacts -name '*.AppImage' -exec cp {} "$base/Linux/" \;
+          {
+            echo "Optimisateur de filament et de profils d'impression - by Maison Drabiec"
+            echo ""
+            echo "Windows : ouvrez Windows/ et lancez l'installeur .exe."
+            echo "macOS   : ouvrez MacOS/, montez le .dmg, glissez l'app dans Applications"
+            echo "          (1re ouverture : clic droit sur l'app > Ouvrir ; app non signee)."
+            echo "Linux   : ouvrez Linux/, 'chmod +x' le .AppImage puis lancez-le."
+          } > "$base/LISEZ-MOI.txt"
+          zip -r "release-assets/${base}.zip" "$base"
+          ls -la release-assets
+
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: SDS Importer ${{ github.ref_name }}
+          name: Optimisateur MD ${{ github.ref_name }}
           body_path: tools/sds-importer/CHANGELOG.md
           generate_release_notes: true
           append_body: true

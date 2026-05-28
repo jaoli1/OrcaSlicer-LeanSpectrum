@@ -11,6 +11,26 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.1.17] — vérificateur de mise à jour + ZIP client multi-OS
+
+- **Mises à jour** : bouton « Rechercher une mise à jour » + vérification
+  automatique au lancement. La base de filaments se met à jour automatiquement
+  quand une version plus récente est publiée sur le serveur ; une nouvelle
+  version de l'application est proposée au téléchargement (pas de remplacement
+  silencieux du binaire). Sinon : « vous avez déjà la dernière version ».
+- **Distribution** : la release produit un ZIP client unique avec trois dossiers
+  `Windows/` (.exe), `MacOS/` (.dmg), `Linux/` (.AppImage).
+
+## [0.1.16] — bibliothèque de profils process par type de projet
+
+- **Bibliothèque process partagée** : 7 types de projet (Prototype rapide, Objet
+  du quotidien, Figurine, Vase, Décoration, Jouet, Pièce mécanique) × 4 buses
+  (0.2 / 0.4 / 0.6 / 0.8) = 28 profils, calibrés couche / murs / remplissage /
+  vitesses + cornering & résonance (accélération & jerk), mode vase, repassage,
+  coutures scarf et économie de filament. Nouvel onglet « Bibliothèque process »
+  + bouton de génération. Les profils héritent des process de base U1 par buse
+  (chaîne OrcaSlicer → SnapmakerOrca).
+
 ## [0.1.15] — rebrand: Optimisateur de filament et de profils d'impression by Maison Drabiec
 
 The app is rebranded to **Optimisateur de filament et de profils d'impression

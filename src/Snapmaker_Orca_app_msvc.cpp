@@ -242,10 +242,22 @@ int wmain(int argc, wchar_t** argv)
 #endif /* SLIC3R_GUI */
     for (int i = 1; i < argc; ++i) {
 #ifdef SLIC3R_GUI
-        if (wcscmp(argv[i], L"--sw-renderer") == 0)
+        // --sw-renderer / --no-sw-renderer are launcher-only flags: they
+        // pick the OpenGL implementation (bundled MESA software renderer vs
+        // the system driver) BEFORE the slicer DLL is loaded. They must NOT
+        // be forwarded to Snapmaker_Orca_main — the slicer's wxCmdLineParser
+        // does not know them and aborts with "Invalid option --sw-renderer"
+        // (exit code -2). This bug made software-rendering mode unusable on
+        // machines whose GPU driver crashes hardware OpenGL (e.g. some AMD
+        // integrated Radeon + Win11 24H2), the only machines that need it.
+        if (wcscmp(argv[i], L"--sw-renderer") == 0) {
             force_mesa = true;
-        else if (wcscmp(argv[i], L"--no-sw-renderer") == 0)
+            continue;
+        }
+        else if (wcscmp(argv[i], L"--no-sw-renderer") == 0) {
             force_mesa = false;
+            continue;
+        }
 #endif /* SLIC3R_GUI */
         argv_extended.emplace_back(argv[i]);
     }

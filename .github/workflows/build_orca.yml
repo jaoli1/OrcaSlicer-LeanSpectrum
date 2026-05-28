@@ -265,6 +265,22 @@ jobs:
           WindowsSDKVersion: '10.0.26100.0\'
         run: .\build_release_vs2022.bat slicer
 
+      - name: Bundle MESA software OpenGL renderer (Win)
+        # Ship the bundled MESA (llvmpipe) software OpenGL renderer at
+        # Snapmaker_Orca\mesa\opengl32.dll. The launcher loads it when run
+        # with --sw-renderer (or when the system OpenGL driver reports < 2.0),
+        # so the slicer can run on machines whose GPU driver crashes hardware
+        # OpenGL (e.g. some AMD integrated Radeon on Win11 24H2 — observed
+        # 0xC0000005 in atio6axx at 3D-view init). Without this file the
+        # --sw-renderer flag has nothing to load and falls back to the
+        # crashing hardware path.
+        if: inputs.os == 'windows-latest'
+        working-directory: ${{ github.workspace }}
+        shell: cmd
+        run: |
+          if not exist "build\Snapmaker_Orca\mesa" mkdir "build\Snapmaker_Orca\mesa"
+          copy /Y "tools\mesa-win\opengl32.dll" "build\Snapmaker_Orca\mesa\opengl32.dll"
+
       - name: Pack app
         if: inputs.os == 'windows-latest'
         working-directory: ${{ github.workspace }}/build

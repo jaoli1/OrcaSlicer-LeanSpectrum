@@ -5,8 +5,8 @@
 
 const messages = {
   en: {
-    app_title:           "LeanSpectrum SDS / TDS Importer",
-    app_subtitle:        "Turn filament safety / technical data sheets into Snapmaker_Orca profiles.",
+    app_title:           "Filament & Print-Profile Optimiser by Maison Drabiec",
+    app_subtitle:        "Turn a manufacturer safety / technical data sheet into optimised Snapmaker_Orca filament + process profiles.",
 
     tab_single:          "Single PDF",
     tab_catalog:         "Vendor catalog",
@@ -60,8 +60,8 @@ const messages = {
   },
 
   fr: {
-    app_title:           "LeanSpectrum — Importateur FDS / TDS",
-    app_subtitle:        "Convertit les fiches de données de sécurité ou techniques d'un filament en profil Snapmaker_Orca.",
+    app_title:           "Optimisateur de filament et de profils d'impression by Maison Drabiec",
+    app_subtitle:        "Transforme une fiche fabricant (SDS/TDS) en profils filament + process Snapmaker_Orca optimisés.",
 
     tab_single:          "PDF unique",
     tab_catalog:         "Catalogue fabricant",

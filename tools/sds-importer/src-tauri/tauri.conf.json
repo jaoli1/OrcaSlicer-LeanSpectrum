@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
-  "productName": "Custom Filament Profile Creator",
-  "version": "0.1.14",
-  "identifier": "fork.leanspectrum.profile-creator",
+  "productName": "Optimisateur de filament et de profils d'impression by Maison Drabiec",
+  "version": "0.1.15",
+  "identifier": "fr.maisondrabiec.optimisateur",
   "build": {
     "frontendDist": "../frontend",
     "devUrl": "http://localhost:1430",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Custom Filament Profile Creator",
+        "title": "Optimisateur de filament et de profils d'impression by Maison Drabiec",
         "width": 920,
         "height": 680,
         "minWidth": 720,
@@ -40,8 +40,8 @@
       "icons/128x128@2x.png"
     ],
     "category": "DeveloperTool",
-    "shortDescription": "Filament SDS/TDS PDF -> tailored Snapmaker_Orca profile",
-    "longDescription": "Reads a manufacturer Safety or Technical Data Sheet PDF, extracts the relevant chemistry and printing parameters, and creates a Snapmaker_Orca filament profile tailored to the specific filament — ready to import. Companion app to LeanSpectrum."
+    "shortDescription": "Optimise filaments et profils d'impression Snapmaker U1 depuis une fiche SDS/TDS",
+    "longDescription": "Optimisateur de filament et de profils d'impression by Maison Drabiec — lit une fiche fabricant (SDS/TDS) et crée un profil filament Snapmaker_Orca taillé pour ce filament précis, accompagné de profils de process optimisés (coutures, économie de filament, mélange de couleurs)."
   },
   "plugins": {}
 }

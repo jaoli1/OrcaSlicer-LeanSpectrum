@@ -6,12 +6,12 @@
 function resolveInvoke() {
   const t = window.__TAURI__;
   if (!t) {
-    console.error("[Custom Filament Profile Creator] window.__TAURI__ is undefined — Tauri runtime did not inject the global. Check tauri.conf.json withGlobalTauri + CSP script-src.");
+    console.error("[Optimisateur MD] window.__TAURI__ is undefined — Tauri runtime did not inject the global. Check tauri.conf.json withGlobalTauri + CSP script-src.");
     return null;
   }
   if (t.core && typeof t.core.invoke === "function") return t.core.invoke;
   if (typeof t.invoke === "function")                return t.invoke;
-  console.error("[Custom Filament Profile Creator] Could not find invoke() on window.__TAURI__. Keys:", Object.keys(t));
+  console.error("[Optimisateur MD] Could not find invoke() on window.__TAURI__. Keys:", Object.keys(t));
   return null;
 }
 const invoke = resolveInvoke();

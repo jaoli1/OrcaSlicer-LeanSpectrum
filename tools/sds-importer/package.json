@@ -1,7 +1,7 @@
 {
-  "name": "custom-filament-profile-creator",
-  "version": "0.1.14",
-  "description": "Companion app that creates Snapmaker_Orca filament profiles tailored to each vendor's SDS/TDS PDF",
+  "name": "optimisateur-filament-profils-md",
+  "version": "0.1.15",
+  "description": "Optimisateur de filament et de profils d'impression by Maison Drabiec — profils filament + process Snapmaker_Orca optimisés depuis une fiche SDS/TDS",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "_note": "No build step needed — the frontend uses window.__TAURI__ globals (withGlobalTauri: true). To develop locally, install tauri-cli via `cargo install tauri-cli` then run `cargo tauri dev` from this directory."

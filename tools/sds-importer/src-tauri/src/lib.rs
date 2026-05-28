@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
+mod catalog;
 mod crawler;
 mod fetcher;
 mod ocr;
@@ -416,6 +417,52 @@ fn generate_process_library() -> std::result::Result<ProcessLibraryResult, Error
     })
 }
 
+// --- v0.1.18 universal printer support: catalogue selectors + on-demand process
+//     library for ANY OrcaSlicer-family printer (vendor -> model -> nozzle). ---
+
+#[tauri::command]
+fn list_printer_vendors() -> std::result::Result<Vec<String>, Error> {
+    run_command(|| Ok(catalog::vendors()))
+}
+
+#[tauri::command]
+fn list_printer_models(vendor: String) -> std::result::Result<Vec<String>, Error> {
+    run_command(move || Ok(catalog::models(&vendor)))
+}
+
+#[tauri::command]
+fn list_printer_nozzles(vendor: String, model: String) -> std::result::Result<Vec<f64>, Error> {
+    run_command(move || Ok(catalog::nozzles(&vendor, &model)))
+}
+
+/// Generate the 7 project-type process profiles for a chosen catalogue printer
+/// (on-demand). Resolves the printer's stock base process + preset name from the
+/// machine catalogue, then writes the profiles to the Snapmaker_Orca process/ dir.
+#[tauri::command]
+fn generate_process_library_for(
+    vendor: String,
+    model: String,
+    nozzle: Option<f64>,
+) -> std::result::Result<ProcessLibraryResult, Error> {
+    run_command(move || {
+        let spec = catalog::resolve(&vendor, &model, nozzle)
+            .ok_or_else(|| Error::Other(format!("Unknown printer in catalogue: {vendor} / {model}")))?;
+        let user = profile::snapmaker_orca_user_dir().ok_or_else(|| {
+            Error::Profile(
+                "Snapmaker_Orca user directory not found — open the slicer once so it creates your profile folder, then retry.".into(),
+            )
+        })?;
+        let dir = user.join("process");
+        std::fs::create_dir_all(&dir)?;
+        let mut names = Vec::new();
+        for (name, value) in project_process::build_library_for(&[spec]) {
+            profile::write_unique_json(&dir, &name, &value)?;
+            names.push(name);
+        }
+        Ok(ProcessLibraryResult { count: names.len(), dir: dir.display().to_string(), names })
+    })
+}
+
 /// v0.1.17 — check the Maison Drabiec server for a newer app and/or filament
 /// database. A newer DATABASE is downloaded automatically; a newer APP is only
 /// reported (the frontend offers to open the download page).
@@ -429,6 +476,13 @@ fn check_updates() -> std::result::Result<update::UpdateStatus, Error> {
 #[tauri::command]
 fn open_external(url: String) -> std::result::Result<(), Error> {
     run_command(move || {
+        // Only ever open the Maison Drabiec download page — never an arbitrary
+        // URL that a tampered manifest could inject.
+        if !update::is_trusted(&url) {
+            return Err(Error::Other(
+                "refused to open a URL outside the Maison Drabiec server".into(),
+            ));
+        }
         open::that(&url).map_err(|e| Error::Other(e.to_string()))?;
         Ok(())
     })
@@ -515,7 +569,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             import_pdf, pick_pdf, crawl_catalog, import_from_urls,
             corpus_default_path, scan_corpus, generate_process_library,
-            check_updates, open_external
+            check_updates, open_external,
+            list_printer_vendors, list_printer_models, list_printer_nozzles,
+            generate_process_library_for
         ])
         .setup(|app| {
             log::info!(

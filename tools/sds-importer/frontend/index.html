@@ -244,8 +244,15 @@
     <!-- ============ Process library tab (v0.1.16) ============ -->
     <div id="tab-library" class="tab-panel">
       <p class="sub" data-i18n="library_intro">Generate the shared set of process profiles by project type (Vase, Decoration, Figurine, Mechanical part…) for every nozzle (0.2 / 0.4 / 0.6 / 0.8) — 28 profiles tuned for cornering, resonance and the fork features. Filament-specific tuning stays on the filament profile.</p>
+      <div class="row" style="flex-wrap:wrap;">
+        <select id="pVendor" style="flex:1;min-width:150px;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--fg);"><option value="" data-i18n="library_vendor">— brand —</option></select>
+        <select id="pModel" disabled style="flex:2;min-width:170px;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--fg);"><option value="" data-i18n="library_model">— model —</option></select>
+        <select id="pNozzle" disabled style="min-width:95px;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--fg);"><option value="" data-i18n="library_nozzle">— nozzle —</option></select>
+        <button id="genForPrinter" disabled data-i18n="library_generate_printer">Generate for this printer</button>
+      </div>
+      <p class="sub" data-i18n="library_or_u1">— or generate the full Snapmaker U1 set (all 4 nozzles) —</p>
       <div class="row">
-        <button id="genLibraryBtn" data-i18n="library_generate">Generate process library</button>
+        <button id="genLibraryBtn" class="secondary" data-i18n="library_generate">Generate the Snapmaker U1 set</button>
         <span id="libraryStatus" class="sub"></span>
       </div>
       <div id="libraryResult" class="panel" style="display:none;"></div>

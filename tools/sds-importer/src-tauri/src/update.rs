@@ -28,6 +28,26 @@ use crate::{Error, Result};
 const MANIFEST_URL: &str =
     "https://slicer.maisondrabiec.fr/o-8e1ff3fc4498/manifest.json";
 
+/// Update artefacts must live on the Maison Drabiec HTTPS server — guards
+/// against a tampered manifest redirecting the DB download / app link elsewhere.
+const TRUSTED_PREFIX: &str = "https://slicer.maisondrabiec.fr/";
+pub fn is_trusted(url: &str) -> bool {
+    url.starts_with(TRUSTED_PREFIX)
+}
+
+/// True only for a strict "YYYY-MM-DD" string (the db_version format). A
+/// malformed local marker must NOT win a lexical compare and silently block
+/// database updates — callers treat "not a date" as "needs (re)download".
+fn is_iso_date(s: &str) -> bool {
+    let b = s.as_bytes();
+    b.len() == 10
+        && b[4] == b'-'
+        && b[7] == b'-'
+        && s[0..4].bytes().all(|c| c.is_ascii_digit())
+        && s[5..7].bytes().all(|c| c.is_ascii_digit())
+        && s[8..10].bytes().all(|c| c.is_ascii_digit())
+}
+
 #[derive(Debug, Deserialize)]
 struct Manifest {
     app_version: String,
@@ -115,6 +135,11 @@ fn semver_newer(current: &str, candidate: &str) -> bool {
 }
 
 fn download_db(url: &str, version: &str) -> Result<()> {
+    if !is_trusted(url) {
+        return Err(Error::Fetch(
+            "refused: the database URL is not on the Maison Drabiec server".into(),
+        ));
+    }
     let dir = data_dir().ok_or_else(|| Error::Other("no app-data directory".into()))?;
     std::fs::create_dir_all(&dir)?;
     let bytes = client()?
@@ -134,11 +159,12 @@ fn download_db(url: &str, version: &str) -> Result<()> {
     }
     // Write to a temp sibling then rename, so a crash mid-write never leaves a
     // half-written DB behind.
-    let final_db = db_path().unwrap();
+    let final_db = db_path().ok_or_else(|| Error::Other("no app-data directory".into()))?;
+    let vpath = db_version_path().ok_or_else(|| Error::Other("no app-data directory".into()))?;
     let tmp = final_db.with_extension("sqlite.part");
     std::fs::write(&tmp, &bytes)?;
     std::fs::rename(&tmp, &final_db)?;
-    std::fs::write(db_version_path().unwrap(), version)?;
+    std::fs::write(vpath, version)?;
     Ok(())
 }
 
@@ -165,8 +191,8 @@ pub fn check(download_db_if_newer: bool) -> Result<UpdateStatus> {
     st.app_update_available = semver_newer(&st.current_app_version, &m.app_version);
     // db_version is an ISO date string → lexical compare orders it correctly.
     st.db_update_available = match &st.current_db_version {
-        Some(v) => v.as_str() < m.db_version.as_str(),
-        None => true,
+        Some(v) if is_iso_date(v) => v.as_str() < m.db_version.as_str(),
+        _ => true, // no local DB, or a malformed version marker → (re)download
     };
 
     if st.db_update_available && download_db_if_newer {

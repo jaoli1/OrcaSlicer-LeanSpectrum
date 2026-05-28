@@ -326,6 +326,75 @@ if (genLibraryBtn) {
 }
 
 // ============================================================
+// Universal printer selector (v0.1.18) — generate the 7 project-type process
+// profiles for ANY catalogue printer (vendor -> model -> nozzle).
+// ============================================================
+const pVendor = document.getElementById("pVendor");
+const pModel = document.getElementById("pModel");
+const pNozzle = document.getElementById("pNozzle");
+const genForPrinter = document.getElementById("genForPrinter");
+
+function fillSelect(sel, items, placeholder) {
+  if (!sel) return;
+  sel.innerHTML = "";
+  const o0 = document.createElement("option");
+  o0.value = "";
+  o0.textContent = placeholder;
+  sel.appendChild(o0);
+  for (const it of items) {
+    const o = document.createElement("option");
+    o.value = String(it && it.value !== undefined ? it.value : it);
+    o.textContent = String(it && it.label !== undefined ? it.label : it);
+    sel.appendChild(o);
+  }
+}
+
+if (pVendor && invoke) {
+  pVendor.addEventListener("change", async () => {
+    pModel.disabled = true; pNozzle.disabled = true; genForPrinter.disabled = true;
+    fillSelect(pModel, [], tr("library_model"));
+    fillSelect(pNozzle, [], tr("library_nozzle"));
+    if (!pVendor.value) return;
+    try {
+      fillSelect(pModel, await invoke("list_printer_models", { vendor: pVendor.value }), tr("library_model"));
+      pModel.disabled = false;
+    } catch (e) { libraryStatus.textContent = String(e); }
+  });
+  pModel.addEventListener("change", async () => {
+    pNozzle.disabled = true; genForPrinter.disabled = true;
+    fillSelect(pNozzle, [], tr("library_nozzle"));
+    if (!pModel.value) return;
+    try {
+      const nz = await invoke("list_printer_nozzles", { vendor: pVendor.value, model: pModel.value });
+      fillSelect(pNozzle, nz.map(n => ({ value: n, label: n + " mm" })), tr("library_nozzle"));
+      pNozzle.disabled = false;
+      genForPrinter.disabled = false; // nozzle optional (defaults to 0.4 / smallest)
+    } catch (e) { libraryStatus.textContent = String(e); }
+  });
+  genForPrinter.addEventListener("click", async () => {
+    genForPrinter.disabled = true;
+    libraryStatus.textContent = tr("library_working");
+    libraryResult.style.display = "none";
+    try {
+      const args = { vendor: pVendor.value, model: pModel.value };
+      if (pNozzle.value) args.nozzle = parseFloat(pNozzle.value);
+      const r = await invoke("generate_process_library_for", args);
+      libraryResult.style.display = "block";
+      libraryResult.innerHTML = `<strong>${r.count}</strong> ${escapeHtml(tr("library_done"))} <code>${escapeHtml(r.dir)}</code>`;
+    } catch (e) {
+      libraryResult.style.display = "block";
+      libraryResult.textContent = `${tr("library_fail")}: ${e}`;
+    } finally {
+      libraryStatus.textContent = "";
+      genForPrinter.disabled = false;
+    }
+  });
+  invoke("list_printer_vendors")
+    .then(v => fillSelect(pVendor, v, tr("library_vendor")))
+    .catch(() => {});
+}
+
+// ============================================================
 // Update checker (v0.1.17) — manual button + silent launch check.
 // The database is downloaded automatically when newer; a newer APP is only
 // proposed (button opens the download page in the browser).

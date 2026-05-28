@@ -192,11 +192,25 @@ fn scan_density(text: &str) -> Option<f64> {
         .or_else(|| density_pull(backward, &DENSITY_VALUE_RX))
 }
 
+/// pdf-extract frequently drops the space before a company's legal-form
+/// suffix, gluing it onto the preceding word — the real ERYONE TDS extracts as
+/// "Shenzhen Eryone TechnologyCo,.Ltd". Insert a single space when a legal form
+/// is glued directly onto the tail of a lowercase-ending word:
+/// "TechnologyCo,.Ltd" → "Technology Co,.Ltd". Idempotent — a name that already
+/// has the space is left unchanged (the suffix is then preceded by a space, not
+/// a letter, so the pattern doesn't fire).
+fn deglue_company_suffix(s: &str) -> String {
+    static GLUE_RX: Lazy<Regex> = Lazy::new(|| {
+        Regex::new(r"([a-z])(Co[.,;\s]|GmbH|Inc|LLC|Corp|Limited|Ltd|B\.V\.|N\.V\.|Pty|S\.A|S\.L|S\.R\.L)").unwrap()
+    });
+    GLUE_RX.replace_all(s, "$1 $2").to_string()
+}
+
 fn scan_manufacturer(text: &str) -> Option<String> {
     // Prefer the first match within the first ~1000 chars (header area).
     let head = safe_slice(text, 0, 1500);
     MANUFACTURER_RX.captures(head)
-        .and_then(|c| c.get(1).map(|m| m.as_str().trim().to_string()))
+        .and_then(|c| c.get(1).map(|m| deglue_company_suffix(m.as_str().trim())))
 }
 
 // Words that look like a region / city / generic legal-form rather than a
@@ -342,6 +356,67 @@ fn scan_print_speed(text: &str) -> (Option<f64>, Option<f64>) {
     (None, None)
 }
 
+static SPECIMEN_TEMP_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(?:printing|nozzle|extrud\w*|print)\s*temperature\s*[=:]?\s*(\d{2,3})").unwrap()
+});
+static SPECIMEN_SPEED_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(?:printing\s*)?speed\s*[=:]?\s*(\d{1,3})").unwrap()
+});
+static SPECIMEN_BED_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(?:base\s*plate|build\s*plate|heated\s*bed|bed)\s*(?:temp\w*)?\s*[=:]?\s*(\d{2,3})").unwrap()
+});
+
+/// Extract the manufacturer's VALIDATED test-specimen print conditions — the
+/// "specimens / splines are printed under the following conditions: printing
+/// temperature=210 °C, printing speed=80 mm/s, base plate 60 °C" note that many
+/// TDS carry in the mechanical-properties section. These values are
+/// AUTHORITATIVE (the vendor printed the very bars it measured at exactly these
+/// settings), so the caller uses them to OVERRIDE the parameter-table
+/// midpoints. Returns `(nozzle_c, speed_mm_s, bed_c)`, each independently
+/// optional. Anchored on distinctive specimen-note phrases so an unrelated
+/// sentence can't trigger it.
+fn scan_test_specimen_conditions(text: &str) -> (Option<f64>, Option<f64>, Option<f64>) {
+    let lower = text.to_ascii_lowercase();
+    let anchors = [
+        "following conditions",
+        "specimens are printed",
+        "splines are printed",
+        "samples are printed",
+        "test specimen",
+        "test conditions",
+    ];
+    let idx = match anchors.iter().find_map(|a| lower.find(a)) {
+        Some(i) => i,
+        None => return (None, None, None),
+    };
+    // The note is a single clause; a 320-char forward window covers it without
+    // bleeding into the next paragraph.
+    let window = safe_slice(text, idx, idx + 320);
+
+    let pull = |rx: &Regex, min: f64, max: f64| -> Option<f64> {
+        rx.captures(window)
+            .and_then(|c| c.get(1))
+            .and_then(|m| m.as_str().parse::<f64>().ok())
+            .filter(|v| *v >= min && *v <= max)
+    };
+
+    let nozzle = pull(&SPECIMEN_TEMP_RX, 120.0, 350.0);
+    let speed  = pull(&SPECIMEN_SPEED_RX, 1.0, 1000.0);
+    let bed    = pull(&SPECIMEN_BED_RX, 20.0, 130.0);
+    (nozzle, speed, bed)
+}
+
+static MM_YYYY_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"\b(?:0[1-9]|1[0-2])/(?:20\d{2})\b").unwrap()
+});
+
+/// Extract a revision / issue date in MM/YYYY form (e.g. the ERYONE TDS header
+/// "08/2024"). Restricted to the header so a stray date in the body can't win.
+fn scan_revision_date(text: &str) -> Option<String> {
+    let head = safe_slice(text, 0, 1500);
+    MM_YYYY_RX.find(head).map(|m| m.as_str().to_string())
+}
+
 pub fn parse(text: &str) -> ExtractedFilament {
     let mut out = ExtractedFilament::default();
     out.polymer = polymer::detect(text);
@@ -394,6 +469,22 @@ pub fn parse(text: &str) -> ExtractedFilament {
     let (s_lo, s_hi) = scan_print_speed(text);
     out.print_speed_min_mm_s = s_lo;
     out.print_speed_max_mm_s = s_hi;
+
+    // Manufacturer-validated test-specimen conditions (the "specimens / splines
+    // are printed under the following conditions …" note). AUTHORITATIVE — the
+    // vendor printed the very bars it measured at exactly these settings — so
+    // the nozzle value OVERRIDES the parameter-table midpoint, and the bed /
+    // speed recommended values feed the process companion (where they actually
+    // take effect). Each is independent and only set when the note provides it.
+    let (spec_nozzle, spec_speed, spec_bed) = scan_test_specimen_conditions(text);
+    if let Some(n) = spec_nozzle {
+        out.nozzle_temp_recommended_c = Some(n);
+    }
+    out.bed_temp_recommended_c = spec_bed;
+    out.print_speed_recommended_mm_s = spec_speed;
+
+    // Revision / issue date (MM/YYYY) from the header, e.g. ERYONE "08/2024".
+    out.revision_date = scan_revision_date(text);
 
     // Cooling fan boolean.
     let lower = text.to_ascii_lowercase();
@@ -677,5 +768,72 @@ RECOMMENDED PRINTING PARAMETERS                                      VALUE
         // bed window.
         assert_eq!(r.bed_temp_min_c, Some(40.0));
         assert_eq!(r.bed_temp_max_c, Some(60.0));
+    }
+
+    /// The éprouvette / test-specimen note ("All splines are printed under the
+    /// following conditions: printing temperature=210 °C, printing speed=80
+    /// mm/s, base plate 60 °C") is AUTHORITATIVE and must override the
+    /// parameter-table midpoint. Here the table would give nozzle 205 (190-220
+    /// midpoint); the note pins it to 210, plus bed 60 and speed 80 — values
+    /// that don't otherwise exist as single recommendations.
+    #[test]
+    fn scan_specimen_note_overrides_table_midpoints() {
+        let raw = "Technical Data Sheet (TDS)\n\
+                   PLA+\n\
+                   Nozzle temperature 190℃-220℃\n\
+                   Bed temperature 55-70℃\n\
+                   Printing speed 30-100mm/s\n\
+                   Part III: Mechanical Properties\n\
+                   All splines are printed under the following conditions: \
+                   printing temperature=210℃, printing speed=80mm/s, \
+                   base plate 60℃, filling=100%, nozzle diameter=0.4mm\n";
+        let text = crate::text_utils::normalize_unicode(raw);
+        let r = parse(&text);
+        // Ranges still come from the parameter table.
+        assert_eq!(r.nozzle_temp_min_c, Some(190.0));
+        assert_eq!(r.nozzle_temp_max_c, Some(220.0));
+        assert_eq!(r.print_speed_min_mm_s, Some(30.0));
+        assert_eq!(r.print_speed_max_mm_s, Some(100.0));
+        // Recommended values come from the AUTHORITATIVE specimen note, NOT the
+        // 205 midpoint / 55 bed-low / 65 speed-mid.
+        assert_eq!(r.nozzle_temp_recommended_c, Some(210.0));
+        assert_eq!(r.bed_temp_recommended_c, Some(60.0));
+        assert_eq!(r.print_speed_recommended_mm_s, Some(80.0));
+    }
+
+    /// Without a specimen note, recommended bed/speed stay None (so the profile
+    /// builder falls back to range midpoints) and the nozzle recommendation
+    /// remains the table midpoint.
+    #[test]
+    fn no_specimen_note_leaves_recommended_bed_speed_none() {
+        let tds = "Recommended Settings\nNozzle temperature: 200-220 °C\nBed temperature: 55-65 °C\nPrint speed 40-80 mm/s\n";
+        let r = parse(tds);
+        assert_eq!(r.nozzle_temp_recommended_c, Some(210.0)); // 200-220 midpoint
+        assert_eq!(r.bed_temp_recommended_c, None);
+        assert_eq!(r.print_speed_recommended_mm_s, None);
+    }
+
+    #[test]
+    fn deglue_company_suffix_inserts_missing_space() {
+        // The exact pdf-extract artifact from the ERYONE TDS.
+        assert_eq!(
+            deglue_company_suffix("Shenzhen Eryone TechnologyCo,.Ltd"),
+            "Shenzhen Eryone Technology Co,.Ltd"
+        );
+        // Idempotent — an already-spaced name is unchanged.
+        assert_eq!(
+            deglue_company_suffix("Shenzhen Eryone Technology Co,.Ltd"),
+            "Shenzhen Eryone Technology Co,.Ltd"
+        );
+        // GmbH / Inc glue is handled too.
+        assert_eq!(deglue_company_suffix("PolymakerGmbH"), "Polymaker GmbH");
+    }
+
+    #[test]
+    fn scan_revision_date_reads_header_mm_yyyy() {
+        let tds = "Shenzhen Eryone Technology Co,.Ltd\nversion 1.0\n08/2024\n\nTechnical Data Sheet (TDS)\n";
+        assert_eq!(scan_revision_date(tds).as_deref(), Some("08/2024"));
+        // No date → None.
+        assert_eq!(scan_revision_date("Technical Data Sheet\nPLA+\n"), None);
     }
 }

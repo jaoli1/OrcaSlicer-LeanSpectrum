@@ -46,8 +46,10 @@ pub fn merge(into: &mut ExtractedFilament, other: ExtractedFilament) {
     prefer_other!(nozzle_temp_recommended_c);
     prefer_other!(bed_temp_min_c);
     prefer_other!(bed_temp_max_c);
+    prefer_other!(bed_temp_recommended_c);
     prefer_other!(print_speed_min_mm_s);
     prefer_other!(print_speed_max_mm_s);
+    prefer_other!(print_speed_recommended_mm_s);
     prefer_other!(max_flow_mm3_s);
     prefer_other!(fan_enabled);
     into.estimated_fields.extend(other.estimated_fields);
@@ -166,6 +168,22 @@ fn fmt_num(x: f64) -> String {
     if x.fract().abs() < 1e-9 { format!("{x:.0}") } else { format!("{x}") }
 }
 
+/// The single print speed (mm/s) to inject into the process companion.
+/// Priority: the manufacturer's validated test-specimen speed (authoritative),
+/// then the midpoint of the recommended range, then the range top. `None` only
+/// when the sheet carries no speed at all. Print speed is a PROCESS-domain
+/// setting, so it would otherwise be silently dropped — this is what wires the
+/// TDS "Printing speed" value into a profile the slicer actually applies.
+fn effective_print_speed(ef: &ExtractedFilament) -> Option<f64> {
+    ef.print_speed_recommended_mm_s
+        .or_else(|| match (ef.print_speed_min_mm_s, ef.print_speed_max_mm_s) {
+            (Some(lo), Some(hi)) if lo.is_finite() && hi.is_finite() => Some(((lo + hi) / 2.0).round()),
+            _ => None,
+        })
+        .or(ef.print_speed_max_mm_s)
+        .filter(|v| v.is_finite() && *v > 0.0)
+}
+
 /// The stock U1 process profile the scarf companion attaches its overrides
 /// to. "0.20 Standard" is the balanced default; the user can re-base to a
 /// finer / faster layer height afterwards and keep the scarf overrides.
@@ -188,16 +206,18 @@ const PRESET_VERSION: &str = "01.10.01.70";
 /// the exact preset NAME, not a display alias.
 const U1_PRINTER: &str = "Snapmaker U1 (0.4 nozzle)";
 
-/// Build a companion **process** profile that enables scarf-joint seams.
+/// Build a companion **process** profile carrying the settings that only take
+/// effect in the PROCESS domain: scarf-joint seams and the manufacturer print
+/// speed.
 ///
-/// `seam_*` / `scarf_*` are PROCESS-domain config keys (verified in
-/// PrintConfig.cpp + the stock profiles), so they only take effect in a
-/// process profile — putting them in a filament profile, as we did through
-/// v0.1.10, does nothing. This profile inherits the standard U1 process and
-/// overrides ONLY the scarf keys.
+/// `seam_*` / `scarf_*` AND the wall/infill `*_speed` keys are PROCESS-domain
+/// config keys (verified in PrintConfig.cpp + the stock profiles), so they only
+/// take effect in a process profile — putting them in a filament profile, as we
+/// did through v0.1.10, does nothing. This profile inherits the standard U1
+/// process and overrides ONLY those keys.
 ///
-/// Value formats follow the process-profile convention (plain string
-/// scalars, NOT the filament profile's string-arrays; bools as "0"/"1"):
+/// Value formats follow the process-profile convention (plain string scalars,
+/// NOT the filament profile's string-arrays; bools as "0"/"1"):
 ///   - seam_slope_type        coEnum  -> "external"  (contour outer walls)
 ///   - seam_slope_conditional coBool  -> "1"
 ///   - scarf_angle_threshold  coInt   -> "155"
@@ -205,17 +225,27 @@ const U1_PRINTER: &str = "Snapmaker U1 (0.4 nozzle)";
 ///   - scarf_joint_flow_ratio coFloat -> "1"  (ratio, NOT "100%")
 ///   - seam_slope_min_length  coFloat -> "20"
 ///   - seam_slope_steps       coInt   -> "10"
+///   - outer_wall_speed / inner_wall_speed / sparse_infill_speed /
+///     internal_solid_infill_speed  coFloat -> the TDS print speed (mm/s)
 ///
-/// Returns `None` when scarf is disabled for the polymer (e.g. TPU — rubber
-/// doesn't ramp cleanly).
-fn build_process_json(product_display: &str, scarf: &ScarfSettings) -> Option<(String, Value)> {
-    if !scarf.enable_scarf {
+/// Returns `None` only when BOTH are absent — scarf disabled for the polymer
+/// (e.g. TPU) AND no print speed on the sheet. When scarf is off but a speed
+/// exists we still emit a "Tuned" companion so the manufacturer speed is
+/// applied (it has nowhere else to live).
+fn build_process_json(
+    product_display: &str,
+    scarf: &ScarfSettings,
+    print_speed: Option<f64>,
+) -> Option<(String, Value)> {
+    let speed = print_speed.filter(|x| x.is_finite() && *x > 0.0);
+    if !scarf.enable_scarf && speed.is_none() {
         return None;
     }
-    let name = format!("{product_display} Scarf @U1 (0.4 nozzle)");
-    // coFloat ratio: 100% -> 1.0, 95% -> 0.95.
-    let flow_ratio = scarf.scarf_flow_ratio_pct as f64 / 100.0;
-    let v = json!({
+    // Name reflects what the companion actually carries.
+    let kind = if scarf.enable_scarf { "Scarf" } else { "Tuned" };
+    let name = format!("{product_display} {kind} @U1 (0.4 nozzle)");
+
+    let mut v = json!({
         "name":     name,
         "version":  PRESET_VERSION,
         "from":     "User",
@@ -223,19 +253,36 @@ fn build_process_json(product_display: &str, scarf: &ScarfSettings) -> Option<(S
         "type":     "process",
         "inherits": BASE_PROCESS_U1,
         "compatible_printers": [U1_PRINTER],
-        "seam_slope_type":        "external",
-        "seam_slope_conditional": "1",
-        "scarf_angle_threshold":  scarf.scarf_angle_deg.to_string(),
-        "scarf_joint_speed":      format!("{}%", scarf.scarf_joint_speed_pct),
-        "scarf_joint_flow_ratio": fmt_num(flow_ratio),
-        "seam_slope_min_length":  fmt_num(scarf.scarf_length_mm),
-        "seam_slope_steps":       scarf.scarf_steps.to_string(),
-        "seam_position":          scarf.seam_position,
         "_leanspectrum_metadata": {
-            "source":       "SDS/TDS importer — scarf companion",
+            "source":       "SDS/TDS importer — process companion",
             "base_process": BASE_PROCESS_U1,
         }
     });
+    {
+        let obj = v.as_object_mut().expect("process root is a JSON object");
+
+        if scarf.enable_scarf {
+            // coFloat ratio: 100% -> 1.0, 95% -> 0.95.
+            let flow_ratio = scarf.scarf_flow_ratio_pct as f64 / 100.0;
+            obj.insert("seam_slope_type".into(),        json!("external"));
+            obj.insert("seam_slope_conditional".into(), json!("1"));
+            obj.insert("scarf_angle_threshold".into(),  json!(scarf.scarf_angle_deg.to_string()));
+            obj.insert("scarf_joint_speed".into(),      json!(format!("{}%", scarf.scarf_joint_speed_pct)));
+            obj.insert("scarf_joint_flow_ratio".into(), json!(fmt_num(flow_ratio)));
+            obj.insert("seam_slope_min_length".into(),  json!(fmt_num(scarf.scarf_length_mm)));
+            obj.insert("seam_slope_steps".into(),       json!(scarf.scarf_steps.to_string()));
+            obj.insert("seam_position".into(),          json!(scarf.seam_position.clone()));
+        }
+
+        if let Some(s) = speed {
+            // The manufacturer's recommended print speed applies to the main
+            // print moves. coFloat plain-string scalars in a process profile.
+            for key in ["outer_wall_speed", "inner_wall_speed",
+                        "sparse_infill_speed", "internal_solid_infill_speed"] {
+                obj.insert(key.to_string(), json!(fmt_num(s)));
+            }
+        }
+    }
     Some((name, v))
 }
 
@@ -333,7 +380,20 @@ fn build_profile_json(
         // U1's default plate is textured PEI; setting only `hot_plate_temp`
         // (as we did through v0.1.9) left the textured plate at the parent
         // default and the user's bed temperature silently never changed.
-        if let Some(bed) = ef.bed_temp_min_c.filter(|x| x.is_finite()) {
+        //
+        // Value priority: the manufacturer's validated test-specimen bed temp
+        // (authoritative — e.g. ERYONE's "base plate 60 °C"), then the midpoint
+        // of the recommended range (rounded — 55-70 → 63), then the range low
+        // end. Through v0.1.12 we always used the low end, which under-set the
+        // bed vs. what the vendor actually printed at.
+        let bed_value = ef.bed_temp_recommended_c
+            .or_else(|| match (ef.bed_temp_min_c, ef.bed_temp_max_c) {
+                (Some(lo), Some(hi)) if lo.is_finite() && hi.is_finite() => Some(((lo + hi) / 2.0).round()),
+                _ => None,
+            })
+            .or(ef.bed_temp_min_c)
+            .filter(|x| x.is_finite());
+        if let Some(bed) = bed_value {
             for key in [
                 "hot_plate_temp",      "hot_plate_temp_initial_layer",
                 "cool_plate_temp",     "cool_plate_temp_initial_layer",
@@ -389,31 +449,38 @@ pub fn build_and_save(
     let out_path = write_unique_json(&filament_dir, &display, &profile)?;
     log.push(format!("Saved filament profile to {}", out_path.display()));
 
-    // 2) Companion process profile carrying the scarf-joint seam overrides.
-    //    seam_*/scarf_* are process-domain keys, so they only take effect in
-    //    a process profile — not in the filament profile. We write one that
-    //    inherits the standard U1 process and overrides only the scarf keys,
-    //    and surface it as the recommended process so the UI can point the
-    //    user straight at it.
-    let recommended = match build_process_json(&product_disp, &scarf) {
+    // 2) Companion process profile carrying the PROCESS-domain overrides:
+    //    scarf-joint seams AND the manufacturer print speed. seam_*/scarf_* and
+    //    the wall/infill *_speed keys only take effect in a process profile —
+    //    not in the filament profile. We write one that inherits the standard
+    //    U1 process and overrides only those keys, and surface it as the
+    //    recommended process so the UI can point the user straight at it.
+    let print_speed = effective_print_speed(ef);
+    let recommended = match build_process_json(&product_disp, &scarf, print_speed) {
         Some((proc_name, proc_json)) => {
             let process_dir = resolve_dir("process")?;
             let proc_path = write_unique_json(&process_dir, &proc_name, &proc_json)?;
+            let bits = match (scarf.enable_scarf, print_speed) {
+                (true, Some(s))  => format!("scarf seams + {s:.0} mm/s print speed"),
+                (true, None)     => "scarf seams".to_string(),
+                (false, Some(s)) => format!("{s:.0} mm/s print speed"),
+                (false, None)    => "process overrides".to_string(),
+            };
             log.push(format!(
-                "Saved companion process profile (scarf seams) to {}. Pick it in the Process dropdown for nearly-invisible Z-seams.",
+                "Saved companion process profile ({bits}) to {}. Pick it in the Process dropdown to apply them.",
                 proc_path.display()
             ));
             Some(RecommendedProcess {
                 name:         proc_name,
                 layer_height: Some(0.20),
-                print_speed:  None,
+                print_speed,
                 priority:     "balanced".into(),
                 path:         proc_path.display().to_string(),
             })
         }
         None => {
             log.push(format!(
-                "No scarf companion for {} (scarf disabled for this polymer family).",
+                "No process companion for {} (scarf disabled for this polymer family and no print speed on the sheet).",
                 polymer.as_str()
             ));
             None
@@ -487,6 +554,11 @@ mod tests {
     }
 
     fn eryone_pla() -> ExtractedFilament {
+        // Represents the REAL ERYONE PLA+ extraction AFTER the v0.1.13 fix: the
+        // test-specimen note ("printing temperature=210, printing speed=80,
+        // base plate 60") supplies the authoritative recommended values that
+        // override the parameter-table midpoints (which would be nozzle 205,
+        // bed-low 55, speed-mid 65).
         ExtractedFilament {
             product_name:        Some("Eryone PLA+".into()),
             manufacturer:        Some("Shenzhen Eryone Technology Co,.Ltd".into()),
@@ -495,9 +567,13 @@ mod tests {
             glass_transition_c:  Some(54.0),
             nozzle_temp_min_c:   Some(190.0),
             nozzle_temp_max_c:   Some(220.0),
-            nozzle_temp_recommended_c: Some(205.0),
+            nozzle_temp_recommended_c: Some(210.0),
             bed_temp_min_c:      Some(55.0),
             bed_temp_max_c:      Some(70.0),
+            bed_temp_recommended_c: Some(60.0),
+            print_speed_min_mm_s: Some(30.0),
+            print_speed_max_mm_s: Some(100.0),
+            print_speed_recommended_mm_s: Some(80.0),
             ..Default::default()
         }
     }
@@ -523,19 +599,21 @@ mod tests {
         assert_eq!(v["filament_type"][0], "PLA");
         assert_eq!(v["filament_vendor"][0], "Shenzhen Eryone Technology Co,.Ltd");
 
-        // Temperatures as integer strings (no trailing ".00").
-        assert_eq!(v["nozzle_temperature"][0],            "205");
+        // Temperatures as integer strings (no trailing ".00"). Nozzle is the
+        // AUTHORITATIVE specimen-note value (210), NOT the 190-220 midpoint 205.
+        assert_eq!(v["nozzle_temperature"][0],            "210");
         assert_eq!(v["nozzle_temperature_range_low"][0],  "190");
         assert_eq!(v["nozzle_temperature_range_high"][0], "220");
         assert_eq!(v["filament_density"][0],              "1.23");
         assert_eq!(v["temperature_vitrification"][0],     "54");
 
-        // ALL four plate types + initial-layer variants carry the bed temp.
+        // ALL four plate types + initial-layer variants carry the bed temp —
+        // the specimen-note "base plate 60", NOT the 55 range low.
         for key in ["hot_plate_temp", "hot_plate_temp_initial_layer",
                     "cool_plate_temp", "cool_plate_temp_initial_layer",
                     "eng_plate_temp", "eng_plate_temp_initial_layer",
                     "textured_plate_temp", "textured_plate_temp_initial_layer"] {
-            assert_eq!(v[key][0], "55", "plate key {key} should be the bed temp");
+            assert_eq!(v[key][0], "60", "plate key {key} should be the bed temp");
         }
 
         // Dead process-domain keys MUST NOT appear at the top level anymore.
@@ -556,7 +634,8 @@ mod tests {
     fn scarf_companion_process_has_correct_schema() {
         let scarf = Polymer::Pla.default_scarf_settings();
         assert!(scarf.enable_scarf, "PLA scarf should be enabled by default");
-        let (name, v) = build_process_json("Eryone PLA+", &scarf).expect("PLA yields a companion");
+        // 80 mm/s is the ERYONE specimen-note print speed.
+        let (name, v) = build_process_json("Eryone PLA+", &scarf, Some(80.0)).expect("PLA yields a companion");
 
         assert_eq!(name, "Eryone PLA+ Scarf @U1 (0.4 nozzle)");
         assert_eq!(v["type"], "process");
@@ -576,14 +655,52 @@ mod tests {
         assert_eq!(v["seam_slope_steps"], "10");
         // None of these should be string-arrays (that's the filament format).
         assert!(v["seam_slope_type"].is_string());
+        // The TDS print speed is injected into the main print moves — this is
+        // the v0.1.13 gap fix (print speed is process-domain, was dropped).
+        assert_eq!(v["outer_wall_speed"], "80");
+        assert_eq!(v["inner_wall_speed"], "80");
+        assert_eq!(v["sparse_infill_speed"], "80");
+        assert_eq!(v["internal_solid_infill_speed"], "80");
+        assert!(v["outer_wall_speed"].is_string());
     }
 
-    /// TPU disables scarf, so no companion process is generated.
+    /// A polymer that disables scarf (TPU) but HAS a manufacturer print speed
+    /// still gets a "Tuned" companion carrying the speed — it has nowhere else
+    /// to live (print speed is a process-domain setting).
     #[test]
-    fn scarf_companion_skipped_when_disabled() {
+    fn speed_only_companion_emitted_when_scarf_disabled() {
         let scarf = Polymer::Tpu.default_scarf_settings();
         assert!(!scarf.enable_scarf, "TPU scarf should be disabled");
-        assert!(build_process_json("Generic TPU", &scarf).is_none());
+        let (name, v) = build_process_json("Generic TPU", &scarf, Some(30.0))
+            .expect("speed alone yields a companion");
+        assert_eq!(name, "Generic TPU Tuned @U1 (0.4 nozzle)");
+        assert_eq!(v["type"], "process");
+        assert_eq!(v["outer_wall_speed"], "30");
+        // Scarf keys must be absent when scarf is disabled.
+        let obj = v.as_object().unwrap();
+        assert!(!obj.contains_key("seam_slope_type"));
+        assert!(!obj.contains_key("scarf_joint_speed"));
+    }
+
+    /// No scarf AND no print speed → no companion at all.
+    #[test]
+    fn scarf_companion_skipped_when_disabled_and_no_speed() {
+        let scarf = Polymer::Tpu.default_scarf_settings();
+        assert!(!scarf.enable_scarf, "TPU scarf should be disabled");
+        assert!(build_process_json("Generic TPU", &scarf, None).is_none());
+    }
+
+    /// effective_print_speed: specimen-note recommendation wins; else range
+    /// midpoint (rounded); else range top; else None.
+    #[test]
+    fn effective_print_speed_priority() {
+        let mut ef = ExtractedFilament { polymer: Some(Polymer::Pla), ..Default::default() };
+        assert_eq!(effective_print_speed(&ef), None);
+        ef.print_speed_min_mm_s = Some(30.0);
+        ef.print_speed_max_mm_s = Some(100.0);
+        assert_eq!(effective_print_speed(&ef), Some(65.0)); // midpoint
+        ef.print_speed_recommended_mm_s = Some(80.0);
+        assert_eq!(effective_print_speed(&ef), Some(80.0)); // recommendation wins
     }
 
     /// When a value is missing we must NOT emit the key at all (emitting

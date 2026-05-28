@@ -11,6 +11,39 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.1.13] — feat: honour the TDS print speed + manufacturer test-specimen conditions
+
+Three data-fidelity gaps closed, applied **generically to any filament** (not
+just the ERYONE PLA+ that surfaced them):
+
+- **Print speed is no longer dropped.** "Printing speed" (e.g. 30–100 mm/s) is
+  a PROCESS-domain setting, so — like the scarf keys before v0.1.11 — it had
+  nowhere to live in a filament profile and was silently discarded. The
+  companion **process** profile now injects it into `outer_wall_speed`,
+  `inner_wall_speed`, `sparse_infill_speed` and `internal_solid_infill_speed`.
+  A companion is now generated whenever scarf seams **or** a print speed exist
+  (a speed-only companion is named `… Tuned @U1 (0.4 nozzle)`).
+- **Manufacturer test-specimen note is now authoritative.** Many TDS state the
+  exact conditions their mechanical-test bars were printed at — ERYONE Part III:
+  *"All splines are printed under the following conditions: printing
+  temperature=210 °C, printing speed=80 mm/s, base plate 60 °C"*. The parser
+  now reads that note and uses those values to **override** the parameter-table
+  midpoints (nozzle 210 instead of the 190–220 midpoint 205, bed 60, speed 80).
+- **Bed temperature picks a sensible value.** Priority: the specimen-note bed
+  temp → the rounded midpoint of the recommended range → the range low end.
+  Through v0.1.12 it always used the low end (55 °C for ERYONE, vs the 60 °C the
+  vendor actually printed at).
+
+Plus two extraction polish fixes:
+- **Revision date (MM/YYYY).** The header date (ERYONE "08/2024") is captured
+  into `_leanspectrum_metadata.revision_date` instead of staying `null`.
+- **De-glued manufacturer.** pdf-extract drops the space before a legal-form
+  suffix ("TechnologyCo,.Ltd"); the name is repaired to "Technology Co,.Ltd",
+  which also feeds `filament_vendor`.
+
+Eight new/updated unit tests cover the specimen-note override, the speed-only
+companion, `effective_print_speed` priority, the de-glue, and the date scan.
+
 ## [0.1.12] — fix: generated profiles now actually appear in the slicer
 
 THE core bug. Through v0.1.11 the generated filament (and scarf process)

@@ -74,8 +74,15 @@ pub struct ExtractedFilament {
     pub nozzle_temp_recommended_c: Option<f64>,
     pub bed_temp_min_c:      Option<f64>,
     pub bed_temp_max_c:      Option<f64>,
+    /// Authoritative single bed temperature when the vendor states one
+    /// (e.g. the "test specimen printed under … base plate 60 °C" note),
+    /// preferred over the range midpoint.
+    pub bed_temp_recommended_c: Option<f64>,
     pub print_speed_min_mm_s: Option<f64>,
     pub print_speed_max_mm_s: Option<f64>,
+    /// Authoritative single print speed when the vendor states one (e.g. the
+    /// validated "printing speed=80 mm/s" from the test-specimen note).
+    pub print_speed_recommended_mm_s: Option<f64>,
     pub max_flow_mm3_s:      Option<f64>,
     pub fan_enabled:         Option<bool>,
 

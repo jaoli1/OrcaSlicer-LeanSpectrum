@@ -1,8 +1,8 @@
 # Optimisateur de filament et de profils d'impression by Maison Drabiec — Manuel utilisateur
 
-> **Version du logiciel :** 0.1.17 · **Langue de ce document :** Français ([English version](WIKI_EN.md))
+> **Version du logiciel :** 0.2.0 · **Langue de ce document :** Français ([English version](WIKI_EN.md))
 >
-> Application de bureau pour transformer une fiche fabricant (PDF SDS/TDS) ou une URL catalogue en profils **filament** et **process** optimisés pour le slicer **OptimusOrca / Snapmaker_Orca**.
+> Application de bureau qui s'appuie sur une **base de données de filaments** (construite à partir des fiches officielles des fabricants) pour générer, en un clic, des profils **filament** et **process** optimisés pour le slicer **OptimusOrca / Snapmaker_Orca**.
 
 ---
 
@@ -11,9 +11,9 @@
 1. [Introduction](#1-introduction)
 2. [Installation](#2-installation)
 3. [Premier lancement & interface](#3-premier-lancement--interface)
-4. [Mode 1 — Importer une fiche PDF](#4-mode-1--importer-une-fiche-pdf)
-5. [Mode 2 — Catalogue fabricant](#5-mode-2--catalogue-fabricant)
-6. [Mode 3 — Base locale](#6-mode-3--base-locale)
+4. [La Bibliothèque Filament (mode principal)](#4-la-bibliothèque-filament-mode-principal)
+5. [Le sélecteur d'imprimante global](#5-le-sélecteur-dimprimante-global)
+6. [PDF unique (mode de secours)](#6-pdf-unique-mode-de-secours)
 7. [La bibliothèque de profils PROCESS](#7-la-bibliothèque-de-profils-process)
 8. [Mises à jour](#8-mises-à-jour)
 9. [Utiliser les profils dans OptimusOrca / Snapmaker_Orca](#9-utiliser-les-profils-dans-optimusorca--snapmaker_orca)
@@ -24,47 +24,48 @@
 
 ## 1. Introduction
 
-L'**Optimisateur de filament et de profils d'impression by Maison Drabiec** (en abrégé : *Optimisateur MD*) est un petit utilitaire de bureau qui supprime l'étape fastidieuse du réglage manuel d'un nouveau filament.
+L'**Optimisateur de filament et de profils d'impression by Maison Drabiec** (en abrégé : *Optimisateur MD*) est un utilitaire de bureau qui supprime l'étape fastidieuse du réglage manuel d'un nouveau filament.
 
-Vous lui fournissez l'une de ces trois entrées :
+Au cœur du logiciel se trouve désormais une **base de données de filaments**. Construite à partir des **fiches officielles des fabricants** (TDS — fiche technique, SDS / MSDS — fiches de sécurité, RoHS), elle réunit **709 matériaux** de **122 marques**, avec leurs températures, leurs couleurs et les liens vers les documents d'origine. Elle est **embarquée hors-ligne** (un instantané est posé dans l'application à la première utilisation), puis **rafraîchie depuis le serveur Maison Drabiec** quand vous cliquez sur « Rechercher une mise à jour ».
 
-- une **fiche fabricant** au format PDF (SDS — fiche de sécurité, ou TDS — fiche technique) ;
-- l'**URL d'une page catalogue / certificats** d'une marque ;
-- un **dossier local** de PDF déjà téléchargés.
+Le principe d'utilisation est simple :
+
+1. vous choisissez votre **imprimante** dans le sélecteur en haut de la fenêtre (marque → modèle → buse) ;
+2. vous **recherchez un matériau** dans la base (par marque, nom ou famille : PLA, PETG…) ;
+3. l'application génère, **en un seul clic**, le profil filament **et** les sept profils process par type de projet, calibrés pour cette imprimante.
 
 En retour, le logiciel écrit pour vous :
 
-- un **profil filament** `.json` (températures de buse et de plateau, densité, débit volumétrique, fournisseur…) ;
+- un **profil filament** `.json` (températures de buse et de plateau, densité, débit volumétrique, fournisseur…), rendu compatible avec l'imprimante choisie ;
 - une **bibliothèque de profils process** `.json` par type de projet et par diamètre de buse.
 
 Ces profils apparaissent ensuite directement dans les menus du slicer **OptimusOrca / Snapmaker_Orca**.
 
+Pour un filament qui ne figure pas encore dans la base, un mode de secours **« PDF unique »** permet d'importer une fiche fabricant (SDS / TDS) au format PDF.
+
 ### Pour qui ?
 
 - Les **possesseurs de Snapmaker U1** : les profils sont calibrés pour cette machine et ses quatre buses (0.2 / 0.4 / 0.6 / 0.8 mm).
-- Plus largement, les **imprimeurs FDM** qui utilisent le slicer Snapmaker_Orca / OptimusOrca et veulent partir de réglages fiables, issus des données officielles du fabricant, plutôt que de valeurs glanées sur des forums.
+- Plus largement, les **imprimeurs FDM** qui utilisent le slicer Snapmaker_Orca / OptimusOrca (famille OrcaSlicer) et veulent partir de réglages fiables, issus des données officielles du fabricant, plutôt que de valeurs glanées sur des forums.
 
 > **Note**
-> Le logiciel ne réhéberge jamais les PDF des fabricants. Il extrait les faits utiles (températures, densité, séchage…) et, le cas échéant, conserve un lien vers le document d'origine.
+> Le logiciel ne réhéberge jamais les PDF des fabricants. La base stocke les **faits utiles** (températures, densité, séchage, couleurs…) et un **lien direct** vers le document d'origine sur le site du fabricant.
 
 ---
 
 ## 2. Installation
 
-L'application est distribuée sous forme de binaire léger (technologie Tauri) pour chaque système.
+L'application est distribuée sous forme de binaire léger (technologie Tauri) pour chaque système. La **release est une archive ZIP unique** contenant trois dossiers : `Windows/` (`.exe`), `MacOS/` (`.dmg`) et `Linux/` (`.AppImage`). Décompressez l'archive, puis ouvrez le dossier correspondant à votre système.
 
-### Windows (`.exe` / `.msi`)
+### Windows (`.exe`)
 
-1. Téléchargez le fichier d'installation Windows.
-2. Lancez l'installateur et suivez les étapes.
+1. Ouvrez le dossier `Windows/` de l'archive et lancez le fichier `.exe`.
+2. Suivez les étapes de l'installateur.
 3. Démarrez l'application depuis le menu Démarrer.
-
-> **Note**
-> Le format `.msi` est recommandé pour Windows ; un installateur `.exe` (NSIS) est également proposé.
 
 ### macOS (`.dmg` — application non signée)
 
-1. Ouvrez le fichier `.dmg` téléchargé.
+1. Ouvrez le fichier `.dmg` situé dans le dossier `MacOS/` de l'archive.
 2. Glissez l'application dans le dossier **Applications**.
 3. **Au premier lancement**, ne double-cliquez pas : faites un **clic droit sur l'application > Ouvrir**, puis confirmez dans la boîte de dialogue.
 
@@ -73,7 +74,7 @@ L'application est distribuée sous forme de binaire léger (technologie Tauri) p
 
 ### Linux (`.AppImage`)
 
-1. Téléchargez le fichier `.AppImage`.
+1. Récupérez le fichier `.AppImage` dans le dossier `Linux/` de l'archive.
 2. Rendez-le exécutable :
 
    ```bash
@@ -85,9 +86,6 @@ L'application est distribuée sous forme de binaire léger (technologie Tauri) p
    ```bash
    ./Optimisateur-MD-*.AppImage
    ```
-
-> **Note**
-> Des paquets `.deb` et `.rpm` peuvent également être proposés pour les distributions correspondantes.
 
 ### Où l'application écrit-elle les profils ?
 
@@ -113,26 +111,90 @@ En haut à droite, deux boutons **EN** et **FR** permettent de basculer l'interf
 
 ### Bouton « Rechercher une mise à jour »
 
-Sous l'en-tête se trouve un bouton **« Rechercher une mise à jour »**, accompagné d'une zone de statut. Voir la section [Mises à jour](#8-mises-à-jour).
+Sous l'en-tête se trouve un bouton **« Rechercher une mise à jour »**, accompagné d'une zone de statut. C'est lui qui installe et met à jour la **base de filaments** : au premier usage il télécharge la base courante, puis il récupère une version plus récente si le serveur en publie une. Voir la section [Mises à jour](#8-mises-à-jour).
 
-### Les 4 onglets
+### Sélecteur d'imprimante global
 
-L'interface s'organise en quatre onglets :
+Juste **au-dessus des onglets**, un sélecteur **« Imprimante »** permet de choisir **Marque → Modèle → Buse**, avec une option **« Toutes les buses »** pour traiter toutes les buses de la machine d'un coup. Ce sélecteur est **partagé par les deux bibliothèques** (Filament et process) : l'imprimante choisie ici sert aussi bien à la génération en un clic qu'à la génération des profils process seuls. Il couvre toute la **famille OrcaSlicer** (57 marques / 326 modèles). Voir la section [Le sélecteur d'imprimante global](#5-le-sélecteur-dimprimante-global).
+
+### Les 3 onglets
+
+Sous le sélecteur d'imprimante, l'interface s'organise en trois onglets, dans cet ordre :
 
 | Onglet | Rôle |
 |---|---|
-| **PDF unique** | Importer une seule fiche fabricant PDF (glisser-déposer ou sélection de fichier). |
-| **Catalogue fabricant** | Coller l'URL d'une page « certificats / téléchargements » et importer en lot les PDF détectés. |
-| **Base de données locale** | Scanner un dossier de PDF déjà présents sur la machine. |
-| **Bibliothèque process** | Générer en un clic le jeu de 28 profils de process par type de projet. |
-
-Les trois premiers onglets produisent un **profil filament** ; le quatrième produit les **profils process**.
+| **Bibliothèque Filament** | Rechercher un matériau dans la base de filaments, puis générer en un clic le profil filament **et** ses profils process pour l'imprimante choisie. |
+| **Bibliothèque process** | Générer le jeu de profils process par type de projet (pour l'imprimante choisie, ou le jeu complet Snapmaker U1). |
+| **PDF unique** | Mode de secours : importer une seule fiche fabricant PDF pour un filament pas encore dans la base. |
 
 ---
 
-## 4. Mode 1 — Importer une fiche PDF
+## 4. La Bibliothèque Filament (mode principal)
 
-C'est le mode le plus direct, dans l'onglet **PDF unique**.
+C'est le mode central de l'application, dans l'onglet **Bibliothèque Filament**. Il relie la **base de données de filaments** au générateur de profils : vous choisissez un matériau et une imprimante, et l'application écrit le profil filament **et** ses profils process en un seul clic.
+
+> Cet onglet remplace l'ancienne « Base de données locale ».
+
+### Étapes
+
+1. **Choisissez votre imprimante** dans le sélecteur global, en haut de la fenêtre (voir la section [Le sélecteur d'imprimante global](#5-le-sélecteur-dimprimante-global)).
+2. **Recherchez un filament** dans le champ de recherche : tapez une **marque**, un **nom de produit** ou une **famille** (PLA, PETG, ABS…). La liste se filtre au fur et à mesure.
+3. **Sélectionnez un matériau** dans la liste. Vous voyez ses informations issues des fiches fabricant : famille de polymère, plage de **températures** (buse / plateau), **densité**, **couleurs** disponibles et liens vers les documents d'origine.
+4. Cliquez sur **« Générer filament + process »**.
+5. L'application écrit le **profil filament** et les **7 profils process** par type de projet, puis affiche un récapitulatif (profil filament créé, nombre de profils process, imprimante visée) et un **journal**.
+
+### Un clic = filament + process
+
+Depuis le matériau choisi et l'imprimante du sélecteur global, l'application génère **ensemble** :
+
+- le **profil filament** (températures, débit, rétraction issus de la matière), rendu compatible avec l'imprimante choisie ;
+- les **7 profils process** par type de projet (voir la section [La bibliothèque de profils PROCESS](#7-la-bibliothèque-de-profils-process)).
+
+Le partage des réglages reste « **un jeu de process partagé + un réglage matière** » : le réglage propre au filament (températures, débit, rétraction) vit sur le **profil filament**, tandis que les profils process portent la géométrie d'impression, le cornering / la résonance et les fonctions du fork.
+
+> **Note — option « Toutes les buses »**
+> Si vous avez coché **« Toutes les buses »** dans le sélecteur, l'application génère les **7 profils process par buse** de la machine (par exemple ×4 pour le Snapmaker U1, soit 28 profils), en plus du profil filament.
+
+### Ce que contiennent les informations affichées
+
+Les données proviennent des fiches officielles du fabricant et alimentent le profil :
+
+- la **plage de température de buse** (et la valeur retenue, au milieu de la plage) ;
+- la **température de plateau** ;
+- les **conditions de séchage** et la **densité** ;
+- les **couleurs** (avec leur code couleur) ;
+- les **liens** vers les fiches d'origine (TDS / SDS…).
+
+Les champs qui ont dû être **estimés** (faute de valeur dans la fiche) sont complétés à partir de valeurs par défaut propres à la famille de polymère, puis signalés : le profil peut alors porter un badge **« À vérifier »** pour vous inviter à contrôler avant une impression critique. Un profil complet porte le badge **« Prêt »**.
+
+---
+
+## 5. Le sélecteur d'imprimante global
+
+En haut de la fenêtre, **au-dessus des onglets**, le sélecteur **« Imprimante »** détermine la machine pour laquelle les profils seront générés. Il est **partagé par la Bibliothèque Filament et la Bibliothèque process**.
+
+### Choisir sa machine
+
+1. Choisissez la **Marque** (par exemple Snapmaker, Creality, Bambu Lab, Prusa, Anycubic…).
+2. Choisissez le **Modèle**.
+3. Choisissez la **Buse**, ou sélectionnez **« Toutes les buses »** pour générer les profils pour toutes les buses de la machine en une fois.
+
+Le catalogue couvre toute la **famille OrcaSlicer** : **57 marques** et **326 modèles**.
+
+### Multi-imprimante : un profil filament correct
+
+Le profil filament généré est rendu **compatible avec l'imprimante choisie** :
+
+- pour le **Snapmaker U1**, il hérite du parent réglé pour la U1 (chaîne « @U1 ») ;
+- pour **toute autre imprimante** de la famille OrcaSlicer, il hérite du profil de série **« Generic &lt;polymère&gt; »** (par exemple Generic PLA, Generic PETG…).
+
+Ainsi, le filament apparaît bien dans le menu du slicer pour la machine sélectionnée, et part de réglages de base cohérents avec elle.
+
+---
+
+## 6. PDF unique (mode de secours)
+
+Pour un filament qui ne figure **pas encore dans la base de données**, l'onglet **PDF unique** permet de générer un profil à partir d'une fiche fabricant que vous fournissez vous-même. C'est le dernier onglet de l'interface.
 
 ### Étapes
 
@@ -158,42 +220,11 @@ Les champs qui ont dû être **estimés** (faute de valeur dans la fiche) sont s
 
 ---
 
-## 5. Mode 2 — Catalogue fabricant
-
-Dans l'onglet **Catalogue fabricant**, vous traitez plusieurs fiches d'un coup à partir d'une page web.
-
-### Étapes
-
-1. **Collez l'URL** de la page « certificats » ou « téléchargements » d'un fabricant dans le champ prévu.
-2. Cliquez sur **« Découvrir les PDFs »**. L'application récupère la page et **liste tous les PDF SDS / TDS** qu'elle parvient à identifier, avec un badge de type (SDS / TDS / inconnu).
-3. Cochez les documents qui vous intéressent. Les boutons **« Tout sélectionner »** / **« Tout désélectionner »** facilitent la sélection.
-4. Vous pouvez activer **« Chercher en plus la TDS associée pour chaque PDF téléchargé »** pour compléter chaque fiche.
-5. Cliquez sur **« Importer la sélection »**. Une barre de progression suit l'avancement, et un récapitulatif indique le nombre de profils créés et d'éventuelles erreurs.
-
-> **Note**
-> L'import par lot est robuste : si un PDF de la sélection pose problème, il est signalé en erreur mais n'interrompt pas le traitement des autres.
-
----
-
-## 6. Mode 3 — Base locale
-
-Dans l'onglet **Base de données locale**, vous travaillez à partir de PDF déjà présents sur votre disque.
-
-### Étapes
-
-1. Le champ de chemin est pré-rempli avec un **dossier par défaut** situé sous votre dossier *Téléchargements* (un dossier de corpus). Modifiez-le si votre collection se trouve ailleurs.
-2. Cliquez sur **« Scanner le dossier »**.
-3. L'application liste les PDF trouvés, **regroupés par marque** (sous-dossier).
-4. Cliquez sur un PDF pour l'importer et générer son profil filament.
-
-> **Note**
-> Le scan explore un niveau d'imbrication : `dossier/marque/*.pdf` et `dossier/marque/produit/*.pdf`. Les arborescences plus profondes ne sont pas parcourues.
-
----
-
 ## 7. La bibliothèque de profils PROCESS
 
-L'onglet **Bibliothèque process** génère des profils de process par **type de projet** pour **n'importe quelle imprimante** prise en charge par OrcaSlicer (Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…) : on choisit **marque → modèle → buse** et l'application produit les 7 profils calibrés pour cette imprimante précise. Un bouton génère aussi, en un clic, le **jeu complet Snapmaker U1** (7 types × 4 buses = 28 profils).
+L'onglet **Bibliothèque process** génère des profils de process par **type de projet** pour l'imprimante choisie dans le [sélecteur global](#5-le-sélecteur-dimprimante-global) (toute la famille OrcaSlicer : Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…) : l'application produit les 7 profils calibrés pour cette imprimante précise. Un bouton génère aussi, en un clic, le **jeu complet Snapmaker U1** (7 types × 4 buses = 28 profils).
+
+Ce sont **les mêmes 7 profils process** que produit la génération en un clic de la [Bibliothèque Filament](#4-la-bibliothèque-filament-mode-principal) ; cet onglet sert à les régénérer seuls, sans repasser par un matériau.
 
 Le principe est « **un jeu de process partagé + un réglage matière** » : le réglage propre au filament (températures, débit, rétraction) reste sur le **profil filament**, tandis que les profils process portent la géométrie d'impression (couches, parois, remplissage, vitesses, accélérations, finition).
 
@@ -238,9 +269,9 @@ Les profils process intègrent des réglages pensés pour que **les supports tie
 ### Générer les profils
 
 **Pour n'importe quelle imprimante** (génération à la demande) :
-1. Ouvrez l'onglet **Bibliothèque process**.
-2. Choisissez votre **marque**, puis le **modèle**, puis la **buse** dans les listes déroulantes.
-3. Cliquez sur **« Générer pour cette imprimante »** — l'application écrit les **7 profils** (un par type de projet) dans le dossier `process/` de votre profil utilisateur, en héritant du process de base de cette imprimante (chaîne OrcaSlicer → SnapmakerOrca).
+1. Choisissez votre **marque**, votre **modèle** et votre **buse** dans le [sélecteur d'imprimante global](#5-le-sélecteur-dimprimante-global), en haut de la fenêtre. (Avec **« Toutes les buses »**, les profils sont générés pour chaque buse de la machine.)
+2. Ouvrez l'onglet **Bibliothèque process**.
+3. Cliquez sur **« Générer les process pour l'imprimante choisie »** — l'application écrit les **7 profils** (un par type de projet) dans le dossier `process/` de votre profil utilisateur, en héritant du process de base de cette imprimante (chaîne OrcaSlicer → SnapmakerOrca).
 
 **Raccourci Snapmaker U1** : le bouton **« Générer le jeu Snapmaker U1 »** produit directement les **28 profils** (7 types × 4 buses) pour la U1.
 
@@ -252,6 +283,8 @@ Les profils process intègrent des réglages pensés pour que **les supports tie
 ## 8. Mises à jour
 
 L'Optimisateur sépare clairement **deux choses** : la **base de données** des filaments (de simples données) et l'**application** elle-même (le binaire).
+
+La base est **embarquée** : un instantané hors-ligne est posé dans le dossier de données de l'application à la première utilisation, de sorte que la Bibliothèque Filament fonctionne sans connexion. Au **premier usage** du bouton, l'application télécharge la base courante depuis le serveur ; par la suite, elle ne récupère une nouvelle base que si le serveur en publie une plus récente.
 
 ### Vérification manuelle et automatique
 
@@ -281,7 +314,7 @@ Une fois les profils générés, ils sont écrits dans le dossier utilisateur du
 ### Comment les sélectionner ?
 
 1. Ouvrez **OptimusOrca / Snapmaker_Orca** (relancez-le s'il était déjà ouvert pendant la génération — voir la [FAQ](#10-dépannage--faq)).
-2. Sélectionnez votre **imprimante Snapmaker U1** au bon diamètre de buse.
+2. Sélectionnez **l'imprimante** (et le diamètre de buse) que vous aviez choisie dans le sélecteur global au moment de la génération.
 3. Dans le menu **Filament**, choisissez le profil filament généré pour votre bobine.
 4. Dans le menu **Process**, choisissez le profil correspondant à votre **type de projet** et à votre **buse**.
 

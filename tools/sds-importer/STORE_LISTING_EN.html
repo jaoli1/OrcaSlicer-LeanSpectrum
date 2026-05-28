@@ -45,42 +45,44 @@
 <h1>Product Listing — Filament &amp; Print-Profile Optimiser by Maison Drabiec</h1>
 <blockquote>
 <p>Working document for the owner to review. <strong>Do not publish as-is.</strong>
-All figures are phrased as "up to" and reflect the software's real state (v0.1.19).</p>
+All figures are phrased as "up to" and reflect the software's real state (v0.2.0).</p>
 </blockquote>
 <hr />
 <h2>1. Product title</h2>
 <p><strong>Chosen title (&lt; 70 characters)</strong></p>
 <blockquote>
-<p><strong>MD Optimiser — ready-to-print filament &amp; process profiles</strong></p>
+<p><strong>MD Optimiser — 700+ filaments, profile in one click</strong></p>
 </blockquote>
 <p><strong>Alternative variants</strong></p>
 <ul>
-<li><em>MD Filament Optimiser — reliable 3D settings, zero guesswork</em></li>
-<li><em>MD Optimiser: turn any spec sheet into a tuned print profile</em></li>
+<li><em>MD Optimiser — 700+ official filaments, profiles in one click</em></li>
+<li><em>MD Optimiser: pick your filament, get your profiles</em></li>
 <li><em>MD Optimiser for Snapmaker U1 — filament + process in one click</em></li>
 </ul>
 <hr />
 <h2>2. Hook / subtitle</h2>
-<p><strong>Drop your filament's spec sheet, get a tuned print profile back. No more hours of trial-and-error.</strong></p>
+<p><strong>Pick your printer, choose your filament from a database of 700+ official materials, and generate the filament profile plus its process profiles in one click. No more hours of trial-and-error.</strong></p>
 <hr />
 <h2>3. Short description (store thumbnail, ≈ 300 characters)</h2>
 <blockquote>
-<p>Turn any manufacturer spec sheet (SDS/TDS PDF) or catalog URL into a tuned <strong>filament</strong> profile plus ready-to-print <strong>process</strong> profiles for Snapmaker_Orca. Backed by 700+ materials sourced from official manufacturer sites. Reliable nozzle, bed, drying and flow settings — no expertise required. Windows / macOS / Linux.</p>
+<p>Pick your printer, choose your filament from a <strong>database of 700+ materials</strong> built from manufacturers' own official sheets (TDS / SDS / MSDS / RoHS), and generate <strong>in one click</strong> a tuned <strong>filament</strong> profile plus its ready-to-print <strong>process</strong> profiles for Snapmaker_Orca. For a filament not yet in the database, importing a manufacturer PDF still works. Reliable nozzle, bed, drying and flow settings — no expertise required. Windows / macOS / Linux.</p>
 </blockquote>
 <hr />
 <h2>4. Long description</h2>
-<h3>Stop guessing your settings</h3>
-<p>Every new spool means the same chore: track down the spec sheet, decode a temperature table, run a calibration, ruin a first print… then start over. The <strong>MD Optimiser</strong> removes that step. Drop your filament's manufacturer sheet (the SDS or TDS PDF), or paste the URL of a brand's "certificates" page, and the software builds a ready-to-print profile <strong>automatically</strong>.</p>
+<h3>Pick your filament, the profile is one click away</h3>
+<p>Every new spool means the same chore: track down the spec sheet, decode a temperature table, run a calibration, ruin a first print… then start over. The <strong>MD Optimiser</strong> removes that step. You <strong>pick your printer</strong> at the top of the window (brand → model → nozzle, or "all nozzles"), <strong>search for your filament in the library</strong> (700+ materials built from manufacturers' own official sheets), and a <strong>single click</strong> generates the tuned <strong>filament profile</strong> <em>and</em> its <strong>7 process profiles by project type</strong> together.</p>
 <p>You no longer need to be an extrusion expert: nozzle temperature, bed temperature, drying, density and volumetric flow are populated from the <strong>manufacturer's own official data</strong> — not approximate values scraped from somewhere else.</p>
 <h3>Trustworthy data, not forum copy-paste</h3>
-<p>The software's real strength is its <strong>database of 700+ materials</strong> (709 entries, 122 brands), built to prioritise <strong>official manufacturer sites and sheets</strong>. The internal rule is strict: whenever manufacturer data exists (Polymaker, Prusament, Bambu Lab, eSUN, SUNLU, Eryone…), it <strong>always takes precedence</strong> over any other source. For each material you get the recommended temperatures, density, drying conditions, colour codes, and <strong>direct links to the official TDS / MSDS / RoHS sheets</strong> hosted by the manufacturer itself.</p>
+<p>The heart of the software is its <strong>database of 700+ materials</strong> (709 entries, 122 brands), built from <strong>manufacturers' own official sheets</strong> (TDS / SDS / MSDS / RoHS). The internal rule is strict: whenever manufacturer data exists (Polymaker, Prusament, Bambu Lab, eSUN, SUNLU, Eryone…), it <strong>always takes precedence</strong> over any other source. For each material you get the recommended temperatures, density, drying conditions, colour codes, and <strong>direct links to the official TDS / MSDS / RoHS sheets</strong> hosted by the manufacturer itself.</p>
+<p>The database <strong>ships ready to use</strong>: the app bundles a full <strong>offline</strong> snapshot, and the <strong>update checker</strong> keeps it current — on first launch it downloads the current database from the server, and later a "check for updates" pulls a newer one whenever it becomes available.</p>
 <blockquote>
 <p>Important: the software <strong>never</strong> re-hosts manufacturer PDFs. It stores the useful facts (temperatures, density…) and a deep link to the original document.</p>
 </blockquote>
-<h3>Extraction that actually reads the sheet</h3>
-<p>When you import a PDF, the parser doesn't stop at the parameter table. It also reads the <strong>"test specimen" note</strong> — the test conditions many manufacturers state ("all specimens are printed at 210 °C, 80 mm/s, bed 60 °C"). Those values are <strong>authoritative</strong> and override the table's midpoints, because they describe exactly how the manufacturer obtained its mechanical results. Built-in safety: the chosen nozzle temperature always stays below the stated decomposition threshold.</p>
-<h3>A library of PROCESS profiles by project type</h3>
-<p>Beyond the filament profile, the MD Optimiser generates <strong>process profiles by project type</strong> for <strong>any printer</strong> supported by OrcaSlicer (Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…): you pick <strong>brand → model → nozzle</strong> and the app produces the 7 profiles tuned for that machine. A one-click button also generates the full <strong>Snapmaker U1</strong> set (7 types × 4 nozzles = 28 profiles):</p>
+<h3>Filament not in the database yet? PDF import takes over</h3>
+<p>If your filament isn't in the database yet, the MD Optimiser builds it from its sheet: you <strong>drop the manufacturer PDF</strong> (SDS or TDS) and the profile is produced automatically (the app can also look up the manufacturer's TDS online), just as from the library. This is the <strong>fallback</strong> for new releases; the vast majority of common materials are already in the database.</p>
+<p>And the parser doesn't stop at the parameter table. It also reads the <strong>"test specimen" note</strong> — the test conditions many manufacturers state ("all specimens are printed at 210 °C, 80 mm/s, bed 60 °C"). Those values are <strong>authoritative</strong> and override the table's midpoints, because they describe exactly how the manufacturer obtained its mechanical results. Built-in safety: the chosen nozzle temperature always stays below the stated decomposition threshold.</p>
+<h3>The 7 PROCESS profiles by project type, generated with the filament</h3>
+<p>The same click that creates the filament profile also generates its <strong>7 process profiles by project type</strong>. It all starts from the <strong>printer selector at the top of the window</strong>: you pick <strong>brand → model → nozzle</strong> (or "all nozzles") from the <strong>OrcaSlicer family</strong> (57 brands / 326 models: Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…) and the app produces the 7 profiles tuned for that machine. With "all nozzles" the whole set is multiplied by 4 — for the <strong>Snapmaker U1</strong>, for example: 7 types × 4 nozzles = 28 profiles:</p>
 <ul>
 <li><strong>Fast prototype</strong> — thick layers, top speed, high accelerations</li>
 <li><strong>Everyday object</strong> — the strength / speed / finish balance</li>
@@ -90,7 +92,8 @@ All figures are phrased as "up to" and reflect the software's real state (v0.1.1
 <li><strong>Toy</strong> — reinforced walls, generous infill</li>
 <li><strong>Mechanical part</strong> — multiple walls, dense infill</li>
 </ul>
-<p>Each profile is tuned for <strong>cornering</strong> and <strong>resonance / VFA</strong> (via acceleration and jerk limits) and to stay under the U1's flow ceiling. Filament-specific tuning (temperatures, flow, retraction) stays on the filament profile: one shared set of processes plus per-material tuning is all it takes.</p>
+<p>Each profile is tuned for <strong>cornering</strong> and <strong>resonance / VFA</strong> (via acceleration and jerk limits) and to stay under the machine's flow ceiling. Filament-specific tuning (temperatures, flow, retraction) stays on the filament profile: one shared set of processes plus per-material tuning is all it takes.</p>
+<p>The filament profile targets the <strong>chosen printer</strong> (<code>compatible_printers</code>): it inherits the <strong>U1-tuned parent</strong> when that's the machine, and the stock "<strong>Generic &lt;polymer&gt;</strong>" of the OrcaSlicer family otherwise. The shared process set carries the cornering / resonance tuning and the fork features.</p>
 <h3>Fork features enabled out of the box</h3>
 <p>The generated profiles activate the <strong>Snapmaker_Orca / OptimusOrca</strong> fork capabilities:</p>
 <ul>
@@ -99,7 +102,7 @@ All figures are phrased as "up to" and reflect the software's real state (v0.1.1
 <li><strong>Colour-mixing readiness</strong> — the safe optimisation (region-collapse) is enabled; experimental modes (gradient, dithering…) stay off by default so single-colour prints are unaffected.</li>
 </ul>
 <h3>Always current, lightweight, bilingual</h3>
-<p>The database receives <strong>regular updates</strong>: the app ships an offline-capable snapshot and refreshes automatically when a newer data version is available. The interface is <strong>bilingual French / English</strong>, the binary is <strong>lightweight</strong> (Tauri, ≈ 10 MB per OS) and runs on <strong>Windows, macOS and Linux</strong>.</p>
+<p>The database receives <strong>regular updates</strong>: the app ships an offline-capable snapshot and the <strong>update checker</strong> pulls a newer database as soon as one is published, with no reinstall. The interface is <strong>bilingual French / English</strong>, the binary is <strong>lightweight</strong> (Tauri, ≈ 10 MB per OS) and runs on <strong>Windows, macOS and Linux</strong>.</p>
 <hr />
 <h2>5. Technical specifications</h2>
 <table>
@@ -128,15 +131,15 @@ All figures are phrased as "up to" and reflect the software's real state (v0.1.1
 </tr>
 <tr>
 <td>Accepted inputs</td>
-<td>Manufacturer spec-sheet PDF (SDS / TDS), catalog/certificates page URL, local PDF folder</td>
+<td><strong>Select a material from the bundled database</strong> (primary flow); as a fallback for a filament not yet listed: manufacturer spec-sheet PDF (SDS / TDS), with optional online TDS lookup</td>
 </tr>
 <tr>
 <td>Generated outputs</td>
-<td>Filament profile <code>.json</code> + process profiles <code>.json</code> (by project type, for the chosen printer)</td>
+<td>Filament profile <code>.json</code> + its 7 process profiles <code>.json</code> (by project type, for the chosen printer; × 4 with "all nozzles")</td>
 </tr>
 <tr>
 <td>Database</td>
-<td>700+ materials (709 entries, 122 brands), official manufacturer data prioritised</td>
+<td>700+ materials (709 entries, 122 brands) built from manufacturers' own official sheets (TDS / SDS / MSDS / RoHS); ships bundled, kept current by the update checker</td>
 </tr>
 <tr>
 <td>Printers covered</td>
@@ -171,35 +174,34 @@ All figures are phrased as "up to" and reflect the software's real state (v0.1.1
 <h2>6. What's included</h2>
 <ul>
 <li>The <strong>MD Optimiser</strong> application for your system (Windows / macOS / Linux).</li>
-<li>The <strong>database of 700+ materials</strong> (temperatures, density, drying, colours, links to official sheets).</li>
-<li>The <strong>filament-profile generator</strong> from an SDS/TDS PDF, a catalog URL, or a local folder.</li>
-<li><strong>Process-profile generation</strong> by project type for any OrcaSlicer-family printer (+ the full Snapmaker U1 set).</li>
-<li>The <strong>update checker</strong> (auto database + new-version prompt) and material-adaptive <strong>supports / anti-warp</strong> settings.</li>
+<li>The <strong>database of 700+ materials</strong> shipped ready to use (temperatures, density, drying, colours, links to official sheets), kept current by the update checker.</li>
+<li>The <strong>one-click flow</strong>: printer selector (brand → model → nozzle), filament library, then joint generation of the <strong>filament profile</strong> + its <strong>7 process profiles</strong> by project type (up to the full Snapmaker U1 set).</li>
+<li>The <strong>PDF fallback import</strong> (SDS/TDS PDF, optional online TDS lookup) to build a filament not yet in the database.</li>
+<li>The <strong>update checker</strong> (downloads the database on first launch, a newer one thereafter) and material-adaptive <strong>supports / anti-warp</strong> settings.</li>
 <li><strong>Fork features enabled</strong>: filament economy, scarf seams, colour-mixing readiness.</li>
-<li><strong>Batch import</strong> from a manufacturer's "certificates" page.</li>
 <li>The <strong>bilingual FR / EN</strong> interface.</li>
 <li><strong>Regular database updates</strong>.</li>
 </ul>
 <hr />
 <h2>7. SEO</h2>
 <p><strong>Keywords</strong></p>
-<p><code>Snapmaker U1 filament profile</code> · <code>3D printing optimiser</code> · <code>OrcaSlicer profiles</code> · <code>automatic filament settings</code> · <code>multicolor filament saving</code> · <code>import TDS SDS filament sheet</code> · <code>3D printing process profiles</code> · <code>Snapmaker_Orca</code></p>
+<p><code>filament database</code> · <code>Snapmaker U1 filament profile</code> · <code>3D printing optimiser</code> · <code>one-click OrcaSlicer profiles</code> · <code>automatic filament settings</code> · <code>3D filament library</code> · <code>multicolor filament saving</code> · <code>import TDS SDS filament sheet</code> · <code>3D printing process profiles</code> · <code>Snapmaker_Orca</code></p>
 <p><strong>Meta description (≈ 155 characters)</strong></p>
 <blockquote>
-<p>Generate tuned filament and process profiles for Snapmaker_Orca from any manufacturer spec sheet. 700+ official materials. Windows/macOS/Linux.</p>
+<p>Database of 700+ official filaments: pick your printer, choose your material, and generate filament + process profiles for Snapmaker_Orca in one click. Win/macOS/Linux.</p>
 </blockquote>
 <hr />
 <h2>8. FAQ</h2>
 <p><strong>Is it compatible with my printer / slicer?</strong>
-Yes, for the whole <strong>OrcaSlicer family</strong>: OrcaSlicer, Creality Print, Bambu Studio, SnapmakerOrca / OptimusOrca. The app covers <strong>their printers</strong> (57 brands, 326 models) — you pick brand, model and nozzle, and the profiles appear in the slicer's menus once generated. PrusaSlicer (<code>.ini</code> format) is planned next.</p>
+Yes, for the whole <strong>OrcaSlicer family</strong>: OrcaSlicer, Creality Print, Bambu Studio, SnapmakerOrca / OptimusOrca. It all starts from the <strong>printer selector at the top of the window</strong>: you pick brand, model and nozzle (or "all nozzles") from <strong>their printers</strong> (57 brands, 326 models), and the profiles appear in the slicer's menus once generated. PrusaSlicer (<code>.ini</code> format) is planned next.</p>
 <p><strong>Where does the data come from? Is it reliable?</strong>
 The database prioritises <strong>official manufacturer sites and sheets</strong>. Whenever manufacturer data exists, it always takes precedence over any other source. For each material you get <strong>links to the official sheets</strong> (TDS / MSDS / RoHS) hosted by the manufacturer. The software never re-hosts those PDFs.</p>
 <p><strong>How is this better than a generic "PLA" profile?</strong>
-A generic profile applies averages. The MD Optimiser starts from <strong>your specific filament's sheet</strong>: it reads the parameter table <em>and</em> the "test specimen" note (the authoritative test conditions) to dial in nozzle, bed, speed and flow precisely, then adds process profiles designed for your project type.</p>
+A generic profile applies averages. The MD Optimiser starts from <strong>your specific filament</strong>: it draws on a <strong>database of 700+ materials</strong> built from manufacturers' own official sheets (and, failing that, reads the parameter table <em>and</em> the "test specimen" note from the PDF — the authoritative test conditions) to dial in nozzle, bed, speed and flow precisely, then adds process profiles designed for your project type.</p>
 <p><strong>My PDF is a scan / an image — will it work?</strong>
-Yes, provided you install <strong>Tesseract</strong> on your system (OCR). Manufacturers' "text" PDFs — the vast majority — work with nothing extra installed.</p>
+Yes — for the fallback import of a filament not yet in the database, provided you install <strong>Tesseract</strong> on your system (OCR). Manufacturers' "text" PDFs — the vast majority — work with nothing extra installed.</p>
 <p><strong>Are database updates included?</strong>
-Yes. The app ships an offline-capable snapshot and updates automatically when new data is published, with no need to reinstall the software.</p>
+Yes. The app ships an offline-capable snapshot; on first launch the update checker downloads the current database, then "check for updates" pulls a newer one whenever it's published, with no need to reinstall the software.</p>
 <p><strong>How much filament can I realistically save?</strong>
 On <strong>multi-colour</strong> prints, savings can reach <strong>up to −15 to −30 %</strong> depending on the part and the number of colour changes (purge shrinking, removal of needless tool changes). On single-colour prints the gain comes mostly from curvature-based scaling. These are ballpark figures, not a guaranteed number.</p>
 <p><strong>Refund policy?</strong>
@@ -207,13 +209,13 @@ On <strong>multi-colour</strong> prints, savings can reach <strong>up to −15 t
 <hr />
 <h2>9. Visual / screenshot ideas to prepare</h2>
 <ul>
-<li><strong>Hero screenshot</strong>: the "Single PDF" window with a sheet dropped in and the generated profile shown (a "Ready" badge).</li>
-<li><strong>Before / after</strong>: a raw manufacturer spec-sheet table, an arrow, then the finished filament profile in the slicer's menu.</li>
-<li><strong>"Process library" tab</strong>: the grid of 7 project types × 4 nozzles (28 profiles) with the "Generate" button.</li>
+<li><strong>Hero screenshot</strong>: the <strong>filament library</strong> with a search in progress and a material selected, ready for the single click.</li>
+<li><strong>Global printer selector</strong>: the menu at the top of the window, brand → model → nozzle (with the "all nozzles" option).</li>
+<li><strong>One-click result</strong>: the filament profile <em>and</em> its 7 process profiles generated together and shown (a "Ready" badge).</li>
 <li><strong>Thumbnails of the 7 project types</strong>: one icon/render per intent (Prototype, Figurine, Vase, Decoration, Toy, Mechanical part, Everyday object).</li>
+<li><strong>Fallback import</strong>: the "Single PDF" window with a sheet dropped in for a filament not yet in the database, and the resulting profile.</li>
 <li><strong>"Filament economy" diagram</strong>: purge tower before/after, captioned "up to −15 to −30 % on multi-colour".</li>
 <li><strong>"Scarf seam" close-up</strong>: comparison of a classic Z-seam vs a scarf seam.</li>
-<li><strong>"Vendor catalog" tab</strong>: a parsed certificates page, the list of detected PDFs with SDS/TDS badges and batch import.</li>
 <li><strong>OS logo strip</strong>: Windows / macOS / Linux plus "bilingual FR/EN" and "lightweight (Tauri)".</li>
 <li><strong>"700+ materials" visual</strong>: a brand cloud + key figures (709 entries, 122 brands) with the note "official manufacturer sources".</li>
 </ul>

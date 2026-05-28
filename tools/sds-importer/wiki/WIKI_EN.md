@@ -1,8 +1,8 @@
 # Filament & Print-Profile Optimiser by Maison Drabiec — User Manual
 
-> **Software version:** 0.1.17 · **Language of this document:** English ([Version française](WIKI_FR.md))
+> **Software version:** 0.2.0 · **Language of this document:** English ([Version française](WIKI_FR.md))
 >
-> A desktop application that turns a manufacturer data sheet (SDS/TDS PDF) or a catalog URL into optimised **filament** and **process** profiles for the **OptimusOrca / Snapmaker_Orca** slicer.
+> A desktop application built around a **filament database** (compiled from manufacturers' own official sheets) that generates, in one click, optimised **filament** and **process** profiles for the **OptimusOrca / Snapmaker_Orca** slicer.
 
 ---
 
@@ -11,9 +11,9 @@
 1. [Introduction](#1-introduction)
 2. [Installation](#2-installation)
 3. [First launch & interface](#3-first-launch--interface)
-4. [Mode 1 — Import a PDF data sheet](#4-mode-1--import-a-pdf-data-sheet)
-5. [Mode 2 — Vendor catalog](#5-mode-2--vendor-catalog)
-6. [Mode 3 — Local database](#6-mode-3--local-database)
+4. [The Filament Library (main mode)](#4-the-filament-library-main-mode)
+5. [The global printer selector](#5-the-global-printer-selector)
+6. [Single PDF (fallback mode)](#6-single-pdf-fallback-mode)
 7. [The PROCESS profile library](#7-the-process-profile-library)
 8. [Updates](#8-updates)
 9. [Using the profiles in OptimusOrca / Snapmaker_Orca](#9-using-the-profiles-in-optimusorca--snapmaker_orca)
@@ -24,47 +24,48 @@
 
 ## 1. Introduction
 
-The **Filament & Print-Profile Optimiser by Maison Drabiec** (short name: *Optimiser MD*) is a small desktop utility that removes the tedious step of manually tuning a new filament.
+The **Filament & Print-Profile Optimiser by Maison Drabiec** (short name: *Optimiser MD*) is a desktop utility that removes the tedious step of manually tuning a new filament.
 
-You give it one of three inputs:
+At the heart of the app is now a **filament database**. Built from the **manufacturers' own official sheets** (TDS — technical data sheet, SDS / MSDS — safety data sheets, RoHS), it gathers **709 materials** from **122 brands**, with their temperatures, colours and links back to the source documents. It is **bundled offline** (a snapshot is seeded into the app on first run), then **refreshed from the Maison Drabiec server** when you click "Check for updates".
 
-- a **manufacturer PDF** (SDS — safety data sheet, or TDS — technical data sheet);
-- the **URL of a vendor's catalog / certificates page**;
-- a **local folder** of already-downloaded PDFs.
+The workflow is simple:
+
+1. you pick your **printer** in the selector at the top of the window (brand → model → nozzle);
+2. you **search for a material** in the database (by brand, name or family: PLA, PETG…);
+3. the app generates, in **a single click**, the filament profile **and** the seven project-type process profiles, tuned for that printer.
 
 In return, the app writes for you:
 
-- a **filament profile** `.json` (nozzle and bed temperatures, density, volumetric flow, vendor…);
+- a **filament profile** `.json` (nozzle and bed temperatures, density, volumetric flow, vendor…), made compatible with the chosen printer;
 - a **library of process profiles** `.json` by project type and nozzle diameter.
 
 These profiles then appear directly in the menus of the **OptimusOrca / Snapmaker_Orca** slicer.
 
+For a filament not yet in the database, a **"Single PDF"** fallback mode lets you import a manufacturer sheet (SDS / TDS) as a PDF.
+
 ### Who is it for?
 
 - **Snapmaker U1 owners**: the profiles are tuned for this machine and its four nozzles (0.2 / 0.4 / 0.6 / 0.8 mm).
-- More broadly, **FDM 3D-printing users** running the Snapmaker_Orca / OptimusOrca slicer who want to start from reliable settings derived from official manufacturer data rather than values picked up on forums.
+- More broadly, **FDM 3D-printing users** running the Snapmaker_Orca / OptimusOrca slicer (OrcaSlicer family) who want to start from reliable settings derived from official manufacturer data rather than values picked up on forums.
 
 > **Note**
-> The app never re-hosts manufacturer PDFs. It extracts the useful facts (temperatures, density, drying…) and, where relevant, keeps a link back to the original document.
+> The app never re-hosts manufacturer PDFs. The database stores the **useful facts** (temperatures, density, drying, colours…) and a **direct link** to the original document on the manufacturer's site.
 
 ---
 
 ## 2. Installation
 
-The application ships as a lightweight binary (Tauri technology) for each operating system.
+The application ships as a lightweight binary (Tauri technology) for each operating system. The **release is a single ZIP archive** containing three folders: `Windows/` (`.exe`), `MacOS/` (`.dmg`) and `Linux/` (`.AppImage`). Unzip the archive, then open the folder matching your system.
 
-### Windows (`.exe` / `.msi`)
+### Windows (`.exe`)
 
-1. Download the Windows installer.
-2. Run the installer and follow the steps.
+1. Open the `Windows/` folder of the archive and run the `.exe` file.
+2. Follow the installer steps.
 3. Start the app from the Start menu.
-
-> **Note**
-> The `.msi` format is recommended on Windows; an `.exe` (NSIS) installer is also provided.
 
 ### macOS (`.dmg` — unsigned app)
 
-1. Open the downloaded `.dmg` file.
+1. Open the `.dmg` file in the `MacOS/` folder of the archive.
 2. Drag the app into the **Applications** folder.
 3. **On first launch**, do not double-click: **right-click the app > Open**, then confirm in the dialog.
 
@@ -73,7 +74,7 @@ The application ships as a lightweight binary (Tauri technology) for each operat
 
 ### Linux (`.AppImage`)
 
-1. Download the `.AppImage` file.
+1. Take the `.AppImage` file from the `Linux/` folder of the archive.
 2. Make it executable:
 
    ```bash
@@ -85,9 +86,6 @@ The application ships as a lightweight binary (Tauri technology) for each operat
    ```bash
    ./Optimiser-MD-*.AppImage
    ```
-
-> **Note**
-> `.deb` and `.rpm` packages may also be provided for the matching distributions.
 
 ### Where does the app write the profiles?
 
@@ -113,26 +111,90 @@ In the top-right corner, two buttons **EN** and **FR** switch the interface lang
 
 ### "Check for updates" button
 
-Below the header is a **"Check for updates"** button with a status area next to it. See the [Updates](#8-updates) section.
+Below the header is a **"Check for updates"** button with a status area next to it. This is what installs and updates the **filament database**: on first use it downloads the current database, and afterwards it pulls a newer one whenever the server publishes it. See the [Updates](#8-updates) section.
 
-### The 4 tabs
+### Global printer selector
 
-The interface is organised into four tabs:
+Right **above the tabs**, a **"Printer"** selector lets you choose **Brand → Model → Nozzle**, with an **"All nozzles"** option to handle every nozzle of the machine at once. This selector is **shared by both libraries** (Filament and process): the printer chosen here drives both the one-click generation and the process-only generation. It covers the whole **OrcaSlicer family** (57 brands / 326 models). See the [global printer selector](#5-the-global-printer-selector) section.
+
+### The 3 tabs
+
+Below the printer selector, the interface is organised into three tabs, in this order:
 
 | Tab | Purpose |
 |---|---|
-| **Single PDF** | Import a single manufacturer PDF (drag-and-drop or file picker). |
-| **Vendor catalog** | Paste a "certificates / downloads" page URL and batch-import the detected PDFs. |
-| **Local database** | Scan a folder of PDFs already present on the machine. |
-| **Process library** | Generate the set of 28 process profiles by project type in one click. |
-
-The first three tabs produce a **filament profile**; the fourth produces the **process profiles**.
+| **Filament Library** | Search a material in the filament database, then generate in one click the filament profile **and** its process profiles for the chosen printer. |
+| **Process library** | Generate the set of process profiles by project type (for the chosen printer, or the full Snapmaker U1 set). |
+| **Single PDF** | Fallback mode: import a single manufacturer PDF for a filament not yet in the database. |
 
 ---
 
-## 4. Mode 1 — Import a PDF data sheet
+## 4. The Filament Library (main mode)
 
-This is the most direct mode, in the **Single PDF** tab.
+This is the app's central mode, in the **Filament Library** tab. It links the **filament database** to the profile generator: you pick a material and a printer, and the app writes the filament profile **and** its process profiles in a single click.
+
+> This tab replaces the former "Local database".
+
+### Steps
+
+1. **Pick your printer** in the global selector at the top of the window (see the [global printer selector](#5-the-global-printer-selector) section).
+2. **Search for a filament** in the search box: type a **brand**, a **product name** or a **family** (PLA, PETG, ABS…). The list filters as you type.
+3. **Select a material** in the list. You see its information drawn from the manufacturer sheets: polymer family, **temperature** ranges (nozzle / bed), **density**, available **colours** and links to the source documents.
+4. Click **"Generate filament + process"**.
+5. The app writes the **filament profile** and the **7 process profiles** by project type, then shows a summary (filament profile created, number of process profiles, target printer) and a **log**.
+
+### One click = filament + process
+
+From the chosen material and the printer in the global selector, the app generates **together**:
+
+- the **filament profile** (temperatures, flow, retraction from the material), made compatible with the chosen printer;
+- the **7 process profiles** by project type (see [The PROCESS profile library](#7-the-process-profile-library)).
+
+The split stays "**one shared process set + per-filament tuning**": the filament-specific tuning (temperatures, flow, retraction) lives on the **filament profile**, while the process profiles carry the print geometry, cornering / resonance and the fork features.
+
+> **Note — the "All nozzles" option**
+> If you ticked **"All nozzles"** in the selector, the app generates the **7 process profiles per nozzle** of the machine (for example ×4 for the Snapmaker U1, i.e. 28 profiles), in addition to the filament profile.
+
+### What the displayed information contains
+
+The data comes from the manufacturer's official sheets and feeds the profile:
+
+- the **nozzle temperature range** (and the chosen value, at the midpoint of the range);
+- the **bed temperature**;
+- the **drying** conditions and the **density**;
+- the **colours** (with their colour code);
+- the **links** to the source sheets (TDS / SDS…).
+
+Fields that had to be **estimated** (because the sheet gave no value) are backfilled from per-polymer-family defaults, then flagged: the profile may then carry a **"Needs review"** badge inviting you to double-check before a critical print. A complete profile carries the **"Ready"** badge.
+
+---
+
+## 5. The global printer selector
+
+At the top of the window, **above the tabs**, the **"Printer"** selector decides which machine the profiles are generated for. It is **shared by the Filament Library and the Process library**.
+
+### Choosing your machine
+
+1. Pick the **Brand** (for example Snapmaker, Creality, Bambu Lab, Prusa, Anycubic…).
+2. Pick the **Model**.
+3. Pick the **Nozzle**, or select **"All nozzles"** to generate the profiles for every nozzle of the machine at once.
+
+The catalogue covers the whole **OrcaSlicer family**: **57 brands** and **326 models**.
+
+### Multi-printer: a correct filament profile
+
+The generated filament profile is made **compatible with the chosen printer**:
+
+- for the **Snapmaker U1**, it inherits the U1-tuned parent (the "@U1" chain);
+- for **any other** OrcaSlicer-family printer, it inherits the stock **"Generic &lt;polymer&gt;"** profile (e.g. Generic PLA, Generic PETG…).
+
+This way, the filament shows up in the slicer's menu for the selected machine, starting from base settings consistent with it.
+
+---
+
+## 6. Single PDF (fallback mode)
+
+For a filament that is **not yet in the database**, the **Single PDF** tab lets you generate a profile from a manufacturer sheet you provide yourself. It is the last tab of the interface.
 
 ### Steps
 
@@ -158,42 +220,11 @@ Fields that had to be **estimated** (because the sheet gave no value) are flagge
 
 ---
 
-## 5. Mode 2 — Vendor catalog
-
-In the **Vendor catalog** tab, you process several sheets at once from a web page.
-
-### Steps
-
-1. **Paste the URL** of a manufacturer's "certificates" or "downloads" page into the field.
-2. Click **"Discover PDFs"**. The app fetches the page and **lists every SDS / TDS PDF** it can identify, with a type badge (SDS / TDS / unknown).
-3. Tick the documents you want. The **"Select all"** / **"Select none"** buttons make selection easier.
-4. You can enable **"Also try to fetch related TDS for each downloaded PDF"** to complete each sheet.
-5. Click **"Import selected"**. A progress bar tracks the work, and a summary reports how many profiles were created and any errors.
-
-> **Note**
-> Batch import is robust: if one PDF in the selection has a problem, it is reported as an error but does not stop the processing of the others.
-
----
-
-## 6. Mode 3 — Local database
-
-In the **Local database** tab, you work from PDFs already present on your disk.
-
-### Steps
-
-1. The path field is pre-filled with a **default folder** under your *Downloads* directory (a corpus folder). Change it if your collection lives elsewhere.
-2. Click **"Scan folder"**.
-3. The app lists the PDFs it found, **grouped by brand** (subfolder).
-4. Click a PDF to import it and generate its filament profile.
-
-> **Note**
-> The scan explores one level of nesting: `folder/brand/*.pdf` and `folder/brand/product/*.pdf`. Deeper trees are not walked.
-
----
-
 ## 7. The PROCESS profile library
 
-The **Process library** tab generates process profiles by **project type** for **any printer** supported by OrcaSlicer (Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…): pick **brand → model → nozzle** and the app produces the 7 profiles tuned for that specific printer. A one-click button also generates the **full Snapmaker U1 set** (7 types × 4 nozzles = 28 profiles).
+The **Process library** tab generates process profiles by **project type** for the printer chosen in the [global selector](#5-the-global-printer-selector) (the whole OrcaSlicer family: Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…): the app produces the 7 profiles tuned for that specific printer. A one-click button also generates the **full Snapmaker U1 set** (7 types × 4 nozzles = 28 profiles).
+
+These are **the same 7 process profiles** that the one-click generation in the [Filament Library](#4-the-filament-library-main-mode) produces; this tab is for regenerating them on their own, without going through a material.
 
 The principle is "**one shared process set + per-filament tuning**": the filament-specific tuning (temperatures, flow, retraction) stays on the **filament profile**, while the process profiles carry the print geometry (layers, walls, infill, speeds, accelerations, finishing).
 
@@ -241,9 +272,9 @@ The process profiles ship settings designed so **supports grip the plate but pee
 ### Generating the profiles
 
 **For any printer** (on-demand):
-1. Open the **Process library** tab.
-2. Pick your **brand**, then the **model**, then the **nozzle** from the drop-downs.
-3. Click **"Generate for this printer"** — the app writes the **7 profiles** (one per project type) into the `process/` folder of your user profile, inheriting that printer's stock base process (the OrcaSlicer → SnapmakerOrca chain).
+1. Pick your **brand**, **model** and **nozzle** in the [global printer selector](#5-the-global-printer-selector) at the top of the window. (With **"All nozzles"**, the profiles are generated for every nozzle of the machine.)
+2. Open the **Process library** tab.
+3. Click **"Generate process for the selected printer"** — the app writes the **7 profiles** (one per project type) into the `process/` folder of your user profile, inheriting that printer's stock base process (the OrcaSlicer → SnapmakerOrca chain).
 
 **Snapmaker U1 shortcut**: the **"Generate the Snapmaker U1 set"** button produces all **28 profiles** (7 types × 4 nozzles) for the U1 directly.
 
@@ -255,6 +286,8 @@ The process profiles ship settings designed so **supports grip the plate but pee
 ## 8. Updates
 
 The Optimiser clearly separates **two things**: the filament **database** (just data) and the **application** itself (the binary).
+
+The database is **bundled**: an offline snapshot is seeded into the app's data folder on first run, so the Filament Library works without a connection. On the **first use** of the button, the app downloads the current database from the server; afterwards, it only pulls a new database if the server publishes a newer one.
 
 ### Manual and automatic checks
 
@@ -284,7 +317,7 @@ Once generated, the profiles are written to the slicer's user folder and appear 
 ### How to select them
 
 1. Open **OptimusOrca / Snapmaker_Orca** (restart it if it was already open during generation — see the [FAQ](#10-troubleshooting--faq)).
-2. Select your **Snapmaker U1 printer** at the correct nozzle diameter.
+2. Select the **printer** (and nozzle diameter) you had chosen in the global selector at generation time.
 3. In the **Filament** menu, choose the filament profile generated for your spool.
 4. In the **Process** menu, choose the profile matching your **project type** and **nozzle**.
 

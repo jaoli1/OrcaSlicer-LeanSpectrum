@@ -193,7 +193,7 @@ Dans l'onglet **Base de données locale**, vous travaillez à partir de PDF déj
 
 ## 7. La bibliothèque de profils PROCESS
 
-L'onglet **Bibliothèque process** génère un **jeu partagé de 28 profils de process**, organisés par **type de projet** et déclinés pour les **4 diamètres de buse** du Snapmaker U1.
+L'onglet **Bibliothèque process** génère des profils de process par **type de projet** pour **n'importe quelle imprimante** prise en charge par OrcaSlicer (Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…) : on choisit **marque → modèle → buse** et l'application produit les 7 profils calibrés pour cette imprimante précise. Un bouton génère aussi, en un clic, le **jeu complet Snapmaker U1** (7 types × 4 buses = 28 profils).
 
 Le principe est « **un jeu de process partagé + un réglage matière** » : le réglage propre au filament (températures, débit, rétraction) reste sur le **profil filament**, tandis que les profils process portent la géométrie d'impression (couches, parois, remplissage, vitesses, accélérations, finition).
 
@@ -225,11 +225,14 @@ Valeurs de référence (au diamètre **0.4 mm**) :
 - **Économie de filament** — activée d'office (réduction des purges à −30 %, suppression des changements d'outil redondants, mise à l'échelle de l'extrusion selon la courbure, forçage du mode relatif M83).
 - **Préparation au mélange de couleurs** — l'optimisation sûre *region-collapse* est activée ; les modes expérimentaux restent désactivés par défaut.
 
-### Bouton « Générer la bibliothèque de process »
+### Générer les profils
 
+**Pour n'importe quelle imprimante** (génération à la demande) :
 1. Ouvrez l'onglet **Bibliothèque process**.
-2. Cliquez sur **« Générer la bibliothèque de process »**.
-3. L'application écrit les **28 profils** dans le dossier `process/` de votre profil utilisateur Snapmaker_Orca et affiche le dossier de destination.
+2. Choisissez votre **marque**, puis le **modèle**, puis la **buse** dans les listes déroulantes.
+3. Cliquez sur **« Générer pour cette imprimante »** — l'application écrit les **7 profils** (un par type de projet) dans le dossier `process/` de votre profil utilisateur, en héritant du process de base de cette imprimante (chaîne OrcaSlicer → SnapmakerOrca).
+
+**Raccourci Snapmaker U1** : le bouton **« Générer le jeu Snapmaker U1 »** produit directement les **28 profils** (7 types × 4 buses) pour la U1.
 
 > **Important**
 > Si le dossier utilisateur de Snapmaker_Orca n'est pas trouvé, ouvrez OptimusOrca une fois pour qu'il crée votre dossier de profils, puis relancez la génération.

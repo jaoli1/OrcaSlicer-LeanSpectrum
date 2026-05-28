@@ -193,7 +193,7 @@ In the **Local database** tab, you work from PDFs already present on your disk.
 
 ## 7. The PROCESS profile library
 
-The **Process library** tab generates a **shared set of 28 process profiles**, organised by **project type** and produced for the **4 nozzle diameters** of the Snapmaker U1.
+The **Process library** tab generates process profiles by **project type** for **any printer** supported by OrcaSlicer (Creality, Bambu Lab, Snapmaker, Anycubic, Prusa…): pick **brand → model → nozzle** and the app produces the 7 profiles tuned for that specific printer. A one-click button also generates the **full Snapmaker U1 set** (7 types × 4 nozzles = 28 profiles).
 
 The principle is "**one shared process set + per-filament tuning**": the filament-specific tuning (temperatures, flow, retraction) stays on the **filament profile**, while the process profiles carry the print geometry (layers, walls, infill, speeds, accelerations, finishing).
 
@@ -228,11 +228,14 @@ Reference values (at the **0.4 mm** nozzle):
 - **Filament economy** — enabled by default (purge shrinking to −30%, removal of redundant tool changes, curvature-aware extrusion scaling, forced M83 relative mode).
 - **Color-mixing readiness** — the safe *region-collapse* optimisation is enabled; experimental modes stay off by default.
 
-### "Generate process library" button
+### Generating the profiles
 
+**For any printer** (on-demand):
 1. Open the **Process library** tab.
-2. Click **"Generate process library"**.
-3. The app writes the **28 profiles** into the `process/` folder of your Snapmaker_Orca user profile and shows the destination folder.
+2. Pick your **brand**, then the **model**, then the **nozzle** from the drop-downs.
+3. Click **"Generate for this printer"** — the app writes the **7 profiles** (one per project type) into the `process/` folder of your user profile, inheriting that printer's stock base process (the OrcaSlicer → SnapmakerOrca chain).
+
+**Snapmaker U1 shortcut**: the **"Generate the Snapmaker U1 set"** button produces all **28 profiles** (7 types × 4 nozzles) for the U1 directly.
 
 > **Important**
 > If the Snapmaker_Orca user folder is not found, open OptimusOrca once so it creates your profile folder, then run the generation again.

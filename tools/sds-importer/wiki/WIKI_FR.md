@@ -225,6 +225,16 @@ Valeurs de référence (au diamètre **0.4 mm**) :
 - **Économie de filament** — activée d'office (réduction des purges à −30 %, suppression des changements d'outil redondants, mise à l'échelle de l'extrusion selon la courbure, forçage du mode relatif M83).
 - **Préparation au mélange de couleurs** — l'optimisation sûre *region-collapse* est activée ; les modes expérimentaux restent désactivés par défaut.
 
+### Supports & adhérence (anti-warping)
+
+Les profils process intègrent des réglages pensés pour que **les supports tiennent au plateau mais se détachent proprement du modèle**, et pour **limiter le warping et le décollement** de la pièce :
+
+- **Détachement support → modèle** : jeu vertical au-dessus du support (`support_top_z_distance` 0,2 mm), interface rectiligne espacée (`support_interface_spacing` 0,5 mm, `support_interface_pattern` rectilinear), distance XY 0,35 mm — le support s'enlève à la main sans arracher la surface.
+- **Accroche au plateau & anti-décollement** : un **brim extérieur collé à la pièce** (`brim_type` outer_only, `brim_object_gap` 0) et une **première couche lente** (`initial_layer_speed` 20–25 mm/s).
+- **Anti-warping adapté à la matière** (sur le profil filament importé, qui connaît le polymère) : brim large (≈ 8 mm) + **bouclier (`draft_shield` enabled)** pour ABS / ASA / PC / PA, brim léger (≈ 5 mm) pour PETG / TPU, petit brim (≈ 3 mm) pour le PLA.
+
+> Ces réglages ne s'activent que lorsque la découpe génère des supports / un brim ; ce sont des valeurs de départ prudentes, ajustables ensuite. (Recherche : `data/RESEARCH_supports_adhesion.md`.)
+
 ### Générer les profils
 
 **Pour n'importe quelle imprimante** (génération à la demande) :

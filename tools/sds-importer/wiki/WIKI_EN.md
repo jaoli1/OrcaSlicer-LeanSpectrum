@@ -228,6 +228,16 @@ Reference values (at the **0.4 mm** nozzle):
 - **Filament economy** — enabled by default (purge shrinking to −30%, removal of redundant tool changes, curvature-aware extrusion scaling, forced M83 relative mode).
 - **Color-mixing readiness** — the safe *region-collapse* optimisation is enabled; experimental modes stay off by default.
 
+### Supports & adhesion (anti-warping)
+
+The process profiles ship settings designed so **supports grip the plate but peel cleanly off the model**, and to **limit warping and part detachment**:
+
+- **Support → model release**: a vertical gap above supports (`support_top_z_distance` 0.2 mm), a spaced rectilinear interface (`support_interface_spacing` 0.5 mm, `support_interface_pattern` rectilinear), 0.35 mm XY distance — supports lift off by hand without scarring the surface.
+- **Plate grip & anti-detachment**: an **outer brim fused to the part** (`brim_type` outer_only, `brim_object_gap` 0) and a **slow first layer** (`initial_layer_speed` 20–25 mm/s).
+- **Material-adaptive anti-warp** (on the imported filament's process, which knows the polymer): a wide brim (≈ 8 mm) + **draft shield** (`draft_shield` enabled) for ABS / ASA / PC / PA, a light brim (≈ 5 mm) for PETG / TPU, a small brim (≈ 3 mm) for PLA.
+
+> These only take effect when the slice generates supports / a brim; they are conservative starting values you can fine-tune. (Research: `data/RESEARCH_supports_adhesion.md`.)
+
 ### Generating the profiles
 
 **For any printer** (on-demand):

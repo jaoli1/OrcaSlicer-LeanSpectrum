@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
-  "productName": "Optimisateur de filament et de profils d'impression by Maison Drabiec",
+  "productName": "Optimisateur Filament MD",
   "version": "0.1.15",
   "identifier": "fr.maisondrabiec.optimisateur",
   "build": {

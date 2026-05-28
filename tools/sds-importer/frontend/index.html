@@ -156,6 +156,7 @@
       <div class="tab active" data-tab="single"   data-i18n="tab_single">Single PDF</div>
       <div class="tab"        data-tab="catalog"  data-i18n="tab_catalog">Vendor catalog</div>
       <div class="tab"        data-tab="database" data-i18n="tab_database">Local database</div>
+      <div class="tab"        data-tab="library"  data-i18n="tab_library">Process library</div>
     </div>
 
     <!-- ============ Single PDF tab ============ -->
@@ -232,6 +233,16 @@
       </div>
 
       <div id="corpusResult" class="panel" style="display:none;"></div>
+    </div>
+
+    <!-- ============ Process library tab (v0.1.16) ============ -->
+    <div id="tab-library" class="tab-panel">
+      <p class="sub" data-i18n="library_intro">Generate the shared set of process profiles by project type (Vase, Decoration, Figurine, Mechanical part…) for every nozzle (0.2 / 0.4 / 0.6 / 0.8) — 28 profiles tuned for cornering, resonance and the fork features. Filament-specific tuning stays on the filament profile.</p>
+      <div class="row">
+        <button id="genLibraryBtn" data-i18n="library_generate">Generate process library</button>
+        <span id="libraryStatus" class="sub"></span>
+      </div>
+      <div id="libraryResult" class="panel" style="display:none;"></div>
     </div>
   </div>
 

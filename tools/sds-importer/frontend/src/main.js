@@ -297,3 +297,30 @@ function renderCorpus(idx) {
 function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 }
+
+// ============================================================
+// Process library tab (v0.1.16) — write the 28 shared project-type process
+// profiles (7 project types × 4 nozzles) into the Snapmaker_Orca user folder.
+// ============================================================
+const genLibraryBtn = document.getElementById("genLibraryBtn");
+const libraryStatus = document.getElementById("libraryStatus");
+const libraryResult = document.getElementById("libraryResult");
+if (genLibraryBtn) {
+  genLibraryBtn.addEventListener("click", async () => {
+    genLibraryBtn.disabled = true;
+    libraryStatus.textContent = tr("library_working");
+    libraryResult.style.display = "none";
+    try {
+      const r = await invoke("generate_process_library");
+      libraryResult.style.display = "block";
+      libraryResult.innerHTML =
+        `<strong>${r.count}</strong> ${escapeHtml(tr("library_done"))} <code>${escapeHtml(r.dir)}</code>`;
+    } catch (e) {
+      libraryResult.style.display = "block";
+      libraryResult.textContent = `${tr("library_fail")}: ${e}`;
+    } finally {
+      libraryStatus.textContent = "";
+      genLibraryBtn.disabled = false;
+    }
+  });
+}

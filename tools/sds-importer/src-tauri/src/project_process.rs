@@ -139,6 +139,25 @@ fn fmt(x: f64) -> String {
     if x.fract().abs() < 1e-9 { format!("{x:.0}") } else { format!("{x}") }
 }
 
+/// A concrete print target for the generator: the printer preset to attach to,
+/// the stock base process to inherit, the nozzle, and the printer's max layer
+/// height. For the Snapmaker U1 these come from `u1_spec`; for ANY other
+/// OrcaSlicer-family printer (Creality / Bambu / Snapmaker / …) they come from
+/// the machine catalogue (vendor → model → variant), which is how the same 7
+/// project-type profiles are produced for every supported machine.
+#[derive(Clone, Debug)]
+pub struct PrinterSpec {
+    pub printer_name: String,
+    pub base_process: String,
+    pub nozzle: f64,
+    pub max_layer_height: f64,
+}
+
+fn u1_spec(nozzle: f64) -> PrinterSpec {
+    let (printer_name, base_process) = nozzle_targets(nozzle);
+    PrinterSpec { printer_name, base_process, nozzle, max_layer_height: 0.75 * nozzle }
+}
+
 /// The printer preset + stock base process to inherit, per nozzle. These names
 /// MUST match the U1 per-nozzle profiles that ship in the slicer (created with
 /// the 0.2/0.4/0.6/0.8 printer + "0.10/0.20/0.30/0.40 Standard" base process).
@@ -155,11 +174,28 @@ fn nozzle_targets(nozzle: f64) -> (String, String) {
     (printer, base_process)
 }
 
-/// Build a single project-type process profile for one nozzle.
+/// Build a single project-type process profile for the Snapmaker U1 at `nozzle`.
 pub fn build_one(pt: ProjectType, nozzle: f64) -> (String, Value) {
-    let p = pt.params_at(nozzle);
-    let (printer, base_process) = nozzle_targets(nozzle);
-    let name = format!("{} @U1 ({} nozzle)", pt.label(), fmt(nozzle));
+    build_one_for(pt, &u1_spec(nozzle))
+}
+
+/// Build a single project-type process profile for ANY OrcaSlicer-family printer
+/// described by `spec` (printer preset + stock base process to inherit). The
+/// reference parameters are scaled to the nozzle and clamped to the printer's
+/// max layer height.
+pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
+    let mut p = pt.params_at(spec.nozzle);
+    if spec.max_layer_height > 0.0 {
+        if p.layer_height > spec.max_layer_height {
+            p.layer_height = spec.max_layer_height;
+        }
+        if p.initial_layer_height > spec.max_layer_height {
+            p.initial_layer_height = spec.max_layer_height;
+        }
+    }
+    let printer = spec.printer_name.clone();
+    let base_process = spec.base_process.clone();
+    let name = format!("{} @{}", pt.label(), spec.printer_name);
 
     let mut v = json!({
         "name": name,
@@ -207,9 +243,10 @@ pub fn build_one(pt: ProjectType, nozzle: f64) -> (String, Value) {
         "mixed_filament_region_collapse":     "1",
 
         "_leanspectrum_metadata": {
-            "source": "Optimisateur — bibliothèque process par type de projet (v0.1.16)",
+            "source": "Optimisateur — bibliothèque process par type de projet (multi-imprimante)",
             "project_type": pt.label(),
-            "nozzle_mm": nozzle,
+            "printer": spec.printer_name,
+            "nozzle_mm": spec.nozzle,
             "base_process": base_process,
         }
     });
@@ -248,7 +285,8 @@ pub fn build_one(pt: ProjectType, nozzle: f64) -> (String, Value) {
     (name, v)
 }
 
-/// The full shared library: every project type × every nozzle (7 × 4 = 28).
+/// The full shared library for the Snapmaker U1: every project type × every
+/// nozzle (7 × 4 = 28).
 pub fn build_library() -> Vec<(String, Value)> {
     let mut out = Vec::with_capacity(ProjectType::all().len() * NOZZLES.len());
     for pt in ProjectType::all() {
@@ -259,9 +297,45 @@ pub fn build_library() -> Vec<(String, Value)> {
     out
 }
 
+/// On-demand multi-printer path: the 7 project-type profiles for an arbitrary
+/// set of printer specs (one per chosen printer/nozzle variant resolved from the
+/// machine catalogue). Same engine as the U1 library — this is what makes the
+/// optimiser cover every OrcaSlicer-family printer, not just the U1.
+pub fn build_library_for(specs: &[PrinterSpec]) -> Vec<(String, Value)> {
+    let mut out = Vec::with_capacity(ProjectType::all().len() * specs.len());
+    for s in specs {
+        for pt in ProjectType::all() {
+            out.push(build_one_for(pt, s));
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn generates_for_any_orca_family_printer() {
+        // The same engine targets any catalogue printer, not just the U1.
+        let k1 = PrinterSpec {
+            printer_name: "Creality K1 (0.4 nozzle)".into(),
+            base_process: "0.20mm Standard @Creality K1".into(),
+            nozzle: 0.4,
+            max_layer_height: 0.30,
+        };
+        let (name, v) = build_one_for(ProjectType::PieceMecanique, &k1);
+        assert_eq!(name, "Pièce mécanique @Creality K1 (0.4 nozzle)");
+        assert_eq!(v["inherits"], "0.20mm Standard @Creality K1");
+        assert_eq!(v["compatible_printers"][0], "Creality K1 (0.4 nozzle)");
+        assert_eq!(v["filament_economy_enable"], "1");
+        // One spec yields the 7 project types.
+        assert_eq!(build_library_for(&[k1.clone()]).len(), 7);
+        // A printer whose max layer height is 0.20 caps the thick draft layer.
+        let capped = PrinterSpec { max_layer_height: 0.20, ..k1 };
+        let (_, vp) = build_one_for(ProjectType::PrototypeRapide, &capped);
+        assert_eq!(vp["layer_height"], "0.2");
+    }
 
     #[test]
     fn library_has_28_unique_named_profiles() {

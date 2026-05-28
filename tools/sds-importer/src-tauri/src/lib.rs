@@ -2,6 +2,7 @@
 //!
 //! Library crate that exposes the Tauri command surface. Tests live next to
 //! each module.
+#![recursion_limit = "256"] // the project_process `json!` process objects are large
 
 use std::path::PathBuf;
 

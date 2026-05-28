@@ -171,6 +171,23 @@ fn fmt_num(x: f64) -> String {
 /// finer / faster layer height afterwards and keep the scarf overrides.
 const BASE_PROCESS_U1: &str = "0.20 Standard @Snapmaker U1 (0.4 nozzle)";
 
+/// Config version stamped on every generated USER preset.
+///
+/// CRITICAL: Snapmaker_Orca's preset loader (`Preset.cpp` ~L1220,
+/// `if (!version) continue;`) SILENTLY DROPS any user preset whose `version`
+/// key is missing or not a parseable Semver — the preset never appears in the
+/// slicer's dropdown, with no error. This was THE reason generated profiles
+/// were invisible. The value must be a 4-part Semver string and should be
+/// <= the running slicer's `SLIC3R_VERSION` to avoid a forward-compat
+/// migration pass; it matches the fork's `version.inc` SLIC3R_VERSION.
+const PRESET_VERSION: &str = "01.10.01.70";
+
+/// The printer preset generated presets target. A user preset is filtered out
+/// of the dropdown unless its `compatible_printers` name-matches the active
+/// printer (an empty list also passes, but being explicit is safer). Must be
+/// the exact preset NAME, not a display alias.
+const U1_PRINTER: &str = "Snapmaker U1 (0.4 nozzle)";
+
 /// Build a companion **process** profile that enables scarf-joint seams.
 ///
 /// `seam_*` / `scarf_*` are PROCESS-domain config keys (verified in
@@ -200,9 +217,12 @@ fn build_process_json(product_display: &str, scarf: &ScarfSettings) -> Option<(S
     let flow_ratio = scarf.scarf_flow_ratio_pct as f64 / 100.0;
     let v = json!({
         "name":     name,
+        "version":  PRESET_VERSION,
         "from":     "User",
+        "is_custom_defined": "1",
         "type":     "process",
         "inherits": BASE_PROCESS_U1,
+        "compatible_printers": [U1_PRINTER],
         "seam_slope_type":        "external",
         "seam_slope_conditional": "1",
         "scarf_angle_threshold":  scarf.scarf_angle_deg.to_string(),
@@ -267,9 +287,12 @@ fn build_profile_json(
     // blank the parent's nozzle/bed temperature).
     let mut profile = json!({
         "name":     display,
+        "version":  PRESET_VERSION,
         "from":     "User",
+        "is_custom_defined": "1",
         "type":     "filament",
         "inherits": inherit_stub_for(polymer),
+        "compatible_printers": [U1_PRINTER],
         "filament_type":   [polymer.as_str()],
         "filament_vendor": [manufacturer],
         "_leanspectrum_metadata": {
@@ -491,6 +514,12 @@ mod tests {
 
         assert_eq!(v["inherits"], "Snapmaker PLA SnapSpeed @U1");
         assert_eq!(v["type"],     "filament");
+        // Registration keys WITHOUT which the slicer silently drops the
+        // preset (Preset.cpp ~1220 requires a parseable version) or hides it
+        // (compatible_printers must name-match the active printer).
+        assert_eq!(v["version"], "01.10.01.70");
+        assert_eq!(v["is_custom_defined"], "1");
+        assert_eq!(v["compatible_printers"][0], "Snapmaker U1 (0.4 nozzle)");
         assert_eq!(v["filament_type"][0], "PLA");
         assert_eq!(v["filament_vendor"][0], "Shenzhen Eryone Technology Co,.Ltd");
 
@@ -532,6 +561,10 @@ mod tests {
         assert_eq!(name, "Eryone PLA+ Scarf @U1 (0.4 nozzle)");
         assert_eq!(v["type"], "process");
         assert_eq!(v["inherits"], "0.20 Standard @Snapmaker U1 (0.4 nozzle)");
+        // Same registration keys required for the process preset to load+show.
+        assert_eq!(v["version"], "01.10.01.70");
+        assert_eq!(v["is_custom_defined"], "1");
+        assert_eq!(v["compatible_printers"][0], "Snapmaker U1 (0.4 nozzle)");
         // Process scalars are plain strings, not arrays.
         assert_eq!(v["seam_slope_type"], "external");
         assert_eq!(v["seam_slope_conditional"], "1");

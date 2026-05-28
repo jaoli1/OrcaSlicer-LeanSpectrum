@@ -63,22 +63,24 @@ def fnum(s):
 def scan_range_after(text, labels, bed_max=None):
     low = text.lower()
     for lab in labels:
-        i = low.find(lab)
-        if i < 0: continue
-        win = text[i + len(lab): i + len(lab) + 80]
-        m = RANGE_RX.search(win)
-        if m:
-            lo, hi = fnum(m.group(1)), fnum(m.group(2))
-            if lo and hi and lo <= hi:
-                if bed_max and (lo > bed_max + 10 or hi > bed_max + 10):
-                    continue
-                return lo, hi
-        # single value fallback within window: "Nozzle 240 °C"
-        m2 = re.search(r"(\d{2,3}(?:\.\d+)?)\s*(?:°\s*c|℃|°)", win)
-        if m2:
-            v = fnum(m2.group(1))
-            if v and (not bed_max or v <= bed_max + 10):
-                return v, v
+        start = 0
+        while True:  # try EVERY occurrence — the first is often a distractor
+            i = low.find(lab, start)             # ("higher nozzle temperatures" advice
+            if i < 0:
+                break                            #  before the real "Nozzle Temp 220-250")
+            start = i + len(lab)
+            win = text[i + len(lab): i + len(lab) + 80]
+            m = RANGE_RX.search(win)
+            if m:
+                lo, hi = fnum(m.group(1)), fnum(m.group(2))
+                if lo and hi and lo <= hi and not (bed_max and (lo > bed_max + 10 or hi > bed_max + 10)):
+                    return lo, hi
+            # single value fallback: "Nozzle 240 °C" / "215⁰C Extruder"
+            m2 = re.search(r"(\d{2,3}(?:\.\d+)?)\s*(?:°\s*c|℃|⁰|º|°)", win)
+            if m2:
+                v = fnum(m2.group(1))
+                if v and (not bed_max or v <= bed_max + 10):
+                    return v, v
     return None, None
 
 def scan_print_speed(text):
@@ -118,9 +120,9 @@ def scan_specimen(text):
         nv = fnum(n.group(1)) if n else None
         sv = fnum(s.group(1)) if s else None
         bv = fnum(b.group(1)) if b else None
-        nv = nv if (nv and 120 <= nv <= 350) else None
+        nv = nv if (nv and 120 <= nv <= 500) else None   # up to TPI/PEEK/PEI (~445 C)
         sv = sv if (sv and 1 <= sv <= 1000) else None
-        bv = bv if (bv and 20 <= bv <= 130) else None
+        bv = bv if (bv and 15 <= bv <= 200) else None     # up to PPSU/PEI chamber-bed
         if nv or sv or bv:
             return nv, sv, bv
     return None, None, None
@@ -149,14 +151,22 @@ def parse_tds(text, base_type=None):
         "nozzle temperature", "extruder temperature", "print temperature",
         "bottom printing temperature", "température buse", "température d'impression",
         "printing temperature", "3d printing temperature",
-        "nozzle temp", "extruder temp", "print temp", "printing temp"])
+        "nozzle temp", "extruder temp", "print temp", "printing temp",
+        # last-resort bare labels (Extrudr "Nozzle 200-230°C"); specific ones win first
+        "hotend", "hot end", "nozzle", "buse"])
     b_lo, b_hi = scan_range_after(text, [
         "bed temperature", "heated bed", "platform temperature", "température plateau",
-        "plateau chauffant", "base plate", "plate temp", "bed temp", "platform temp"], bed_max=bed_max)
+        "plateau chauffant", "base plate", "plate temp", "bed temp", "platform temp",
+        "heatbed", "heat bed", "hot bed"], bed_max=bed_max)
     s_lo, s_hi = scan_print_speed(text)
     dens = scan_density(text)
     spec_n, spec_s, spec_b = scan_specimen(text)
     dry_t, dry_h = scan_drying(text)
+    # a bare "Nozzle ..." label can grab a diameter (0.4mm) or an orientation
+    # angle ("+/- 45°"); no filament prints below 120 C, so drop such readings and
+    # let the authoritative specimen "Extrusion Temp" value take over.
+    if n_lo is not None and n_lo < 120:
+        n_lo = n_hi = None
     # store table ranges; if missing fall back to authoritative specimen single value
     if n_lo is None and spec_n: n_lo = n_hi = spec_n
     if b_lo is None and spec_b: b_lo = b_hi = spec_b

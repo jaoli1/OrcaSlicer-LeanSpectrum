@@ -11,6 +11,38 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.1.11] — feat: scarf seams actually apply (companion process profile)
+
+v0.1.10 removed the dead `seam_*` / `scarf_*` keys from the filament
+profile because they're PROCESS-domain settings the slicer ignores in a
+filament profile. This release makes the scarf feature *real*: alongside
+the filament profile, the importer now writes a companion **process**
+profile that carries the scarf overrides where they actually take
+effect.
+
+What gets generated, per import (when scarf is enabled for the polymer):
+- A process profile named `<product> Scarf @U1 (0.4 nozzle)` written to
+  `…/Snapmaker_Orca/user/<id>/process/`.
+- It `inherits` the stock `0.20 Standard @Snapmaker U1 (0.4 nozzle)` and
+  overrides ONLY the scarf keys, so all other process settings stay at
+  the U1 standard:
+  - `seam_slope_type: external` · `seam_slope_conditional: 1`
+  - `scarf_angle_threshold: 155` · `scarf_joint_speed: 50%`
+  - `scarf_joint_flow_ratio: 1` (coFloat ratio — the old code wrongly
+    emitted `100%` for this float key) · `seam_slope_min_length: 20` ·
+    `seam_slope_steps: 10`
+- Values use the process-profile wire format (plain string scalars and
+  `0`/`1` bools), verified against PrintConfig.cpp and the shipped
+  profiles — NOT the filament profile's string-array format.
+
+The companion is surfaced as the import's *recommended process*, and
+the log tells the user to pick it in the Process dropdown. TPU (scarf
+disabled — rubber doesn't ramp cleanly) gets no companion. Two new unit
+tests pin the companion schema and the disabled-polymer skip.
+
+To use: after import, select your filament as usual AND choose the
+`… Scarf @U1` process — the two together give nearly-invisible Z-seams.
+
 ## [0.1.10] — fix: broken profile inheritance + incomplete bed temps
 
 Auditing the generated profile against the real Snapmaker_Orca filament

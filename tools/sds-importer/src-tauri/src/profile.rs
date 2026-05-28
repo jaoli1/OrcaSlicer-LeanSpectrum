@@ -159,6 +159,66 @@ fn inherit_stub_for(polymer: Polymer) -> &'static str {
     }
 }
 
+/// Format a float without trailing zeros: 220.0 -> "220", 1.23 -> "1.23".
+/// Stock Snapmaker profiles store temperatures / counts as integer strings
+/// and ratios as short decimals; this matches both.
+fn fmt_num(x: f64) -> String {
+    if x.fract().abs() < 1e-9 { format!("{x:.0}") } else { format!("{x}") }
+}
+
+/// The stock U1 process profile the scarf companion attaches its overrides
+/// to. "0.20 Standard" is the balanced default; the user can re-base to a
+/// finer / faster layer height afterwards and keep the scarf overrides.
+const BASE_PROCESS_U1: &str = "0.20 Standard @Snapmaker U1 (0.4 nozzle)";
+
+/// Build a companion **process** profile that enables scarf-joint seams.
+///
+/// `seam_*` / `scarf_*` are PROCESS-domain config keys (verified in
+/// PrintConfig.cpp + the stock profiles), so they only take effect in a
+/// process profile — putting them in a filament profile, as we did through
+/// v0.1.10, does nothing. This profile inherits the standard U1 process and
+/// overrides ONLY the scarf keys.
+///
+/// Value formats follow the process-profile convention (plain string
+/// scalars, NOT the filament profile's string-arrays; bools as "0"/"1"):
+///   - seam_slope_type        coEnum  -> "external"  (contour outer walls)
+///   - seam_slope_conditional coBool  -> "1"
+///   - scarf_angle_threshold  coInt   -> "155"
+///   - scarf_joint_speed      coFloatOrPercent -> "50%"
+///   - scarf_joint_flow_ratio coFloat -> "1"  (ratio, NOT "100%")
+///   - seam_slope_min_length  coFloat -> "20"
+///   - seam_slope_steps       coInt   -> "10"
+///
+/// Returns `None` when scarf is disabled for the polymer (e.g. TPU — rubber
+/// doesn't ramp cleanly).
+fn build_process_json(product_display: &str, scarf: &ScarfSettings) -> Option<(String, Value)> {
+    if !scarf.enable_scarf {
+        return None;
+    }
+    let name = format!("{product_display} Scarf @U1 (0.4 nozzle)");
+    // coFloat ratio: 100% -> 1.0, 95% -> 0.95.
+    let flow_ratio = scarf.scarf_flow_ratio_pct as f64 / 100.0;
+    let v = json!({
+        "name":     name,
+        "from":     "User",
+        "type":     "process",
+        "inherits": BASE_PROCESS_U1,
+        "seam_slope_type":        "external",
+        "seam_slope_conditional": "1",
+        "scarf_angle_threshold":  scarf.scarf_angle_deg.to_string(),
+        "scarf_joint_speed":      format!("{}%", scarf.scarf_joint_speed_pct),
+        "scarf_joint_flow_ratio": fmt_num(flow_ratio),
+        "seam_slope_min_length":  fmt_num(scarf.scarf_length_mm),
+        "seam_slope_steps":       scarf.scarf_steps.to_string(),
+        "seam_position":          scarf.seam_position,
+        "_leanspectrum_metadata": {
+            "source":       "SDS/TDS importer — scarf companion",
+            "base_process": BASE_PROCESS_U1,
+        }
+    });
+    Some((name, v))
+}
+
 /// Build the filament profile JSON document (pure; no disk I/O). Split out
 /// from `build_and_save` so the schema can be unit-tested without touching
 /// the user's Snapmaker_Orca directory.
@@ -170,13 +230,6 @@ fn build_profile_json(
     let product_name = ef.product_name.as_deref().unwrap_or("Imported filament");
     let manufacturer = ef.manufacturer.as_deref().unwrap_or("Unknown");
     let display      = format!("{} — {} ({})", polymer.as_str(), product_name, manufacturer);
-
-    // Format a float without trailing zeros: 220.0 -> "220", 1.23 -> "1.23".
-    // Stock Snapmaker filament profiles store temperatures as integer strings
-    // and density as a short decimal string; this matches both.
-    fn fmt_num(x: f64) -> String {
-        if x.fract().abs() < 1e-9 { format!("{x:.0}") } else { format!("{x}") }
-    }
 
     // The settings with the biggest impact on print success: extrusion
     // temperature, bed temperature, maximum volumetric speed. Each uses the
@@ -280,38 +333,85 @@ pub fn build_and_save(
         "Could not identify the polymer family — nothing to save.".into()
     ))?;
 
+    let scarf = polymer.default_scarf_settings();
+    let product_disp = ef.product_name.clone()
+        .unwrap_or_else(|| polymer.as_str().to_string());
+
     let profile = build_profile_json(ef, polymer, log);
     let display = profile["name"].as_str().unwrap_or("Imported filament").to_string();
 
     let user_dir = snapmaker_orca_user_dir();
-    let filament_dir = match user_dir.as_ref() {
-        Some(p) => {
-            let d = p.join("filament");
-            fs::create_dir_all(&d)?;
-            d
-        }
-        None => {
-            log.push("Snapmaker_Orca user directory not found; saving the profile next to the source PDF instead.".into());
-            ef.source_files
+    if user_dir.is_none() {
+        log.push("Snapmaker_Orca user directory not found; saving the profile(s) next to the source PDF instead.".into());
+    }
+    // Resolve <user>/<sub> (filament | process), or the source PDF's folder
+    // as a fallback when the slicer's user directory can't be located.
+    let resolve_dir = |sub: &str| -> Result<PathBuf> {
+        match user_dir.as_ref() {
+            Some(p) => {
+                let d = p.join(sub);
+                fs::create_dir_all(&d)?;
+                Ok(d)
+            }
+            None => Ok(ef.source_files
                 .first()
-                .map(|p| PathBuf::from(p))
+                .map(PathBuf::from)
                 .and_then(|p| p.parent().map(|x| x.to_path_buf()))
-                .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))),
         }
     };
 
-    let mut out_path = filament_dir.join(format!("{}.json", sanitize(&display)));
-    let mut counter = 1;
-    while out_path.exists() {
-        out_path = filament_dir.join(format!("{} ({}).json", sanitize(&display), counter));
-        counter += 1;
-    }
-    fs::write(&out_path, serde_json::to_string_pretty(&profile).unwrap())
-        .map_err(|e| Error::Profile(e.to_string()))?;
+    // 1) Filament profile.
+    let filament_dir = resolve_dir("filament")?;
+    let out_path = write_unique_json(&filament_dir, &display, &profile)?;
     log.push(format!("Saved filament profile to {}", out_path.display()));
 
-    let recommended = user_dir.as_ref().and_then(|p| recommend_process(p, polymer));
+    // 2) Companion process profile carrying the scarf-joint seam overrides.
+    //    seam_*/scarf_* are process-domain keys, so they only take effect in
+    //    a process profile — not in the filament profile. We write one that
+    //    inherits the standard U1 process and overrides only the scarf keys,
+    //    and surface it as the recommended process so the UI can point the
+    //    user straight at it.
+    let recommended = match build_process_json(&product_disp, &scarf) {
+        Some((proc_name, proc_json)) => {
+            let process_dir = resolve_dir("process")?;
+            let proc_path = write_unique_json(&process_dir, &proc_name, &proc_json)?;
+            log.push(format!(
+                "Saved companion process profile (scarf seams) to {}. Pick it in the Process dropdown for nearly-invisible Z-seams.",
+                proc_path.display()
+            ));
+            Some(RecommendedProcess {
+                name:         proc_name,
+                layer_height: Some(0.20),
+                print_speed:  None,
+                priority:     "balanced".into(),
+                path:         proc_path.display().to_string(),
+            })
+        }
+        None => {
+            log.push(format!(
+                "No scarf companion for {} (scarf disabled for this polymer family).",
+                polymer.as_str()
+            ));
+            None
+        }
+    };
+
     Ok((Some(out_path), recommended))
+}
+
+/// Write `value` to `dir/<sanitized name>.json`, appending " (N)" if a file
+/// with that name already exists. Shared by the filament and process writers.
+fn write_unique_json(dir: &Path, display: &str, value: &Value) -> Result<PathBuf> {
+    let mut path = dir.join(format!("{}.json", sanitize(display)));
+    let mut counter = 1;
+    while path.exists() {
+        path = dir.join(format!("{} ({}).json", sanitize(display), counter));
+        counter += 1;
+    }
+    fs::write(&path, serde_json::to_string_pretty(value).unwrap())
+        .map_err(|e| Error::Profile(e.to_string()))?;
+    Ok(path)
 }
 
 fn sanitize(s: &str) -> String {
@@ -332,14 +432,6 @@ fn build_scarf_value(s: &ScarfSettings) -> Value {
     })
 }
 
-fn recommend_process(_user_dir: &Path, _polymer: Polymer) -> Option<RecommendedProcess> {
-    // Placeholder: real implementation walks the slicer's system/process/
-    // directory, parses each .json, filters by the active printer + nozzle
-    // size and the polymer's compatible_filaments field, then scores by
-    // (print_speed, layer_height). For v0.1 we return None so the UI
-    // shows "no recommendation yet" instead of a wrong default.
-    None
-}
 
 #[cfg(test)]
 mod tests {
@@ -425,6 +517,40 @@ mod tests {
         }
         // …but the scarf reference is preserved in metadata.
         assert!(v["_leanspectrum_metadata"]["scarf_settings"].is_object());
+    }
+
+    /// The companion process profile must carry the scarf keys in the
+    /// process-profile format (plain string scalars, bool as "0"/"1", flow
+    /// ratio as a float not a percent), inherit the standard U1 process, and
+    /// be typed as a process.
+    #[test]
+    fn scarf_companion_process_has_correct_schema() {
+        let scarf = Polymer::Pla.default_scarf_settings();
+        assert!(scarf.enable_scarf, "PLA scarf should be enabled by default");
+        let (name, v) = build_process_json("Eryone PLA+", &scarf).expect("PLA yields a companion");
+
+        assert_eq!(name, "Eryone PLA+ Scarf @U1 (0.4 nozzle)");
+        assert_eq!(v["type"], "process");
+        assert_eq!(v["inherits"], "0.20 Standard @Snapmaker U1 (0.4 nozzle)");
+        // Process scalars are plain strings, not arrays.
+        assert_eq!(v["seam_slope_type"], "external");
+        assert_eq!(v["seam_slope_conditional"], "1");
+        assert_eq!(v["scarf_angle_threshold"], "155");
+        assert_eq!(v["scarf_joint_speed"], "50%");
+        // coFloat ratio, NOT "100%".
+        assert_eq!(v["scarf_joint_flow_ratio"], "1");
+        assert_eq!(v["seam_slope_min_length"], "20");
+        assert_eq!(v["seam_slope_steps"], "10");
+        // None of these should be string-arrays (that's the filament format).
+        assert!(v["seam_slope_type"].is_string());
+    }
+
+    /// TPU disables scarf, so no companion process is generated.
+    #[test]
+    fn scarf_companion_skipped_when_disabled() {
+        let scarf = Polymer::Tpu.default_scarf_settings();
+        assert!(!scarf.enable_scarf, "TPU scarf should be disabled");
+        assert!(build_process_json("Generic TPU", &scarf).is_none());
     }
 
     /// When a value is missing we must NOT emit the key at all (emitting

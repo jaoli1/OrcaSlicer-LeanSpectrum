@@ -98,7 +98,7 @@ pub fn estimate_missing_temperatures(ef: &mut ExtractedFilament, log: &mut Vec<S
     ef.needs_review |= !ef.estimated_fields.is_empty();
 }
 
-fn snapmaker_orca_user_dir() -> Option<PathBuf> {
+pub(crate) fn snapmaker_orca_user_dir() -> Option<PathBuf> {
     let base = if cfg!(target_os = "macos") {
         dirs::data_dir().map(|d| d.join("Snapmaker_Orca"))
     } else if cfg!(target_os = "windows") {
@@ -500,7 +500,7 @@ pub fn build_and_save(
 
 /// Write `value` to `dir/<sanitized name>.json`, appending " (N)" if a file
 /// with that name already exists. Shared by the filament and process writers.
-fn write_unique_json(dir: &Path, display: &str, value: &Value) -> Result<PathBuf> {
+pub(crate) fn write_unique_json(dir: &Path, display: &str, value: &Value) -> Result<PathBuf> {
     let mut path = dir.join(format!("{}.json", sanitize(display)));
     let mut counter = 1;
     while path.exists() {

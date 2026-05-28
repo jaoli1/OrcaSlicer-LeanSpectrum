@@ -379,6 +379,41 @@ fn pick_pdf(app: tauri::AppHandle) -> std::result::Result<Option<String>, Error>
     Ok(path.map(|p| p.display().to_string()))
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProcessLibraryResult {
+    count: usize,
+    dir: String,
+    names: Vec<String>,
+}
+
+/// v0.1.16 — write the shared project-type process library (7 project types ×
+/// 4 nozzles = 28 process profiles) into the Snapmaker_Orca user `process/`
+/// folder so they appear in the slicer's Process dropdown. One shared set; the
+/// per-filament tuning stays on the filament profile.
+#[tauri::command]
+fn generate_process_library() -> std::result::Result<ProcessLibraryResult, Error> {
+    run_command(|| {
+        let user = profile::snapmaker_orca_user_dir().ok_or_else(|| {
+            Error::Profile(
+                "Snapmaker_Orca user directory not found — open OptimusOrca once so it creates your profile folder, then retry.".into(),
+            )
+        })?;
+        let dir = user.join("process");
+        std::fs::create_dir_all(&dir)?;
+        let mut names = Vec::new();
+        for (name, value) in project_process::build_library() {
+            profile::write_unique_json(&dir, &name, &value)?;
+            names.push(name);
+        }
+        Ok(ProcessLibraryResult {
+            count: names.len(),
+            dir: dir.display().to_string(),
+            names,
+        })
+    })
+}
+
 /// Build the path to the persistent log file:
 ///   Windows: %LOCALAPPDATA%\Custom Filament Profile Creator\app.log
 ///   macOS:   ~/Library/Application Support/Custom Filament Profile Creator/app.log
@@ -459,7 +494,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             import_pdf, pick_pdf, crawl_catalog, import_from_urls,
-            corpus_default_path, scan_corpus
+            corpus_default_path, scan_corpus, generate_process_library
         ])
         .setup(|app| {
             log::info!(

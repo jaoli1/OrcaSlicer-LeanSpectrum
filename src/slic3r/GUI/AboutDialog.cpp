@@ -246,10 +246,10 @@ AboutDialog::AboutDialog()
     // version
     {
         const int title_wrap_width = FromDIP(520);
-        const wxString sm_version_label = format_wxstr("Snapmaker Orca %1%", Snapmaker_VERSION);
+        const wxString sm_version_label = format_wxstr("OptimusOrca %1%", Snapmaker_VERSION);
         const wxString fs_version_label = format_wxstr("FullSpectrum %1%", FULLSPECTRUM_VERSION);
         vesizer->Add(0, FromDIP(165), 1, wxEXPAND, FromDIP(5));
-        wxStaticText* version = new wxStaticText(this, wxID_ANY, _L("Snapmaker Orca FullSpectrum"), wxDefaultPosition, wxSize(title_wrap_width, -1), wxALIGN_CENTER_HORIZONTAL);
+        wxStaticText* version = new wxStaticText(this, wxID_ANY, _L("OptimusOrca by Maison Drabiec"), wxDefaultPosition, wxSize(title_wrap_width, -1), wxALIGN_CENTER_HORIZONTAL);
         wxStaticText* sm_version = new wxStaticText(this, wxID_ANY, sm_version_label, wxDefaultPosition, wxSize(title_wrap_width, -1), wxALIGN_CENTER_HORIZONTAL);
         wxStaticText* fs_version = new wxStaticText(this, wxID_ANY, fs_version_label, wxDefaultPosition, wxSize(title_wrap_width, -1), wxALIGN_CENTER_HORIZONTAL);
         wxStaticText* bs_version = new wxStaticText(this, wxID_ANY, wxString::Format("Based on Orca Slicer"), wxDefaultPosition, wxDefaultSize);

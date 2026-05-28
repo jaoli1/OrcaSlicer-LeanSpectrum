@@ -1,0 +1,203 @@
+{
+  "cluster": "azurefilm",
+  "_note": "AzureFilm d.o.o. official documents aggregated by distributor atome3d.com on its Shopify CDN (cdn.shopify.com/s/files/1/1339/4265/files/). Filenames AzureFilm_*/EN_Azurefilm_* are the manufacturer's own TDS/SDS datasheets, hence source=manufacturer. All 29 listed PDFs verified HTTP 200 + application/pdf on 2026-05-28. doc_type: TDS = technical/product datasheet, MSDS = (M)SDS safety sheet, CHEM = test report. Params (nozzle=printing temp range, bed, density g/cm3, dry temp/time) read from each material's TDS PDF where present; AzureFilm TDS list a single test-print temp plus a 'Printing Recommendations' range -> recorded as nozzle_min/max. AzureFilm_Material_comparison.pdf is a multi-material overview (attached to PLA line as reference).",
+  "records": [
+    {
+      "brand": "AzureFilm",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": 200, "nozzle_max": 230, "bed_min": 50, "bed_max": 60, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PLA_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/EN_Azurefilm_-_Safety_Data_Sheet_PLA_regular.pdf", "rohs_compliant": null },
+        { "doc_type": "CHEM", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Material_comparison.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "PLA Strongman",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": 200, "nozzle_max": 230, "bed_min": 50, "bed_max": 60, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PLA_Strongman_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PLA_Strongman_MSDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Silk",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": 210, "nozzle_max": 240, "bed_min": 70, "bed_max": 80, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_SILK_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_SILK_SDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.29,
+      "params": { "nozzle_min": 220, "nozzle_max": 240, "bed_min": 80, "bed_max": 90, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PETG_TDS1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PETG_MSDS.pdf", "rohs_compliant": null },
+        { "doc_type": "CHEM", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PETG_test_reportANG.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "ABS Plus",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": 230, "nozzle_max": 260, "bed_min": 90, "bed_max": 120, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_ABS-P_TDS1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_ABS_Plus_SDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Flexible 85A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.12,
+      "params": { "nozzle_min": 200, "nozzle_max": 240, "bed_min": 0, "bed_max": 80, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Flexible_85A_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Flexible_85A_MSDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Flexible 98A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.16,
+      "params": { "nozzle_min": 200, "nozzle_max": 240, "bed_min": 0, "bed_max": 80, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Flexible_98A_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Flexible_98A_MSDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Nylon P6",
+      "base_type": "PA",
+      "filled_type": null,
+      "density": 1.13,
+      "params": { "nozzle_min": 260, "nozzle_max": 280, "bed_min": 90, "bed_max": 120, "dry_temp": 75, "dry_time": 8 },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_NYLONp6_TDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "PAHT Carbon Fiber",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": 1.24,
+      "params": { "nozzle_min": 270, "nozzle_max": 290, "bed_min": 90, "bed_max": 120, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PAHT_Carbon_Fiber_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PAHT_Carbon_Fiber_SDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "PET Carbon Fiber",
+      "base_type": "PET",
+      "filled_type": "CF",
+      "density": 1.40,
+      "params": { "nozzle_min": 245, "nozzle_max": 270, "bed_min": 80, "bed_max": 90, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PET_Carbon_Fiber_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_PET_Carbon_Fiber_SDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Wood Bamboo",
+      "base_type": "PLA",
+      "filled_type": "Wood",
+      "density": 1.19,
+      "params": { "nozzle_min": 200, "nozzle_max": 230, "bed_min": 0, "bed_max": 60, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Wood_Bamboo_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Wood_Bamboo_MSDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Wood Cork",
+      "base_type": "PLA",
+      "filled_type": "Wood",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Wood_Cork_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Wood_Cork_MSDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Wood Cork Glitter",
+      "base_type": "PLA",
+      "filled_type": "Wood",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Wood_Cork_Glitter_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Wood_Cork_Glitter_MSDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Wood Pine",
+      "base_type": "PLA",
+      "filled_type": "Wood",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Wood_Pine_TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AzureFilm_Wood_Pine_MSDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

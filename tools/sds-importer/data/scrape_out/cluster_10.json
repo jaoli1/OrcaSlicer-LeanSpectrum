@@ -1,0 +1,407 @@
+{
+  "cluster": 10,
+  "records": [
+    {
+      "brand": "3D Solutech",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AMOLEN",
+      "material": "PLA Basic High-Speed",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.25,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 230,
+        "bed_min": 30,
+        "bed_max": 65,
+        "dry_temp": 50,
+        "dry_time": 8
+      },
+      "docs": [],
+      "colors": [
+        {
+          "name": "Peach Fuzz",
+          "hex": null,
+          "finish": "matte/standard"
+        },
+        {
+          "name": "Forest Green",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Carrot Orange",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Sand Beige",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Real Gold",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Paper White",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Chestnut Brown",
+          "hex": null,
+          "finish": "standard"
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AMOLEN",
+      "material": "PLA Silk S-Series",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.29,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 220,
+        "bed_min": 50,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AMOLEN",
+      "material": "PLA Carbon Fiber",
+      "base_type": "PLA",
+      "filled_type": "CF",
+      "density": 1.26,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AceAddity",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 220,
+        "nozzle_max": 240,
+        "bed_min": 70,
+        "bed_max": 80,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Aliz",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.longshanplas.com/d/file/2026/03-16/Aliz-Brochure-2025-English%20H-and-V(S).pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Amazon",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Ambrosia",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.255,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 220,
+        "bed_min": 0,
+        "bed_max": 65,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [
+        {
+          "name": "Velvet Black",
+          "hex": null,
+          "finish": "matte"
+        },
+        {
+          "name": "Creamsicle",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Burnt Orange",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Voron Red",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Terrestrial Blue",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "West Green",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Grape",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Super Blue",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Skin",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Coral",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Midnight",
+          "hex": null,
+          "finish": "standard"
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Atome3D",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Biqu",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 200,
+        "nozzle_max": 230,
+        "bed_min": 30,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Biqu",
+      "material": "PLA-HS",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 200,
+        "nozzle_max": 240,
+        "bed_min": 0,
+        "bed_max": 80,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [
+        {
+          "name": "White",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Grey",
+          "hex": null,
+          "finish": "standard"
+        },
+        {
+          "name": "Black",
+          "hex": null,
+          "finish": "standard"
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "CC3D",
+      "material": "Silk PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 195,
+        "nozzle_max": 220,
+        "bed_min": 40,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [
+        {
+          "name": "Silk Black",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Dark Cyan",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Lime Green",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Red",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Green Bronze",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Silver",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Copper",
+          "hex": null,
+          "finish": "silk"
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "CaiLab",
+      "material": "PLA+ Bio",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 195,
+        "nozzle_max": 220,
+        "bed_min": 50,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "CaiLab",
+      "material": "PETG-CF",
+      "base_type": "PETG",
+      "filled_type": "CF",
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": 50,
+        "dry_time": 5
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

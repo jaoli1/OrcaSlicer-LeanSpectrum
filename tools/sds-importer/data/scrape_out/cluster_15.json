@@ -1,0 +1,247 @@
+{
+  "cluster": 15,
+  "records": [
+    {
+      "brand": "Tecbears",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 200, "nozzle_max": 230, "bed_min": 50, "bed_max": 65, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Tecbears",
+      "material": "PLA+",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 210, "nozzle_max": 235, "bed_min": 55, "bed_max": 65, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Tecbears",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Tianse",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 180, "nozzle_max": 220, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Tronxy",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 190, "nozzle_max": 230, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Tronxy",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 230, "nozzle_max": 250, "bed_min": 80, "bed_max": 90, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Valment",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Verbatim",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {"nozzle_min": 200, "nozzle_max": 220, "bed_min": 60, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [
+        {"name": "Black", "hex": null, "finish": null},
+        {"name": "White", "hex": null, "finish": null},
+        {"name": "Red", "hex": null, "finish": null},
+        {"name": "Green", "hex": null, "finish": null},
+        {"name": "Blue", "hex": null, "finish": null},
+        {"name": "Aluminium Grey", "hex": null, "finish": null},
+        {"name": "Natural/Transparent", "hex": null, "finish": null}
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Verbatim",
+      "material": "PET-G",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 225, "nozzle_max": 245, "bed_min": 90, "bed_max": 90, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [
+        {"name": "Black", "hex": null, "finish": null},
+        {"name": "White", "hex": null, "finish": null},
+        {"name": "Red", "hex": null, "finish": null},
+        {"name": "Blue", "hex": null, "finish": null},
+        {"name": "Clear", "hex": null, "finish": null},
+        {"name": "Red Transparent", "hex": null, "finish": "transparent"},
+        {"name": "Blue Transparent", "hex": null, "finish": "transparent"},
+        {"name": "Green Transparent", "hex": null, "finish": "transparent"}
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Verbatim",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Wanhao",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "http://www.wanhao3dprinter.com/xiazai/filament.pdf", "rohs_compliant": null}
+      ],
+      "colors": [
+        {"name": "Natural", "hex": null, "finish": null},
+        {"name": "White", "hex": null, "finish": null},
+        {"name": "Silver", "hex": null, "finish": null},
+        {"name": "Slate Grey", "hex": null, "finish": null},
+        {"name": "Purple", "hex": null, "finish": null},
+        {"name": "Pink", "hex": null, "finish": null},
+        {"name": "Orange", "hex": null, "finish": null},
+        {"name": "Red", "hex": null, "finish": null},
+        {"name": "Nuclear Green", "hex": null, "finish": null},
+        {"name": "Yellow", "hex": null, "finish": null},
+        {"name": "Blue", "hex": null, "finish": null},
+        {"name": "Brown", "hex": null, "finish": null},
+        {"name": "Black", "hex": null, "finish": null},
+        {"name": "Translucent Red", "hex": null, "finish": "translucent"},
+        {"name": "Translucent Orange", "hex": null, "finish": "translucent"},
+        {"name": "Translucent Purple", "hex": null, "finish": "translucent"},
+        {"name": "Translucent Yellow", "hex": null, "finish": "translucent"}
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Wanhao",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "http://www.wanhao3dprinter.com/xiazai/filament.pdf", "rohs_compliant": null}
+      ],
+      "colors": [
+        {"name": "Natural", "hex": null, "finish": null},
+        {"name": "White", "hex": null, "finish": null},
+        {"name": "Silver", "hex": null, "finish": null},
+        {"name": "Slate Grey", "hex": null, "finish": null},
+        {"name": "Pink", "hex": null, "finish": null},
+        {"name": "Purple", "hex": null, "finish": null},
+        {"name": "Orange", "hex": null, "finish": null},
+        {"name": "Red", "hex": null, "finish": null},
+        {"name": "Nuclear Green", "hex": null, "finish": null},
+        {"name": "Dark Green", "hex": null, "finish": null},
+        {"name": "Yellow", "hex": null, "finish": null},
+        {"name": "Blue", "hex": null, "finish": null},
+        {"name": "Brown", "hex": null, "finish": null},
+        {"name": "Navy Wool", "hex": null, "finish": null},
+        {"name": "Black", "hex": null, "finish": null}
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Wondermaker",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Yumi",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Ziro",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 190, "nozzle_max": 220, "bed_min": 50, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Ziro",
+      "material": "High Speed PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 190, "nozzle_max": 220, "bed_min": 50, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Ziro",
+      "material": "TPU",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

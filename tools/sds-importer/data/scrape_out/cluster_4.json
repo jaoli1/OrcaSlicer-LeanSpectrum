@@ -1,0 +1,443 @@
+{
+  "cluster": 4,
+  "records": [
+    {
+      "brand": "KINGROON",
+      "material": "PLA Matte",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.31,
+      "params": {"nozzle_min": 190, "nozzle_max": 230, "bed_min": 35, "bed_max": 45, "dry_temp": 50, "dry_time": 8},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://wiki.kingroon.com/kingroon_pla_matte_technical_data_sheet_v1.0.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "KINGROON",
+      "material": "PETG HS",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.28,
+      "params": {"nozzle_min": 230, "nozzle_max": 260, "bed_min": 65, "bed_max": 75, "dry_temp": 65, "dry_time": 8},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://wiki.kingroon.com/kingroon_petg_hs_technical_data_sheet_v1.0.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "KINGROON",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": 1.05,
+      "params": {"nozzle_min": 240, "nozzle_max": 270, "bed_min": 80, "bed_max": 100, "dry_temp": 80, "dry_time": 8},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://wiki.kingroon.com/kingroon_abs_technical_data_sheet_v1.0.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "KINGROON",
+      "material": "TPU 90A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {"nozzle_min": 200, "nozzle_max": 250, "bed_min": 30, "bed_max": 35, "dry_temp": 70, "dry_time": 8},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://wiki.kingroon.com/kingroon_tpu_95a_technical_data_sheet_v1.0.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Kexcelled",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 190, "nozzle_max": 220, "bed_min": 30, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Kimya",
+      "material": "PETG-S",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Landu",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 190, "nozzle_max": 220, "bed_min": 30, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lattice Medical",
+      "material": "PLGA",
+      "base_type": "PLGA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 180, "nozzle_max": 230, "bed_min": 50, "bed_max": 70, "dry_temp": 40, "dry_time": 48},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://lattice-services.com/wp-content/uploads/2025/11/Technical-Data-Sheet-PLGA-n%C2%B0-V1.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lattice Medical",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 230, "nozzle_max": 245, "bed_min": 75, "bed_max": 85, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://lattice-services.com/wp-content/uploads/2025/11/Technical-Data-Sheet-PETG-n%C2%B0-V1.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lattice Medical",
+      "material": "PCL",
+      "base_type": "PCL",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://lattice-services.com/wp-content/uploads/2025/11/Technical-Data-Sheet-PCL-n%C2%B0-V1.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lattice Medical",
+      "material": "PDO",
+      "base_type": "PDO",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://lattice-services.com/wp-content/uploads/2025/11/Technical-Data-Sheet-PDO-n%C2%B0-V1.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lattice Medical",
+      "material": "PLCL",
+      "base_type": "PLCL",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://lattice-services.com/wp-content/uploads/2025/11/Technical-Data-Sheet-PLCL-n%C2%B0-V1.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lattice Medical",
+      "material": "PC",
+      "base_type": "PC",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://lattice-services.com/wp-content/uploads/2025/11/Technical-Data-Sheet-PC-n%C2%B0-V1.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lattice Medical",
+      "material": "TPE",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://lattice-services.com/wp-content/uploads/2025/11/Technical-Data-Sheet-TPE-n%C2%B0-V1.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lattice Medical",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://lattice-services.com/wp-content/uploads/2025/11/Technical-Data-Sheet-ABS-n%C2%B0-V1.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Longer",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Lotactree",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/0813/1431/6594/files/Lotactree_Data_Sheet_PLA-V01.pdf?v=1772447294", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Magigoo",
+      "material": "Original Adhesive",
+      "base_type": "ADHESIVE",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/2485/2384/files/Designed_TDS_v1.5.pdf?v=1605354443", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "MakerBot",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 210, "nozzle_max": 220, "bed_min": null, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://images.makerbot.com/support/production/SDS-000002ENA.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "MakerBot",
+      "material": "Tough PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://downloads.makerbot.com/legal/Safety_Data_Sheet_ToughPLA.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Markforged",
+      "material": "Onyx",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://static.markforged.com/downloads/composites-data-sheet.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Markforged",
+      "material": "Onyx ESD",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://s3.amazonaws.com/mf.product.doc.images/Datasheets/Material+Datasheets/Onyx_ESD_Supplemental_Datasheet.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "MatterHackers",
+      "material": "MH Build Series PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.matterhackers.com/r/vQ0bKO", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://www.matterhackers.com/r/yvfisi", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "MatterHackers",
+      "material": "PRO Series PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.25,
+      "params": {"nozzle_min": 190, "nozzle_max": 220, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.matterhackers.com/r/eSeA4O.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://www.matterhackers.com/r/kQZXHy.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "MatterHackers",
+      "material": "MH Build Series PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.23,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.matterhackers.com/r/2m3iD0", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://www.matterhackers.com/r/KwBqkz", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "MatterHackers",
+      "material": "PRO Series PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://www.matterhackers.com/r/nhgG2k.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Monoprice",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Multicomp Pro",
+      "material": "PLA Glass Fiber",
+      "base_type": "PLA",
+      "filled_type": "GF",
+      "density": 1.31,
+      "params": {"nozzle_min": 190, "nozzle_max": 230, "bed_min": 45, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.farnell.com/datasheets/4385364.pdf", "rohs_compliant": true},
+        {"doc_type": "RoHS", "url": "https://www.farnell.com/datasheets/4385364.pdf", "rohs_compliant": true}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "NIT",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nanovia",
+      "material": "PLA Lin",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://nanovia.tech/wp-content/media/pdf/nanovia-pla-lin-fiche-technique.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://nanovia.tech/wp-content/media/pdf/nanovia-pla-lin-fiche-de-securite.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nanovia",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "params": {"nozzle_min": 220, "nozzle_max": 240, "bed_min": 80, "bed_max": 90, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://nanovia.tech/media/english-MSDS-PETG.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nanovia",
+      "material": "PETG-CF",
+      "base_type": "PETG",
+      "filled_type": "CF",
+      "density": 1.35,
+      "params": {"nozzle_min": 220, "nozzle_max": 240, "bed_min": 80, "bed_max": 90, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://nanovia.tech/wp-content/media/pdf/nanovia-petg-cf-fiche-technique.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://nanovia.tech/media/nanovia-petg-cf-msds.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nanovia",
+      "material": "ABS-CF",
+      "base_type": "ABS",
+      "filled_type": "CF",
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://nanovia.tech/wp-content/media/pdf/nanovia-abs-cf-fiche-technique.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://nanovia.tech/media/nanovia-abs-cf-msds.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nanovia",
+      "material": "ABS UV",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://nanovia.tech/wp-content/media/pdf/nanovia-abs-uv-fiche-technique.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://nanovia.tech/wp-content/media/pdf/nanovia-abs-af-fiche-de-securite.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

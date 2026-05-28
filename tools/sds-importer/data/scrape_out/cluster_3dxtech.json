@@ -1,0 +1,611 @@
+{
+  "cluster": "3dxtech",
+  "_note": "3DXTECH Advanced Materials official documents aggregated by distributor atome3d.com on its Shopify CDN (cdn.shopify.com/s/files/1/1339/4265/files/). Files are 3DXTech's own TDS/SDS sheets, including its house sub-brands: CarbonX (CF-filled), ThermaX/THERMAX (PEEK/PEKK/PEI/PSU/PPSU/TPI high-temp), 3DXSTAT (ESD), FLUORX (PVDF), AMIDEX (nylon), Firewire (PEEK), SimuBone (medical PEKK). source=manufacturer. All 77 listed PDFs verified HTTP 200 + application/pdf on 2026-05-28. doc_type: TDS=technical datasheet, MSDS=(M)SDS safety sheet. 3DXTech TDS report density (ISO 1183 g/cc) plus a single test-specimen 'Extrusion Temp' and 'Bed Temp' rather than a range; where a single value is given it is recorded as nozzle_min=nozzle_max (likewise bed). PEEK/PEI sheets give an extrusion range -> nozzle_min/max. dry_temp/time not stated on these TDS. Some materials have only an SDS (no TDS) on the page -> params null.",
+  "records": [
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-PLA",
+      "base_type": "PLA",
+      "filled_type": "CF",
+      "density": 1.29,
+      "params": { "nozzle_min": 215, "nozzle_max": 215, "bed_min": 23, "bed_max": 23, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PLA_CF-TDS-v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/CarbonX_CF_PLA_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-PETG",
+      "base_type": "PETG",
+      "filled_type": "CF",
+      "density": 1.34,
+      "params": { "nozzle_min": 245, "nozzle_max": 245, "bed_min": 60, "bed_max": 60, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PETG_CF-TDS-v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/CarbonX_CF_PETG_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-ABS",
+      "base_type": "ABS",
+      "filled_type": "CF",
+      "density": 1.11,
+      "params": { "nozzle_min": 230, "nozzle_max": 230, "bed_min": 110, "bed_max": 110, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ABS_CF-TDS-v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/CarbonX_CF_ABS_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-ASA",
+      "base_type": "ASA",
+      "filled_type": "CF",
+      "density": 1.11,
+      "params": { "nozzle_min": 250, "nozzle_max": 250, "bed_min": 110, "bed_max": 110, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_CF_ASA_v1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/CarbonX_CF_ASA_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-PC",
+      "base_type": "PC",
+      "filled_type": "CF",
+      "density": 1.36,
+      "params": { "nozzle_min": 300, "nozzle_max": 300, "bed_min": 140, "bed_max": 140, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PC_CF-TDS-v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/CarbonX_CF_PC_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-PC+ABS",
+      "base_type": "PC",
+      "filled_type": "CF",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_CF_PC_ABS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-PA6 (Gen 3)",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": 1.17,
+      "params": { "nozzle_min": 275, "nozzle_max": 275, "bed_min": 80, "bed_max": 80, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PA6_CF-TDS-v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/CarbonX_PA6_G3_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-PA12",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": 1.16,
+      "params": { "nozzle_min": 285, "nozzle_max": 285, "bed_min": 110, "bed_max": 110, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_CF_PA12_v1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_CF_PA12_SDS_v1.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "CarbonX CF-PP",
+      "base_type": "PP",
+      "filled_type": "CF",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_CF_PP_v1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "GF-ABS",
+      "base_type": "ABS",
+      "filled_type": "GF",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_GF_ABS_v1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "GF-PP",
+      "base_type": "PP",
+      "filled_type": "GF",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_GF_PP_v1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "AMIDEX Nylon GF30",
+      "base_type": "PA",
+      "filled_type": "GF",
+      "density": 1.35,
+      "params": { "nozzle_min": 265, "nozzle_max": 265, "bed_min": 70, "bed_max": 70, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_Nylon_GF30-TDS-v01.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_Nylon_GF30-SDS-v01.pdf", "rohs_compliant": null },
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AMIDEX_Nylon_GF30_TDS_v1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/AMIDEX_Nylon_GF30_SDS_v1.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "FireWire FR-ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_FR_ABS-TDS-v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_FR_ABS-SDS-v01.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "FireWire FR-PC/ABS",
+      "base_type": "PC",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_FR_PCABS_v3.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_FR_PCABS_SDS_v1.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PLA_v3.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PLA_SDS_v2.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": 1.09,
+      "params": { "nozzle_min": 230, "nozzle_max": 230, "bed_min": 110, "bed_max": 110, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_ABS_v3.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXSTAT_ESD_ABS_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.28,
+      "params": { "nozzle_min": 250, "nozzle_max": 250, "bed_min": 70, "bed_max": 70, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD-PETG-TDS-v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXSTAT_ESD_PETG_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PC",
+      "base_type": "PC",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PC_v3.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXSTAT_ESD_PC_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PPS",
+      "base_type": "PPS",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PPS_v3.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXSTAT_ESD_PPS_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PVDF",
+      "base_type": "PVDF",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PVDF_v3.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PVDF_SDS_v1.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PEEK",
+      "base_type": "PEEK",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PEEK_v1TDS.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PEEK_SDS_v1.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PEKK",
+      "base_type": "PEKK",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_ESD_PEKK_v3.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PA12",
+      "base_type": "PA",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/ESD_PA12_v1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-TPU 90A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.18,
+      "params": { "nozzle_min": 260, "nozzle_max": 260, "bed_min": 60, "bed_max": 60, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXSTAT_ESD_TPU_90A_TDS_v1.1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXSTAT_ESD_TPU_90A_SDS_v2.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "3DXSTAT ESD-PEI (ULTEM 1010)",
+      "base_type": "PEI",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXSTAT_ESD_Ultem1010_TDS_v3.1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXSTAT_ESD_Ultem1010_SDS_v2.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX PEEK",
+      "base_type": "PEEK",
+      "filled_type": null,
+      "density": 1.30,
+      "params": { "nozzle_min": 380, "nozzle_max": 400, "bed_min": 130, "bed_max": 140, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PEEK-TDS-v03.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX CF10 PEEK",
+      "base_type": "PEEK",
+      "filled_type": "CF",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_CF10_PEEK_v1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_CF_PEEK_SDS_v1.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX GF20 PEEK",
+      "base_type": "PEEK",
+      "filled_type": "GF",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_GF20_PEEK_v2.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "Firewire PEEK (Unfilled)",
+      "base_type": "PEEK",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/Firewire_PEEK_Unfilled_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX PEKK-A (Unfilled)",
+      "base_type": "PEKK",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_UN_PEKK-A_v2.1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/Thermax_PEKK_Unfilled_SDS_v1.1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/Thermax_PEKK_Unfilled_SDS_v1.1_75e65379-e39a-46fd-872a-8a3be22791ef.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX PEKK-C (Unfilled)",
+      "base_type": "PEKK",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_UN_PEKK-C_v3.3.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX CF15 PEKK-A",
+      "base_type": "PEKK",
+      "filled_type": "CF",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_CF15_PEKK-A_v1.pdf", "rohs_compliant": null },
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/CF15_PEKK-A_TDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "Ceramic PEKK",
+      "base_type": "PEKK",
+      "filled_type": "Ceramic",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/Ceramic_PEKK_TDS_v1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/Ceramic-PEKK-SDS-v1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "SimuBone (PEKK medical)",
+      "base_type": "PEKK",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/SimuBone_TDS_v1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/SimuBone_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX PEI 1010 (ULTEM 1010)",
+      "base_type": "PEI",
+      "filled_type": null,
+      "density": 1.27,
+      "params": { "nozzle_min": 380, "nozzle_max": 400, "bed_min": 130, "bed_max": 140, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PEI_1010-TDS-v04.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PEI_1010-SDS-v02.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX PEI 9085 (ULTEM 9085)",
+      "base_type": "PEI",
+      "filled_type": null,
+      "density": 1.34,
+      "params": { "nozzle_min": 365, "nozzle_max": 385, "bed_min": 130, "bed_max": 140, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PEI_9085-TDS-v04.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/THERMAX_PEI_9085_SDS_v2.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX CF-PEI (ULTEM)",
+      "base_type": "PEI",
+      "filled_type": "CF",
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PEI_CF-TDS-v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PEI_CF-SDS-v01.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX PSU",
+      "base_type": "PSU",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_PSU_TDS_v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/THERMAX_PSU_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX PPSU",
+      "base_type": "PPSU",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/THERMAX_PPSU_TDS_v3.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "ThermaX TPI",
+      "base_type": "TPI",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_TPI_TDS_v1.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/THERMAX_TPI_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "FLUORX PVDF (Unfilled)",
+      "base_type": "PVDF",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_Unfilled_PVDF_v03.pdf", "rohs_compliant": null },
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/FLUORX_PVDF_SDS_v1.1.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "OBC (Olefin Block Copolymer)",
+      "base_type": "OBC",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_OBC-TDS.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "HTS (High-Temp Support)",
+      "base_type": "Support",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_HTS_SDS_v1.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "3DXTech",
+      "material": "X1 (Water-Soluble Support)",
+      "base_type": "Support",
+      "filled_type": null,
+      "density": null,
+      "params": { "nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null },
+      "docs": [
+        { "doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/1339/4265/files/3DXtech_X1_SDS_v1.0.pdf", "rohs_compliant": null }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

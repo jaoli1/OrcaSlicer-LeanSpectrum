@@ -1,0 +1,797 @@
+{
+  "cluster": "prusa",
+  "records": [
+    {
+      "brand": "Prusament",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {
+        "nozzle_min": 205,
+        "nozzle_max": 225,
+        "bed_min": 55,
+        "bed_max": 65,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/370474/prusament-pla-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/938568/prusament-pla-blend-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/2364515/prusament-pla-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "CERT",
+          "url": "https://www.prusa3d.com/file/2405667/certificate-ul2904.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Army Green",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Prusa Orange",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Gentleman's Grey",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Pearl Mouse",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Galaxy Purple",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PLA Recycled",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 205,
+        "nozzle_max": 225,
+        "bed_min": 55,
+        "bed_max": 65,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3718737/prusament-pla-recycled-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3718743/prusament-pla-recycled-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "mystic PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 205,
+        "nozzle_max": 225,
+        "bed_min": 55,
+        "bed_max": 65,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3471735/safety-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3471739/technical-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Green",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Brown",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "params": {
+        "nozzle_min": 240,
+        "nozzle_max": 260,
+        "bed_min": 80,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/1566978/prusament-petg-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/2524932/prusament-petg-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "CERT",
+          "url": "https://www.prusa3d.com/file/2405476/certificate-ul2904.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Urban Grey",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PETG Recycled",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 240,
+        "nozzle_max": 260,
+        "bed_min": 80,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464757/prusament-petg-recycled-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464766/prusament-petg-recycled-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Black",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PETG Carbon Fiber",
+      "base_type": "PETG",
+      "filled_type": "CF",
+      "density": null,
+      "params": {
+        "nozzle_min": 255,
+        "nozzle_max": 275,
+        "bed_min": 80,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464750/prusament-petg-carbon-fiber-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3880208/prusament-petg-carbon-fiber-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Black",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PETG Tungsten 75%",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 250,
+        "nozzle_max": 270,
+        "bed_min": 80,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464773/prusament-petg-tungsten-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464780/prusament-petg-tungsten-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PETG Magnetite 40%",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 260,
+        "nozzle_max": 280,
+        "bed_min": 90,
+        "bed_max": 110,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3471653/technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3471659/petg-magnetite-filament-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Grey",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PETG Ultraglow",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 240,
+        "nozzle_max": 260,
+        "bed_min": 80,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3734446/prusament-petg-ultraglow-filament-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3734447/prusament-petg-ultraglow-filament-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Green",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": 1.07,
+      "params": {
+        "nozzle_min": 250,
+        "nozzle_max": 270,
+        "bed_min": 105,
+        "bed_max": 115,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464671/prusament-asa-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464679/prusament-asa-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Sapphire Blue",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Natural",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Olive Green",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Prusa Orange",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Prusa Pro Green",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Lipstick Red",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Prusa Galaxy Black",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Signal White",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Jet Black",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PC Blend",
+      "base_type": "PC",
+      "filled_type": null,
+      "density": 1.22,
+      "params": {
+        "nozzle_min": 265,
+        "nozzle_max": 285,
+        "bed_min": 110,
+        "bed_max": 115,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464715/technical-data-sheet-prusament_pcblend.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464722/prusament-pc-blend-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Prusa Orange",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Natural",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Prusa Pro Green",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Jet Black",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Urban Grey",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PC Blend Carbon Fiber",
+      "base_type": "PC",
+      "filled_type": "CF",
+      "density": null,
+      "params": {
+        "nozzle_min": 275,
+        "nozzle_max": 295,
+        "bed_min": 110,
+        "bed_max": 115,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464686/technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464693/prusament-pccf-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Black",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PC Space Grade",
+      "base_type": "PC",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 280,
+        "nozzle_max": 300,
+        "bed_min": 115,
+        "bed_max": 120,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "CERT",
+          "url": "https://www.prusa3d.com/file/3470714/prusament-pc-space-grade-black-850g-test-report.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3470719/safety-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3879900/prusament-pc-space-grade-black-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PA11 Carbon Fiber",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": null,
+      "params": {
+        "nozzle_min": 275,
+        "nozzle_max": 295,
+        "bed_min": 90,
+        "bed_max": 115,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464698/prusament-pa11cf-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464707/prusament-pa11cf-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Black",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PP Carbon Fiber",
+      "base_type": "PP",
+      "filled_type": "CF",
+      "density": null,
+      "params": {
+        "nozzle_min": 260,
+        "nozzle_max": 280,
+        "bed_min": 80,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464803/safety-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464815/technical-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Black",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PP Glass Fiber",
+      "base_type": "PP",
+      "filled_type": "GF",
+      "density": null,
+      "params": {
+        "nozzle_min": 235,
+        "nozzle_max": 255,
+        "bed_min": 90,
+        "bed_max": 100,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464819/technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464822/safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Natural",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PVB",
+      "base_type": "PVB",
+      "filled_type": null,
+      "density": 1.25,
+      "params": {
+        "nozzle_min": 205,
+        "nozzle_max": 225,
+        "bed_min": 70,
+        "bed_max": 80,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464836/prusament-pvb-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464840/prusament-pvb-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Bright Green",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Smoky Black",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Light Yellow",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Prusa Orange",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Natural",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Dark Blue",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "TPU 95A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.21,
+      "params": {
+        "nozzle_min": 225,
+        "nozzle_max": 245,
+        "bed_min": 60,
+        "bed_max": 70,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464880/prusament-tpu-95a-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464883/prusament-tpu-95a-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Ultramarine Blue",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Natural",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Jet Black",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Lipstick Red",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Prusament",
+      "material": "PEI 1010",
+      "base_type": "PEI",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 420,
+        "nozzle_max": 440,
+        "bed_min": 140,
+        "bed_max": 150,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.prusa3d.com/file/3464728/prusament-pei-1010-safety-data-sheet.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "TDS",
+          "url": "https://www.prusa3d.com/file/3464740/prusament-pei-1010-technical-data-sheet.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Natural",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    }
+  ]
+}

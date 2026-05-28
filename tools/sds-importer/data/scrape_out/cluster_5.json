@@ -1,0 +1,449 @@
+{
+  "cluster": 5,
+  "records": [
+    {
+      "brand": "NinjaTek",
+      "material": "Cheetah",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.21,
+      "params": {"nozzle_min": 225, "nozzle_max": 245, "bed_min": 40, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://ninjatek.com/wp-content/uploads/Cheetah-TDS.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://ninjatek.com/wp-content/uploads/SDS-Cheetah-rev0.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "NinjaTek",
+      "material": "NinjaFlex",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.19,
+      "params": {"nozzle_min": 225, "nozzle_max": 235, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nobufil",
+      "material": "PLAx",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 215, "nozzle_max": 235, "bed_min": 55, "bed_max": 75, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.nobufil.com/en/_files/ugd/c9047f_47ad92c7b70547d1a47963f6d8770dce.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nobufil",
+      "material": "ABSx",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 250, "nozzle_max": 270, "bed_min": 90, "bed_max": 110, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.nobufil.com/en/_files/ugd/c9047f_2108dd4236f84f0c867d0881177428ec.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nobufil",
+      "material": "ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 250, "nozzle_max": 270, "bed_min": 100, "bed_max": 120, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.nobufil.com/en/_files/ugd/c9047f_249f6b91600d4370ac4e462fa5e6e868.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nobufil",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.nobufil.com/en/_files/ugd/c9047f_bfc04fd990cb4d21a3805af1e1a2dd78.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Nobufil",
+      "material": "PETG-CF",
+      "base_type": "PETG",
+      "filled_type": "CF",
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.nobufil.com/en/_files/ugd/c9047f_a5ac5d564c38475dbd82effe435d9f39.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "OneFil",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Overture",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 190, "nozzle_max": 220, "bed_min": 25, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://overture3d.com/cdn/shop/files/OVERTURE_PLA_TDS_EN_V5.1_a4102671-a3b0-416f-9191-7e6feb681e3e.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://overture3d.com/cdn/shop/files/PLA_SDS_US_EN_V2_5453130b-10b4-49de-87aa-e48f84cd2a7a.pdf", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://cdn.shopify.com/s/files/1/0207/3624/5824/files/ROHS_All_Product_certificate.pdf", "rohs_compliant": true},
+        {"doc_type": "REACH", "url": "https://cdn.shopify.com/s/files/1/0207/3624/5824/files/REACH-All_Product.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Overture",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 230, "nozzle_max": 260, "bed_min": 70, "bed_max": 90, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://overture3d.com/cdn/shop/files/OVERTURE_PETG_TDS_EN_V5.2_2.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://overture3d.com/cdn/shop/files/PETG_SDS_US_EN_V2_16757a4d-532d-467b-83fc-490548b88337.pdf", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://cdn.shopify.com/s/files/1/0207/3624/5824/files/ROHS_All_Product_certificate.pdf", "rohs_compliant": true},
+        {"doc_type": "REACH", "url": "https://cdn.shopify.com/s/files/1/0207/3624/5824/files/REACH-All_Product.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Overture",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://overture3d.com/cdn/shop/files/OVERTURE_ABS_TDS_EN_V5.1_9d827267-f215-4734-9c0b-c04232b8df92.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://overture3d.com/cdn/shop/files/ABS_SDS_US_EN_V2_63f9f2ee-f32c-4f92-bee9-f5df59b78572.pdf", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://cdn.shopify.com/s/files/1/0207/3624/5824/files/ROHS_All_Product_certificate.pdf", "rohs_compliant": true},
+        {"doc_type": "REACH", "url": "https://cdn.shopify.com/s/files/1/0207/3624/5824/files/REACH-All_Product.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Overture",
+      "material": "ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://overture3d.com/cdn/shop/files/OVERTURE_ASA_TDS_EN_V5.1_60023de4-0977-4f96-9c55-0d94bacc7d0f.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://overture3d.com/cdn/shop/files/ASA_SDS_US_EN_V2_81d82cb3-d591-47cb-a898-e24aaccdf1d8.pdf", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://cdn.shopify.com/s/files/1/0207/3624/5824/files/ROHS_All_Product_certificate.pdf", "rohs_compliant": true}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Overture",
+      "material": "TPU",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://overture3d.com/cdn/shop/files/OVERTURE_TPU_TDS_EN_V5.1_195e4c18-e1da-47fc-964f-a651a96edc78.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://overture3d.com/cdn/shop/files/TPU_SDS_US_EN_V2_8490231e-5ab6-4806-8714-6fc96971a372.pdf", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://cdn.shopify.com/s/files/1/0207/3624/5824/files/ROHS_All_Product_certificate.pdf", "rohs_compliant": true}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Owa",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Panchroma",
+      "material": "Matte PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.31,
+      "params": {"nozzle_min": 190, "nozzle_max": 230, "bed_min": 25, "bed_max": 60, "dry_temp": 55, "dry_time": 6},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://polymaker.com/wp-content/uploads/Panchroma_TDS_V2.1.pdf", "rohs_compliant": null}
+      ],
+      "colors": [
+        {"name": "Sky Blue", "hex": "#1AC5FC", "finish": "matte"},
+        {"name": "Lotus Pink", "hex": "#DD76C0", "finish": "matte"},
+        {"name": "Arctic Teal", "hex": "#61BCC3", "finish": "matte"},
+        {"name": "Army Beige", "hex": "#DBBAA5", "finish": "matte"},
+        {"name": "Army Blue", "hex": "#2E4462", "finish": "matte"},
+        {"name": "Army Brown", "hex": "#795A4D", "finish": "matte"},
+        {"name": "Army Dark Green", "hex": "#5F6244", "finish": "matte"},
+        {"name": "Army Light Green", "hex": "#AB8C02", "finish": "matte"},
+        {"name": "Army Purple", "hex": "#36364A", "finish": "matte"},
+        {"name": "Army Red", "hex": "#BF312E", "finish": "matte"},
+        {"name": "Ash Grey", "hex": "#485155", "finish": "matte"},
+        {"name": "Charcoal Black", "hex": "#2F2E30", "finish": "matte"},
+        {"name": "Cotton White", "hex": "#F4EFEB", "finish": "matte"},
+        {"name": "Earth Brown", "hex": "#7C594A", "finish": "matte"},
+        {"name": "Electric Indigo", "hex": "#6858A9", "finish": "matte"},
+        {"name": "Forest Green", "hex": "#60AD70", "finish": "matte"},
+        {"name": "Fossil Grey", "hex": "#8A8C94", "finish": "matte"},
+        {"name": "Lava Red", "hex": "#ED2F2E", "finish": "matte"},
+        {"name": "Lavender Purple", "hex": "#9572BF", "finish": "matte"},
+        {"name": "Lime Green", "hex": "#D7D602", "finish": "matte"},
+        {"name": "Muted Blue", "hex": "#5F778E", "finish": "matte"},
+        {"name": "Muted Green", "hex": "#777E71", "finish": "matte"},
+        {"name": "Muted Purple", "hex": "#7C5C78", "finish": "matte"},
+        {"name": "Muted Red", "hex": "#D84B2E", "finish": "matte"},
+        {"name": "Muted White", "hex": "#BBADA4", "finish": "matte"},
+        {"name": "Pastel Banana", "hex": "#F7D475", "finish": "matte"},
+        {"name": "Pastel Candy", "hex": "#F0D6D9", "finish": "matte"},
+        {"name": "Pastel Ice", "hex": "#A4D0DF", "finish": "matte"},
+        {"name": "Pastel Mint", "hex": "#D2DEBB", "finish": "matte"},
+        {"name": "Pastel Peach", "hex": "#F6BF8B", "finish": "matte"},
+        {"name": "Pastel Peanut", "hex": "#BF9573", "finish": "matte"},
+        {"name": "Pastel Watermelon", "hex": "#EE474B", "finish": "matte"},
+        {"name": "Pastel Periwinkle", "hex": "#ADB4E6", "finish": "matte"},
+        {"name": "Sakura Pink", "hex": "#EAADBD", "finish": "matte"},
+        {"name": "Sapphire Blue", "hex": "#0163A6", "finish": "matte"},
+        {"name": "Savannah Yellow", "hex": "#F3C432", "finish": "matte"},
+        {"name": "Sunrise Orange", "hex": "#F88B17", "finish": "matte"},
+        {"name": "Wood Brown", "hex": "#AB7449", "finish": "matte"}
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Panchroma",
+      "material": "CoPE",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://polymaker.com/wp-content/uploads/lana-downloads/Panchroma-CoPE_TDS_EN_V5.4.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Phrozen",
+      "material": "Aqua 4K (Gray)",
+      "base_type": "Resin",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0436/6965/1618/files/SDS_AquaGray_4K.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Phrozen",
+      "material": "Aqua 4K (Ivory)",
+      "base_type": "Resin",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0436/6965/1618/files/SDS_Aqua_Ivory_4K.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Phrozen",
+      "material": "Aqua 8K (Gray)",
+      "base_type": "Resin",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0436/6965/1618/files/SDS_AquaGray_8K.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Polar Filament",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "PrintoMax 3D",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Proto-Pasta",
+      "material": "HTPLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Push Plastic",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/0260/7421/files/Push_Plastic_PLA_Technical_Data_sheet.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Push Plastic",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 235, "nozzle_max": 250, "bed_min": 90, "bed_max": 90, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/0260/7421/files/Push_Plastic_PETG_Technical_Data_sheet_6b420a6b-aea1-47d5-b931-464a8804abb4.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0260/7421/files/PUSH_PLASTIC_MSDS_PETG.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Push Plastic",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/0260/7421/files/Push_Plastic_ABS_Technical_Data_sheet_8f0e2174-914e-4312-8018-fb4d1a5d2e9b.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0260/7421/files/PUSH_PLASTIC_MSDS_ABS.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Push Plastic",
+      "material": "ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/0260/7421/files/Push_Plastic_ASA_Technical_Data_sheet.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0260/7421/files/PUSH_PLASTIC_MSDS_ASA.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "QIDI Tech",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "R3D",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "RS Pro",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://docs.rs-online.com/ed44/A700000007511185.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://docs.rs-online.com/c1ad/0900766b8137c353.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Raise3D",
+      "material": "Premium PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {"nozzle_min": 205, "nozzle_max": 235, "bed_min": 30, "bed_max": 45, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://s1.raise3d.com/2024/12/Raise3D-Premium_PLA_TDS_V6.0_EN.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Raise3D",
+      "material": "Premium PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.23,
+      "params": {"nozzle_min": 220, "nozzle_max": 260, "bed_min": 70, "bed_max": 80, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://s2.raise3d.com/public/media/2019/07/Raise3d_Premium_PETG_TDS_V3.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

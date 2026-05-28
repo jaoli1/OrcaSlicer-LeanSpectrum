@@ -1,0 +1,3333 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-28T16:48:01.642469+00:00",
+  "source": "tigertag-rfid-guide/database (factual data only)",
+  "brands": [
+    {
+      "id": 1,
+      "name": "Atome3D",
+      "website": null,
+      "tigertag_brand_id": 1
+    },
+    {
+      "id": 1068,
+      "name": "SainSmart",
+      "website": null,
+      "tigertag_brand_id": 1068
+    },
+    {
+      "id": 1120,
+      "name": "Proto-Pasta",
+      "website": null,
+      "tigertag_brand_id": 1120
+    },
+    {
+      "id": 1421,
+      "name": "3DJake",
+      "website": null,
+      "tigertag_brand_id": 1421
+    },
+    {
+      "id": 2517,
+      "name": "Smart Materials 3D",
+      "website": null,
+      "tigertag_brand_id": 2517
+    },
+    {
+      "id": 2833,
+      "name": "Xstrand",
+      "website": null,
+      "tigertag_brand_id": 2833
+    },
+    {
+      "id": 3132,
+      "name": "Hatchbox",
+      "website": null,
+      "tigertag_brand_id": 3132
+    },
+    {
+      "id": 3924,
+      "name": "FiloAlfa",
+      "website": null,
+      "tigertag_brand_id": 3924
+    },
+    {
+      "id": 4011,
+      "name": "QIDI Tech",
+      "website": null,
+      "tigertag_brand_id": 4011
+    },
+    {
+      "id": 4048,
+      "name": "Owa",
+      "website": null,
+      "tigertag_brand_id": 4048
+    },
+    {
+      "id": 4344,
+      "name": "MatterHackers",
+      "website": null,
+      "tigertag_brand_id": 4344
+    },
+    {
+      "id": 4356,
+      "name": "Landu",
+      "website": null,
+      "tigertag_brand_id": 4356
+    },
+    {
+      "id": 4565,
+      "name": "Valment",
+      "website": null,
+      "tigertag_brand_id": 4565
+    },
+    {
+      "id": 4700,
+      "name": "Filforme",
+      "website": null,
+      "tigertag_brand_id": 4700
+    },
+    {
+      "id": 6305,
+      "name": "Markforged",
+      "website": null,
+      "tigertag_brand_id": 6305
+    },
+    {
+      "id": 7432,
+      "name": "Aliz",
+      "website": null,
+      "tigertag_brand_id": 7432
+    },
+    {
+      "id": 7674,
+      "name": "Extrudr",
+      "website": null,
+      "tigertag_brand_id": 7674
+    },
+    {
+      "id": 7812,
+      "name": "Jayo",
+      "website": null,
+      "tigertag_brand_id": 7812
+    },
+    {
+      "id": 7980,
+      "name": "Fillamentum",
+      "website": null,
+      "tigertag_brand_id": 7980
+    },
+    {
+      "id": 8182,
+      "name": "Fiberlogy",
+      "website": null,
+      "tigertag_brand_id": 8182
+    },
+    {
+      "id": 8303,
+      "name": "GST3D",
+      "website": null,
+      "tigertag_brand_id": 8303
+    },
+    {
+      "id": 8384,
+      "name": "Taulman3D",
+      "website": null,
+      "tigertag_brand_id": 8384
+    },
+    {
+      "id": 8496,
+      "name": "CaiLab",
+      "website": null,
+      "tigertag_brand_id": 8496
+    },
+    {
+      "id": 8586,
+      "name": "NinjaTek",
+      "website": null,
+      "tigertag_brand_id": 8586
+    },
+    {
+      "id": 8675,
+      "name": "SOVB 3D",
+      "website": null,
+      "tigertag_brand_id": 8675
+    },
+    {
+      "id": 8756,
+      "name": "BlueCast",
+      "website": null,
+      "tigertag_brand_id": 8756
+    },
+    {
+      "id": 8921,
+      "name": "Duramic 3D",
+      "website": null,
+      "tigertag_brand_id": 8921
+    },
+    {
+      "id": 8990,
+      "name": "Ice Filaments",
+      "website": null,
+      "tigertag_brand_id": 8990
+    },
+    {
+      "id": 9192,
+      "name": "3D Solutech",
+      "website": null,
+      "tigertag_brand_id": 9192
+    },
+    {
+      "id": 9299,
+      "name": "FDPlast",
+      "website": null,
+      "tigertag_brand_id": 9299
+    },
+    {
+      "id": 9394,
+      "name": "Gizmo Dorks",
+      "website": null,
+      "tigertag_brand_id": 9394
+    },
+    {
+      "id": 9596,
+      "name": "Ziro",
+      "website": null,
+      "tigertag_brand_id": 9596
+    },
+    {
+      "id": 9798,
+      "name": "AMOLEN",
+      "website": null,
+      "tigertag_brand_id": 9798
+    },
+    {
+      "id": 11379,
+      "name": "Filaments.ca",
+      "website": null,
+      "tigertag_brand_id": 11379
+    },
+    {
+      "id": 11429,
+      "name": "3D4Makers",
+      "website": null,
+      "tigertag_brand_id": 11429
+    },
+    {
+      "id": 11501,
+      "name": "InnovateFil",
+      "website": null,
+      "tigertag_brand_id": 11501
+    },
+    {
+      "id": 12345,
+      "name": "MakerBot",
+      "website": null,
+      "tigertag_brand_id": 12345
+    },
+    {
+      "id": 12498,
+      "name": "Forshape",
+      "website": null,
+      "tigertag_brand_id": 12498
+    },
+    {
+      "id": 12635,
+      "name": "Snapmaker",
+      "website": null,
+      "tigertag_brand_id": 12635
+    },
+    {
+      "id": 13667,
+      "name": "RS Pro",
+      "website": null,
+      "tigertag_brand_id": 13667
+    },
+    {
+      "id": 14250,
+      "name": "Jessie (Printed Solid)",
+      "website": null,
+      "tigertag_brand_id": 14250
+    },
+    {
+      "id": 14982,
+      "name": "3D-Fuel",
+      "website": null,
+      "tigertag_brand_id": 14982
+    },
+    {
+      "id": 15899,
+      "name": "Kimya",
+      "website": null,
+      "tigertag_brand_id": 15899
+    },
+    {
+      "id": 15962,
+      "name": "Anycubic",
+      "website": null,
+      "tigertag_brand_id": 15962
+    },
+    {
+      "id": 18629,
+      "name": "PrintoMax 3D",
+      "website": null,
+      "tigertag_brand_id": 18629
+    },
+    {
+      "id": 19265,
+      "name": "CC3D",
+      "website": null,
+      "tigertag_brand_id": 19265
+    },
+    {
+      "id": 19961,
+      "name": "Rosa3D",
+      "website": null,
+      "tigertag_brand_id": 19961
+    },
+    {
+      "id": 20523,
+      "name": "Raise3D",
+      "website": null,
+      "tigertag_brand_id": 20523
+    },
+    {
+      "id": 20851,
+      "name": "Tronxy",
+      "website": null,
+      "tigertag_brand_id": 20851
+    },
+    {
+      "id": 22652,
+      "name": "Spectrum",
+      "website": null,
+      "tigertag_brand_id": 22652
+    },
+    {
+      "id": 23181,
+      "name": "ArianePlast",
+      "website": null,
+      "tigertag_brand_id": 23181
+    },
+    {
+      "id": 23456,
+      "name": "Monoprice",
+      "website": null,
+      "tigertag_brand_id": 23456
+    },
+    {
+      "id": 24363,
+      "name": "Tecbears",
+      "website": null,
+      "tigertag_brand_id": 24363
+    },
+    {
+      "id": 26379,
+      "name": "Formlabs",
+      "website": null,
+      "tigertag_brand_id": 26379
+    },
+    {
+      "id": 26595,
+      "name": "Sovol",
+      "website": null,
+      "tigertag_brand_id": 26595
+    },
+    {
+      "id": 26956,
+      "name": "Creality",
+      "website": null,
+      "tigertag_brand_id": 26956
+    },
+    {
+      "id": 28055,
+      "name": "TAGin3D",
+      "website": null,
+      "tigertag_brand_id": 28055
+    },
+    {
+      "id": 28136,
+      "name": "Polar Filament",
+      "website": null,
+      "tigertag_brand_id": 28136
+    },
+    {
+      "id": 28940,
+      "name": "Eryone",
+      "website": null,
+      "tigertag_brand_id": 28940
+    },
+    {
+      "id": 28988,
+      "name": "KINGROON",
+      "website": null,
+      "tigertag_brand_id": 28988
+    },
+    {
+      "id": 29045,
+      "name": "Yousu",
+      "website": null,
+      "tigertag_brand_id": 29045
+    },
+    {
+      "id": 29302,
+      "name": "IIIDMAX",
+      "website": null,
+      "tigertag_brand_id": 29302
+    },
+    {
+      "id": 31438,
+      "name": "Wondermaker",
+      "website": null,
+      "tigertag_brand_id": 31438
+    },
+    {
+      "id": 32348,
+      "name": "Addnorth",
+      "website": null,
+      "tigertag_brand_id": 32348
+    },
+    {
+      "id": 32587,
+      "name": "Amazon",
+      "website": null,
+      "tigertag_brand_id": 32587
+    },
+    {
+      "id": 33566,
+      "name": "Siraya Tech",
+      "website": null,
+      "tigertag_brand_id": 33566
+    },
+    {
+      "id": 33594,
+      "name": "DEEPLEE",
+      "website": null,
+      "tigertag_brand_id": 33594
+    },
+    {
+      "id": 33788,
+      "name": "Verbatim",
+      "website": null,
+      "tigertag_brand_id": 33788
+    },
+    {
+      "id": 34567,
+      "name": "Push Plastic",
+      "website": null,
+      "tigertag_brand_id": 34567
+    },
+    {
+      "id": 34597,
+      "name": "EconoFil",
+      "website": null,
+      "tigertag_brand_id": 34597
+    },
+    {
+      "id": 35123,
+      "name": "Bambu Lab",
+      "website": null,
+      "tigertag_brand_id": 35123
+    },
+    {
+      "id": 35501,
+      "name": "Zortrax",
+      "website": null,
+      "tigertag_brand_id": 35501
+    },
+    {
+      "id": 35857,
+      "name": "Nobufil",
+      "website": null,
+      "tigertag_brand_id": 35857
+    },
+    {
+      "id": 35882,
+      "name": "Phrozen",
+      "website": null,
+      "tigertag_brand_id": 35882
+    },
+    {
+      "id": 36702,
+      "name": "Tianse",
+      "website": null,
+      "tigertag_brand_id": 36702
+    },
+    {
+      "id": 37434,
+      "name": "Winkle",
+      "website": null,
+      "tigertag_brand_id": 37434
+    },
+    {
+      "id": 38533,
+      "name": "Lotactree",
+      "website": null,
+      "tigertag_brand_id": 38533
+    },
+    {
+      "id": 39002,
+      "name": "GreenGate3D",
+      "website": null,
+      "tigertag_brand_id": 39002
+    },
+    {
+      "id": 39382,
+      "name": "Longer",
+      "website": null,
+      "tigertag_brand_id": 39382
+    },
+    {
+      "id": 39652,
+      "name": "3DXTech",
+      "website": null,
+      "tigertag_brand_id": 39652
+    },
+    {
+      "id": 41847,
+      "name": "OneFil",
+      "website": null,
+      "tigertag_brand_id": 41847
+    },
+    {
+      "id": 41932,
+      "name": "Jamg He",
+      "website": null,
+      "tigertag_brand_id": 41932
+    },
+    {
+      "id": 42911,
+      "name": "UltiMaker",
+      "website": null,
+      "tigertag_brand_id": 42911
+    },
+    {
+      "id": 44630,
+      "name": "NIT",
+      "website": null,
+      "tigertag_brand_id": 44630
+    },
+    {
+      "id": 45670,
+      "name": "Panchroma",
+      "website": null,
+      "tigertag_brand_id": 45670
+    },
+    {
+      "id": 45678,
+      "name": "Atomic Filament",
+      "website": null,
+      "tigertag_brand_id": 45678
+    },
+    {
+      "id": 46010,
+      "name": "AceAddity",
+      "website": null,
+      "tigertag_brand_id": 46010
+    },
+    {
+      "id": 46203,
+      "name": "Overture",
+      "website": null,
+      "tigertag_brand_id": 46203
+    },
+    {
+      "id": 46392,
+      "name": "Prusament",
+      "website": null,
+      "tigertag_brand_id": 46392
+    },
+    {
+      "id": 47560,
+      "name": "Wanhao",
+      "website": null,
+      "tigertag_brand_id": 47560
+    },
+    {
+      "id": 47930,
+      "name": "eSun",
+      "website": null,
+      "tigertag_brand_id": 47930
+    },
+    {
+      "id": 48261,
+      "name": "Gsun3D",
+      "website": null,
+      "tigertag_brand_id": 48261
+    },
+    {
+      "id": 48804,
+      "name": "R3D",
+      "website": null,
+      "tigertag_brand_id": 48804
+    },
+    {
+      "id": 49784,
+      "name": "GIANTARN",
+      "website": null,
+      "tigertag_brand_id": 49784
+    },
+    {
+      "id": 50311,
+      "name": "G3D Pro",
+      "website": null,
+      "tigertag_brand_id": 50311
+    },
+    {
+      "id": 50604,
+      "name": "Polymaker",
+      "website": null,
+      "tigertag_brand_id": 50604
+    },
+    {
+      "id": 51139,
+      "name": "FusRock",
+      "website": null,
+      "tigertag_brand_id": 51139
+    },
+    {
+      "id": 51443,
+      "name": "BASF",
+      "website": null,
+      "tigertag_brand_id": 51443
+    },
+    {
+      "id": 51857,
+      "name": "Sunlu",
+      "website": null,
+      "tigertag_brand_id": 51857
+    },
+    {
+      "id": 52222,
+      "name": "ColorFabb",
+      "website": null,
+      "tigertag_brand_id": 52222
+    },
+    {
+      "id": 52467,
+      "name": "Geeetech",
+      "website": null,
+      "tigertag_brand_id": 52467
+    },
+    {
+      "id": 52757,
+      "name": "Yumi",
+      "website": null,
+      "tigertag_brand_id": 52757
+    },
+    {
+      "id": 53043,
+      "name": "FormFutura",
+      "website": null,
+      "tigertag_brand_id": 53043
+    },
+    {
+      "id": 53640,
+      "name": "Magigoo",
+      "website": null,
+      "tigertag_brand_id": 53640
+    },
+    {
+      "id": 53856,
+      "name": "Lattice Medical",
+      "website": null,
+      "tigertag_brand_id": 53856
+    },
+    {
+      "id": 54112,
+      "name": "Kexcelled",
+      "website": null,
+      "tigertag_brand_id": 54112
+    },
+    {
+      "id": 55229,
+      "name": "Filament PM",
+      "website": null,
+      "tigertag_brand_id": 55229
+    },
+    {
+      "id": 55763,
+      "name": "Nanovia",
+      "website": null,
+      "tigertag_brand_id": 55763
+    },
+    {
+      "id": 55869,
+      "name": "Biqu",
+      "website": null,
+      "tigertag_brand_id": 55869
+    },
+    {
+      "id": 56780,
+      "name": "Fiberon",
+      "website": null,
+      "tigertag_brand_id": 56780
+    },
+    {
+      "id": 56789,
+      "name": "Coex 3D",
+      "website": null,
+      "tigertag_brand_id": 56789
+    },
+    {
+      "id": 57209,
+      "name": "FrancoFil",
+      "website": null,
+      "tigertag_brand_id": 57209
+    },
+    {
+      "id": 57632,
+      "name": "ELEGOO",
+      "website": null,
+      "tigertag_brand_id": 57632
+    },
+    {
+      "id": 58231,
+      "name": "IC3D",
+      "website": null,
+      "tigertag_brand_id": 58231
+    },
+    {
+      "id": 58410,
+      "name": "AzureFilm",
+      "website": null,
+      "tigertag_brand_id": 58410
+    },
+    {
+      "id": 58972,
+      "name": "Tinmorry",
+      "website": null,
+      "tigertag_brand_id": 58972
+    },
+    {
+      "id": 59597,
+      "name": "Filamentive",
+      "website": null,
+      "tigertag_brand_id": 59597
+    },
+    {
+      "id": 60882,
+      "name": "Recreus",
+      "website": null,
+      "tigertag_brand_id": 60882
+    },
+    {
+      "id": 62436,
+      "name": "Ambrosia",
+      "website": null,
+      "tigertag_brand_id": 62436
+    },
+    {
+      "id": 63024,
+      "name": "Multicomp Pro",
+      "website": null,
+      "tigertag_brand_id": 63024
+    },
+    {
+      "id": 63340,
+      "name": "Flashforge",
+      "website": null,
+      "tigertag_brand_id": 63340
+    },
+    {
+      "id": 65535,
+      "name": "Generic",
+      "website": null,
+      "tigertag_brand_id": 65535
+    }
+  ],
+  "materials": [
+    {
+      "id": 425,
+      "brand_id": null,
+      "label": "ABS-CF",
+      "base_type": "ABS",
+      "filled_type": "CF",
+      "density": 1.04,
+      "diameter": 1.75,
+      "tigertag_material_id": 425,
+      "bambu_id": "GFB99",
+      "creality_id": "00004"
+    },
+    {
+      "id": 735,
+      "brand_id": null,
+      "label": "ABS-AF",
+      "base_type": "ABS",
+      "filled_type": "AF",
+      "density": 1.04,
+      "diameter": 1.75,
+      "tigertag_material_id": 735,
+      "bambu_id": "GFB00",
+      "creality_id": "00004"
+    },
+    {
+      "id": 1173,
+      "brand_id": null,
+      "label": "PA6-GF",
+      "base_type": "PA6",
+      "filled_type": "GF",
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 1173,
+      "bambu_id": "GFN08",
+      "creality_id": null
+    },
+    {
+      "id": 1680,
+      "brand_id": null,
+      "label": "PE-GF",
+      "base_type": "PE",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 1680,
+      "bambu_id": "GFP98",
+      "creality_id": "00013"
+    },
+    {
+      "id": 2053,
+      "brand_id": null,
+      "label": "PA12-GF",
+      "base_type": "PA12",
+      "filled_type": "GF",
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 2053,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 3368,
+      "brand_id": null,
+      "label": "PC-ABS",
+      "base_type": "PC",
+      "filled_type": null,
+      "density": 1.19,
+      "diameter": 1.75,
+      "tigertag_material_id": 3368,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 3481,
+      "brand_id": null,
+      "label": "PCTG-GF",
+      "base_type": "PCTG",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 3481,
+      "bambu_id": "GFG97",
+      "creality_id": "00014"
+    },
+    {
+      "id": 4587,
+      "brand_id": null,
+      "label": "PC-PBT",
+      "base_type": "PC",
+      "filled_type": null,
+      "density": 1.2,
+      "diameter": 1.75,
+      "tigertag_material_id": 4587,
+      "bambu_id": "GFC00",
+      "creality_id": "00021"
+    },
+    {
+      "id": 5238,
+      "brand_id": null,
+      "label": "PETG-PTFE",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 5238,
+      "bambu_id": "GFG50",
+      "creality_id": "00014"
+    },
+    {
+      "id": 5733,
+      "brand_id": null,
+      "label": "TPU-AMS",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.21,
+      "diameter": 1.75,
+      "tigertag_material_id": 5733,
+      "bambu_id": "GFU02",
+      "creality_id": "00005"
+    },
+    {
+      "id": 6605,
+      "brand_id": null,
+      "label": "PA11-GF",
+      "base_type": "PA",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 6605,
+      "bambu_id": "GFN08",
+      "creality_id": "00015"
+    },
+    {
+      "id": 7649,
+      "brand_id": null,
+      "label": "PETG HS",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "diameter": 1.75,
+      "tigertag_material_id": 7649,
+      "bambu_id": "GFG96",
+      "creality_id": "06002"
+    },
+    {
+      "id": 7951,
+      "brand_id": null,
+      "label": "PETG-rCF",
+      "base_type": "PETG",
+      "filled_type": "CF",
+      "density": 1.27,
+      "diameter": 1.75,
+      "tigertag_material_id": 7951,
+      "bambu_id": "GFG98",
+      "creality_id": "00014"
+    },
+    {
+      "id": 8345,
+      "brand_id": null,
+      "label": "PLA+ Silk",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 8345,
+      "bambu_id": "GFA06",
+      "creality_id": "00002"
+    },
+    {
+      "id": 8394,
+      "brand_id": null,
+      "label": "Castable Resin",
+      "base_type": null,
+      "filled_type": null,
+      "density": 1.05,
+      "diameter": 1.75,
+      "tigertag_material_id": 8394,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 8504,
+      "brand_id": null,
+      "label": "PPA-CF",
+      "base_type": "PPA",
+      "filled_type": "CF",
+      "density": 1.42,
+      "diameter": 1.75,
+      "tigertag_material_id": 8504,
+      "bambu_id": "GFN97",
+      "creality_id": null
+    },
+    {
+      "id": 9456,
+      "brand_id": null,
+      "label": "PLA Marble",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 9456,
+      "bambu_id": "GFA07",
+      "creality_id": null
+    },
+    {
+      "id": 9483,
+      "brand_id": null,
+      "label": "PVA",
+      "base_type": "PVA",
+      "filled_type": null,
+      "density": 1.23,
+      "diameter": 1.75,
+      "tigertag_material_id": 9483,
+      "bambu_id": "GFS99",
+      "creality_id": "00011"
+    },
+    {
+      "id": 9691,
+      "brand_id": null,
+      "label": "EVA",
+      "base_type": "EVA",
+      "filled_type": null,
+      "density": 0.94,
+      "diameter": 1.75,
+      "tigertag_material_id": 9691,
+      "bambu_id": "GFR99",
+      "creality_id": null
+    },
+    {
+      "id": 10122,
+      "brand_id": null,
+      "label": "PEKK-CF",
+      "base_type": "PEKK",
+      "filled_type": "CF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 10122,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 10187,
+      "brand_id": null,
+      "label": "PHA",
+      "base_type": "PHA",
+      "filled_type": null,
+      "density": 1.25,
+      "diameter": 1.75,
+      "tigertag_material_id": 10187,
+      "bambu_id": "GFR98",
+      "creality_id": null
+    },
+    {
+      "id": 10272,
+      "brand_id": null,
+      "label": "PSU",
+      "base_type": "PSU",
+      "filled_type": null,
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 10272,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 10478,
+      "brand_id": null,
+      "label": "Castable Filament",
+      "base_type": null,
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 10478,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 10602,
+      "brand_id": null,
+      "label": "PLA Silk",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 10602,
+      "bambu_id": "GFL96",
+      "creality_id": "00002"
+    },
+    {
+      "id": 10738,
+      "brand_id": null,
+      "label": "PC-PTFE",
+      "base_type": "PC",
+      "filled_type": "PTFE",
+      "density": 1.3,
+      "diameter": 1.75,
+      "tigertag_material_id": 10738,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 11053,
+      "brand_id": null,
+      "label": "PET-CF",
+      "base_type": "PET",
+      "filled_type": "CF",
+      "density": 1.3,
+      "diameter": 1.75,
+      "tigertag_material_id": 11053,
+      "bambu_id": "GFG99",
+      "creality_id": "00013"
+    },
+    {
+      "id": 11506,
+      "brand_id": null,
+      "label": "PLA-AERO",
+      "base_type": "PLA",
+      "filled_type": "AERO",
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 11506,
+      "bambu_id": "GFA11",
+      "creality_id": "00007"
+    },
+    {
+      "id": 12216,
+      "brand_id": null,
+      "label": "PEEK-GF",
+      "base_type": "PEEK",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 12216,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 12264,
+      "brand_id": null,
+      "label": "PA6-CF",
+      "base_type": "PA6",
+      "filled_type": "CF",
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 12264,
+      "bambu_id": "GFN05",
+      "creality_id": "00015"
+    },
+    {
+      "id": 12844,
+      "brand_id": null,
+      "label": "ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": 1.05,
+      "diameter": 1.75,
+      "tigertag_material_id": 12844,
+      "bambu_id": "GFB98",
+      "creality_id": "00007"
+    },
+    {
+      "id": 12878,
+      "brand_id": null,
+      "label": "CoPE",
+      "base_type": null,
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 12878,
+      "bambu_id": "GFU99",
+      "creality_id": "00005"
+    },
+    {
+      "id": 13850,
+      "brand_id": null,
+      "label": "PPA",
+      "base_type": "PPA",
+      "filled_type": null,
+      "density": 1.15,
+      "diameter": 1.75,
+      "tigertag_material_id": 13850,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 14508,
+      "brand_id": null,
+      "label": "PEI-9085",
+      "base_type": "PEI",
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 14508,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 15041,
+      "brand_id": null,
+      "label": "PCTG",
+      "base_type": "PCTG",
+      "filled_type": null,
+      "density": 1.21,
+      "diameter": 1.75,
+      "tigertag_material_id": 15041,
+      "bambu_id": "GFG97",
+      "creality_id": null
+    },
+    {
+      "id": 18130,
+      "brand_id": null,
+      "label": "PS",
+      "base_type": "PS",
+      "filled_type": null,
+      "density": 1.05,
+      "diameter": 1.75,
+      "tigertag_material_id": 18130,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 18451,
+      "brand_id": null,
+      "label": "PA11-CF",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 18451,
+      "bambu_id": "GFN98",
+      "creality_id": "00009"
+    },
+    {
+      "id": 18703,
+      "brand_id": null,
+      "label": "PETP",
+      "base_type": "PET",
+      "filled_type": null,
+      "density": 1.38,
+      "diameter": 1.75,
+      "tigertag_material_id": 18703,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 18775,
+      "brand_id": null,
+      "label": "PE-CF",
+      "base_type": "PE",
+      "filled_type": "CF",
+      "density": 1.1,
+      "diameter": 1.75,
+      "tigertag_material_id": 18775,
+      "bambu_id": "GFP98",
+      "creality_id": null
+    },
+    {
+      "id": 18922,
+      "brand_id": null,
+      "label": "PLA-ESD",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 18922,
+      "bambu_id": "GFL98",
+      "creality_id": "00006"
+    },
+    {
+      "id": 20073,
+      "brand_id": null,
+      "label": "PVC",
+      "base_type": "PVC",
+      "filled_type": null,
+      "density": 1.38,
+      "diameter": 1.75,
+      "tigertag_material_id": 20073,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 20562,
+      "brand_id": null,
+      "label": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": 1.04,
+      "diameter": 1.75,
+      "tigertag_material_id": 20562,
+      "bambu_id": "GFB99",
+      "creality_id": "00004"
+    },
+    {
+      "id": 20588,
+      "brand_id": null,
+      "label": "PC-CF",
+      "base_type": "PC",
+      "filled_type": "CF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 20588,
+      "bambu_id": "GFC99",
+      "creality_id": "00021"
+    },
+    {
+      "id": 21307,
+      "brand_id": null,
+      "label": "SBS",
+      "base_type": "SBS",
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 21307,
+      "bambu_id": "GFB99",
+      "creality_id": "00004"
+    },
+    {
+      "id": 22652,
+      "brand_id": null,
+      "label": "PAHT-GF",
+      "base_type": null,
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 22652,
+      "bambu_id": "GFN04",
+      "creality_id": "00016"
+    },
+    {
+      "id": 22678,
+      "brand_id": null,
+      "label": "PET-GF",
+      "base_type": "PET",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 22678,
+      "bambu_id": "GFG98",
+      "creality_id": "00013"
+    },
+    {
+      "id": 23080,
+      "brand_id": null,
+      "label": "PAHT",
+      "base_type": null,
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 23080,
+      "bambu_id": "GFN04",
+      "creality_id": "00016"
+    },
+    {
+      "id": 24115,
+      "brand_id": null,
+      "label": "SEBS",
+      "base_type": "SEBS",
+      "filled_type": null,
+      "density": 0.9,
+      "diameter": 1.75,
+      "tigertag_material_id": 24115,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 24116,
+      "brand_id": null,
+      "label": "TPC",
+      "base_type": "TPC",
+      "filled_type": null,
+      "density": 1.15,
+      "diameter": 1.75,
+      "tigertag_material_id": 24116,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 24270,
+      "brand_id": null,
+      "label": "PPS-CF",
+      "base_type": "PPS",
+      "filled_type": "CF",
+      "density": 1.38,
+      "diameter": 1.75,
+      "tigertag_material_id": 24270,
+      "bambu_id": "GFT98",
+      "creality_id": "00018"
+    },
+    {
+      "id": 24629,
+      "brand_id": null,
+      "label": "PLA High Speed",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 24629,
+      "bambu_id": "GFL95",
+      "creality_id": "01001"
+    },
+    {
+      "id": 26029,
+      "brand_id": null,
+      "label": "HIPS",
+      "base_type": "HIPS",
+      "filled_type": null,
+      "density": 1.03,
+      "diameter": 1.75,
+      "tigertag_material_id": 26029,
+      "bambu_id": "GFS98",
+      "creality_id": "00012"
+    },
+    {
+      "id": 27268,
+      "brand_id": null,
+      "label": "PCTPE",
+      "base_type": "PCPTFE",
+      "filled_type": null,
+      "density": 1.01,
+      "diameter": 1.75,
+      "tigertag_material_id": 27268,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 27635,
+      "brand_id": null,
+      "label": "PE",
+      "base_type": "PE",
+      "filled_type": null,
+      "density": 0.94,
+      "diameter": 1.75,
+      "tigertag_material_id": 27635,
+      "bambu_id": "GFP99",
+      "creality_id": null
+    },
+    {
+      "id": 27676,
+      "brand_id": null,
+      "label": "ASA-CF",
+      "base_type": "ASA",
+      "filled_type": "CF",
+      "density": 1.05,
+      "diameter": 1.75,
+      "tigertag_material_id": 27676,
+      "bambu_id": "GFB51",
+      "creality_id": "00007"
+    },
+    {
+      "id": 28110,
+      "brand_id": null,
+      "label": "SBC",
+      "base_type": "SBC",
+      "filled_type": null,
+      "density": 1.01,
+      "diameter": 1.75,
+      "tigertag_material_id": 28110,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 29272,
+      "brand_id": null,
+      "label": "PA11",
+      "base_type": "PA",
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 29272,
+      "bambu_id": "GFN99",
+      "creality_id": "00008"
+    },
+    {
+      "id": 29815,
+      "brand_id": null,
+      "label": "PEEK",
+      "base_type": "PEEK",
+      "filled_type": null,
+      "density": 1.32,
+      "diameter": 1.75,
+      "tigertag_material_id": 29815,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 30458,
+      "brand_id": null,
+      "label": "PC",
+      "base_type": "PC",
+      "filled_type": null,
+      "density": 1.3,
+      "diameter": 1.75,
+      "tigertag_material_id": 30458,
+      "bambu_id": "GFC99",
+      "creality_id": "00021"
+    },
+    {
+      "id": 30594,
+      "brand_id": null,
+      "label": "PA-GF",
+      "base_type": "PA",
+      "filled_type": "GF",
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 30594,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 30884,
+      "brand_id": null,
+      "label": "PP",
+      "base_type": "PP",
+      "filled_type": null,
+      "density": 0.9,
+      "diameter": 1.75,
+      "tigertag_material_id": 30884,
+      "bambu_id": "GFP97",
+      "creality_id": "00019"
+    },
+    {
+      "id": 31011,
+      "brand_id": null,
+      "label": "ASA-AERO",
+      "base_type": "ASA",
+      "filled_type": "AERO",
+      "density": 1.05,
+      "diameter": 1.75,
+      "tigertag_material_id": 31011,
+      "bambu_id": "GFB02",
+      "creality_id": null
+    },
+    {
+      "id": 33958,
+      "brand_id": null,
+      "label": "TPE",
+      "base_type": "TPE",
+      "filled_type": null,
+      "density": 1.0,
+      "diameter": 1.75,
+      "tigertag_material_id": 33958,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 34049,
+      "brand_id": null,
+      "label": "BVOH",
+      "base_type": "BVOH",
+      "filled_type": null,
+      "density": 1.14,
+      "diameter": 1.75,
+      "tigertag_material_id": 34049,
+      "bambu_id": "GFS97",
+      "creality_id": "00010"
+    },
+    {
+      "id": 34409,
+      "brand_id": null,
+      "label": "TPS",
+      "base_type": "TPS",
+      "filled_type": null,
+      "density": 1.0,
+      "diameter": 1.75,
+      "tigertag_material_id": 34409,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 34944,
+      "brand_id": null,
+      "label": "PETG-GF",
+      "base_type": "PETG",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 34944,
+      "bambu_id": "GFG50",
+      "creality_id": "00014"
+    },
+    {
+      "id": 35100,
+      "brand_id": null,
+      "label": "ASA-GF",
+      "base_type": "ASA",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 35100,
+      "bambu_id": "GFB51",
+      "creality_id": "00007"
+    },
+    {
+      "id": 35377,
+      "brand_id": null,
+      "label": "PEI-9085-GF",
+      "base_type": "PEI",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 35377,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 38219,
+      "brand_id": null,
+      "label": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 38219,
+      "bambu_id": "GFL99",
+      "creality_id": "00001"
+    },
+    {
+      "id": 38250,
+      "brand_id": null,
+      "label": "PEI-1010-GF",
+      "base_type": "PEI",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 38250,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 38256,
+      "brand_id": null,
+      "label": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "diameter": 1.75,
+      "tigertag_material_id": 38256,
+      "bambu_id": "GFG99",
+      "creality_id": "00003"
+    },
+    {
+      "id": 39667,
+      "brand_id": null,
+      "label": "PA12-CF",
+      "base_type": "PA12",
+      "filled_type": "CF",
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 39667,
+      "bambu_id": "GFL52",
+      "creality_id": "00009"
+    },
+    {
+      "id": 39944,
+      "brand_id": null,
+      "label": "PA-CF",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 39944,
+      "bambu_id": "GFN98",
+      "creality_id": "00009"
+    },
+    {
+      "id": 41134,
+      "brand_id": null,
+      "label": "PEI-9085-CF",
+      "base_type": "PEI",
+      "filled_type": "CF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 41134,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 42623,
+      "brand_id": null,
+      "label": "PMMA",
+      "base_type": "PMMA",
+      "filled_type": null,
+      "density": 1.18,
+      "diameter": 1.75,
+      "tigertag_material_id": 42623,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 42962,
+      "brand_id": null,
+      "label": "PP-GF",
+      "base_type": "PP",
+      "filled_type": "GF",
+      "density": 0.9,
+      "diameter": 1.75,
+      "tigertag_material_id": 42962,
+      "bambu_id": "GFP95",
+      "creality_id": null
+    },
+    {
+      "id": 43518,
+      "brand_id": null,
+      "label": "TPU",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.21,
+      "diameter": 1.75,
+      "tigertag_material_id": 43518,
+      "bambu_id": "GFU99",
+      "creality_id": "00005"
+    },
+    {
+      "id": 45962,
+      "brand_id": null,
+      "label": "PVB",
+      "base_type": "PVB",
+      "filled_type": null,
+      "density": 1.07,
+      "diameter": 1.75,
+      "tigertag_material_id": 45962,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 46154,
+      "brand_id": null,
+      "label": "PPS",
+      "base_type": "PPS",
+      "filled_type": null,
+      "density": 1.35,
+      "diameter": 1.75,
+      "tigertag_material_id": 46154,
+      "bambu_id": "GFT97",
+      "creality_id": "00017"
+    },
+    {
+      "id": 46276,
+      "brand_id": null,
+      "label": "PPA-GF",
+      "base_type": "PPA",
+      "filled_type": "GF",
+      "density": 1.45,
+      "diameter": 1.75,
+      "tigertag_material_id": 46276,
+      "bambu_id": "GFN96",
+      "creality_id": null
+    },
+    {
+      "id": 46591,
+      "brand_id": null,
+      "label": "PLA+",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 46591,
+      "bambu_id": "GFL03",
+      "creality_id": "09001"
+    },
+    {
+      "id": 47651,
+      "brand_id": null,
+      "label": "PC-PBT-CF",
+      "base_type": "PC",
+      "filled_type": "CF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 47651,
+      "bambu_id": "GFC99",
+      "creality_id": "00021"
+    },
+    {
+      "id": 48001,
+      "brand_id": null,
+      "label": "PLA Wood",
+      "base_type": "PLA",
+      "filled_type": "WOOD",
+      "density": 1.28,
+      "diameter": 1.75,
+      "tigertag_material_id": 48001,
+      "bambu_id": "GFA16",
+      "creality_id": "17001"
+    },
+    {
+      "id": 48047,
+      "brand_id": null,
+      "label": "TPU High Speed",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.21,
+      "diameter": 1.75,
+      "tigertag_material_id": 48047,
+      "bambu_id": "GFU00",
+      "creality_id": "00005"
+    },
+    {
+      "id": 48310,
+      "brand_id": null,
+      "label": "PLA-CF",
+      "base_type": "PLA",
+      "filled_type": "CF",
+      "density": 1.24,
+      "diameter": 1.75,
+      "tigertag_material_id": 48310,
+      "bambu_id": "GFL98",
+      "creality_id": "00006"
+    },
+    {
+      "id": 48469,
+      "brand_id": null,
+      "label": "PEEK-CF",
+      "base_type": "PEEK",
+      "filled_type": "CF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 48469,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 48815,
+      "brand_id": null,
+      "label": "PAHT-CF",
+      "base_type": "PAHT",
+      "filled_type": "CF",
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 48815,
+      "bambu_id": "GFN04",
+      "creality_id": "00016"
+    },
+    {
+      "id": 49074,
+      "brand_id": null,
+      "label": "ABS-GF",
+      "base_type": "ABS",
+      "filled_type": "GF",
+      "density": 1.04,
+      "diameter": 1.75,
+      "tigertag_material_id": 49074,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 49152,
+      "brand_id": null,
+      "label": "PPSU",
+      "base_type": "PPSU",
+      "filled_type": null,
+      "density": 1.37,
+      "diameter": 1.75,
+      "tigertag_material_id": 49152,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 49804,
+      "brand_id": null,
+      "label": "ASA-AF",
+      "base_type": "ASA",
+      "filled_type": "AF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 49804,
+      "bambu_id": "GFB51",
+      "creality_id": null
+    },
+    {
+      "id": 50206,
+      "brand_id": null,
+      "label": "POM",
+      "base_type": "POM",
+      "filled_type": null,
+      "density": 1.4,
+      "diameter": 1.75,
+      "tigertag_material_id": 50206,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 50497,
+      "brand_id": null,
+      "label": "PP-CF",
+      "base_type": "PP",
+      "filled_type": "CF",
+      "density": 0.9,
+      "diameter": 1.75,
+      "tigertag_material_id": 50497,
+      "bambu_id": "GFP96",
+      "creality_id": null
+    },
+    {
+      "id": 51007,
+      "brand_id": null,
+      "label": "Biopolymer",
+      "base_type": null,
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 51007,
+      "bambu_id": "GFL99",
+      "creality_id": "00001"
+    },
+    {
+      "id": 51636,
+      "brand_id": null,
+      "label": "PES",
+      "base_type": null,
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 51636,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 51861,
+      "brand_id": null,
+      "label": "PETG-ESD",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "diameter": 1.75,
+      "tigertag_material_id": 51861,
+      "bambu_id": "GFG50",
+      "creality_id": "00014"
+    },
+    {
+      "id": 52077,
+      "brand_id": null,
+      "label": "PET",
+      "base_type": "PET",
+      "filled_type": null,
+      "density": 1.27,
+      "diameter": 1.75,
+      "tigertag_material_id": 52077,
+      "bambu_id": "GFG99",
+      "creality_id": "00020"
+    },
+    {
+      "id": 53890,
+      "brand_id": null,
+      "label": "PCTG-CF",
+      "base_type": "PCTG",
+      "filled_type": "CF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 53890,
+      "bambu_id": "GFG97",
+      "creality_id": "00014"
+    },
+    {
+      "id": 53970,
+      "brand_id": null,
+      "label": "PEKK",
+      "base_type": "PEKK",
+      "filled_type": null,
+      "density": 1.28,
+      "diameter": 1.75,
+      "tigertag_material_id": 53970,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 54568,
+      "brand_id": null,
+      "label": "ASA+",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 54568,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 55279,
+      "brand_id": null,
+      "label": "PBT",
+      "base_type": "PBT",
+      "filled_type": null,
+      "density": 1.2,
+      "diameter": 1.75,
+      "tigertag_material_id": 55279,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 55418,
+      "brand_id": null,
+      "label": "PETG-CF",
+      "base_type": "PETG",
+      "filled_type": "CF",
+      "density": 1.27,
+      "diameter": 1.75,
+      "tigertag_material_id": 55418,
+      "bambu_id": "GFG98",
+      "creality_id": "00014"
+    },
+    {
+      "id": 55796,
+      "brand_id": null,
+      "label": "PA12",
+      "base_type": "PA12",
+      "filled_type": null,
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 55796,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 56527,
+      "brand_id": null,
+      "label": "PEI-1010",
+      "base_type": "PEI",
+      "filled_type": null,
+      "density": 1.27,
+      "diameter": 1.75,
+      "tigertag_material_id": 56527,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 56666,
+      "brand_id": null,
+      "label": "PA6",
+      "base_type": "PA6",
+      "filled_type": null,
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 56666,
+      "bambu_id": "GFN05",
+      "creality_id": "00015"
+    },
+    {
+      "id": 57469,
+      "brand_id": null,
+      "label": "PETG HF",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "diameter": 1.75,
+      "tigertag_material_id": 57469,
+      "bambu_id": "GFG96",
+      "creality_id": "06002"
+    },
+    {
+      "id": 58142,
+      "brand_id": null,
+      "label": "TPU-GF",
+      "base_type": "TPU",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 58142,
+      "bambu_id": "GFU99",
+      "creality_id": "00005"
+    },
+    {
+      "id": 58498,
+      "brand_id": null,
+      "label": "PEBA",
+      "base_type": "PEBA",
+      "filled_type": null,
+      "density": 1.01,
+      "diameter": 1.75,
+      "tigertag_material_id": 58498,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 59328,
+      "brand_id": null,
+      "label": "PA",
+      "base_type": "PA",
+      "filled_type": null,
+      "density": 1.52,
+      "diameter": 1.75,
+      "tigertag_material_id": 59328,
+      "bambu_id": "GFN99",
+      "creality_id": "00008"
+    },
+    {
+      "id": 59849,
+      "brand_id": null,
+      "label": "PCL",
+      "base_type": null,
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 59849,
+      "bambu_id": "GFA00",
+      "creality_id": "00001"
+    },
+    {
+      "id": 61048,
+      "brand_id": null,
+      "label": "PVDF",
+      "base_type": "PVDF",
+      "filled_type": null,
+      "density": 1.78,
+      "diameter": 1.75,
+      "tigertag_material_id": 61048,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 61563,
+      "brand_id": null,
+      "label": "PC-PBT-GF",
+      "base_type": "PC",
+      "filled_type": "GF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 61563,
+      "bambu_id": "GFC99",
+      "creality_id": "00021"
+    },
+    {
+      "id": 62335,
+      "brand_id": null,
+      "label": "PEI-1010-CF",
+      "base_type": "PEI",
+      "filled_type": "CF",
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 62335,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 63946,
+      "brand_id": null,
+      "label": "TPI",
+      "base_type": "TPI",
+      "filled_type": null,
+      "density": 1.38,
+      "diameter": 1.75,
+      "tigertag_material_id": 63946,
+      "bambu_id": null,
+      "creality_id": null
+    },
+    {
+      "id": 65535,
+      "brand_id": null,
+      "label": "None",
+      "base_type": null,
+      "filled_type": null,
+      "density": null,
+      "diameter": 1.75,
+      "tigertag_material_id": 65535,
+      "bambu_id": null,
+      "creality_id": null
+    }
+  ],
+  "color_variants": [],
+  "printing_params": [
+    {
+      "id": 1,
+      "material_id": 18775,
+      "nozzle_min": 175.0,
+      "nozzle_max": 220.0,
+      "bed_min": 55.0,
+      "bed_max": 60.0,
+      "dry_temp": 80.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 2,
+      "material_id": 34944,
+      "nozzle_min": 230.0,
+      "nozzle_max": 270.0,
+      "bed_min": 70.0,
+      "bed_max": 90.0,
+      "dry_temp": 70.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 3,
+      "material_id": 9691,
+      "nozzle_min": 175.0,
+      "nozzle_max": 220.0,
+      "bed_min": 55.0,
+      "bed_max": 60.0,
+      "dry_temp": 50.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 4,
+      "material_id": 49804,
+      "nozzle_min": 250.0,
+      "nozzle_max": 280.0,
+      "bed_min": 90.0,
+      "bed_max": 95.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 5,
+      "material_id": 7951,
+      "nozzle_min": 240.0,
+      "nozzle_max": 270.0,
+      "bed_min": 65.0,
+      "bed_max": 70.0,
+      "dry_temp": 70.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 6,
+      "material_id": 11053,
+      "nozzle_min": 260.0,
+      "nozzle_max": 290.0,
+      "bed_min": 90.0,
+      "bed_max": 95.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 7,
+      "material_id": 53890,
+      "nozzle_min": 240.0,
+      "nozzle_max": 270.0,
+      "bed_min": 70.0,
+      "bed_max": 75.0,
+      "dry_temp": 65.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 8,
+      "material_id": 51636,
+      "nozzle_min": 340.0,
+      "nozzle_max": 380.0,
+      "bed_min": 120.0,
+      "bed_max": 140.0,
+      "dry_temp": 120.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 9,
+      "material_id": 18130,
+      "nozzle_min": 220.0,
+      "nozzle_max": 260.0,
+      "bed_min": 60.0,
+      "bed_max": 100.0,
+      "dry_temp": 75.0,
+      "dry_time": 2.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 10,
+      "material_id": 9456,
+      "nozzle_min": 190.0,
+      "nozzle_max": 260.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 11,
+      "material_id": 27676,
+      "nozzle_min": 250.0,
+      "nozzle_max": 280.0,
+      "bed_min": 90.0,
+      "bed_max": 95.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 12,
+      "material_id": 30594,
+      "nozzle_min": 260.0,
+      "nozzle_max": 300.0,
+      "bed_min": 40.0,
+      "bed_max": 45.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 13,
+      "material_id": 58142,
+      "nozzle_min": 200.0,
+      "nozzle_max": 250.0,
+      "bed_min": 35.0,
+      "bed_max": 40.0,
+      "dry_temp": 75.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 14,
+      "material_id": 24270,
+      "nozzle_min": 310.0,
+      "nozzle_max": 340.0,
+      "bed_min": 110.0,
+      "bed_max": 115.0,
+      "dry_temp": 130.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 15,
+      "material_id": 48001,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 60.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 16,
+      "material_id": 56527,
+      "nozzle_min": 370.0,
+      "nozzle_max": 420.0,
+      "bed_min": 150.0,
+      "bed_max": 160.0,
+      "dry_temp": 130.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 17,
+      "material_id": 24116,
+      "nozzle_min": 220.0,
+      "nozzle_max": 245.0,
+      "bed_min": 60.0,
+      "bed_max": 90.0,
+      "dry_temp": 75.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 18,
+      "material_id": 57469,
+      "nozzle_min": 220.0,
+      "nozzle_max": 270.0,
+      "bed_min": 70.0,
+      "bed_max": 75.0,
+      "dry_temp": 70.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 19,
+      "material_id": 46591,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 20,
+      "material_id": 425,
+      "nozzle_min": 240.0,
+      "nozzle_max": 280.0,
+      "bed_min": 85.0,
+      "bed_max": 90.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 21,
+      "material_id": 42962,
+      "nozzle_min": 220.0,
+      "nozzle_max": 250.0,
+      "bed_min": 55.0,
+      "bed_max": 60.0,
+      "dry_temp": 60.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 22,
+      "material_id": 10122,
+      "nozzle_min": 350.0,
+      "nozzle_max": 400.0,
+      "bed_min": 120.0,
+      "bed_max": 140.0,
+      "dry_temp": 120.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 23,
+      "material_id": 27268,
+      "nozzle_min": 235.0,
+      "nozzle_max": 245.0,
+      "bed_min": 50.0,
+      "bed_max": 55.0,
+      "dry_temp": 90.0,
+      "dry_time": 3.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 24,
+      "material_id": 59328,
+      "nozzle_min": 240.0,
+      "nozzle_max": 280.0,
+      "bed_min": 100.0,
+      "bed_max": 105.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 25,
+      "material_id": 18703,
+      "nozzle_min": 220.0,
+      "nozzle_max": 260.0,
+      "bed_min": 90.0,
+      "bed_max": 95.0,
+      "dry_temp": 70.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 26,
+      "material_id": 33958,
+      "nozzle_min": 210.0,
+      "nozzle_max": 260.0,
+      "bed_min": 45.0,
+      "bed_max": 60.0,
+      "dry_temp": 65.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 27,
+      "material_id": 48310,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 60.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 28,
+      "material_id": 31011,
+      "nozzle_min": 240.0,
+      "nozzle_max": 280.0,
+      "bed_min": 95.0,
+      "bed_max": 100.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 29,
+      "material_id": 27635,
+      "nozzle_min": 175.0,
+      "nozzle_max": 220.0,
+      "bed_min": 55.0,
+      "bed_max": 60.0,
+      "dry_temp": 0.0,
+      "dry_time": 0.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 30,
+      "material_id": 42623,
+      "nozzle_min": 240.0,
+      "nozzle_max": 265.0,
+      "bed_min": 100.0,
+      "bed_max": 110.0,
+      "dry_temp": 80.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 31,
+      "material_id": 24629,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 32,
+      "material_id": 65535,
+      "nozzle_min": 0.0,
+      "nozzle_max": 0.0,
+      "bed_min": 0.0,
+      "bed_max": 0.0,
+      "dry_temp": 0.0,
+      "dry_time": 0.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 33,
+      "material_id": 3368,
+      "nozzle_min": 240.0,
+      "nozzle_max": 290.0,
+      "bed_min": 90.0,
+      "bed_max": 95.0,
+      "dry_temp": 85.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 34,
+      "material_id": 50206,
+      "nozzle_min": 230.0,
+      "nozzle_max": 250.0,
+      "bed_min": 90.0,
+      "bed_max": 110.0,
+      "dry_temp": 75.0,
+      "dry_time": 3.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 35,
+      "material_id": 43518,
+      "nozzle_min": 200.0,
+      "nozzle_max": 250.0,
+      "bed_min": 35.0,
+      "bed_max": 40.0,
+      "dry_temp": 75.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 36,
+      "material_id": 7649,
+      "nozzle_min": 220.0,
+      "nozzle_max": 270.0,
+      "bed_min": 70.0,
+      "bed_max": 75.0,
+      "dry_temp": 70.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 37,
+      "material_id": 45962,
+      "nozzle_min": 205.0,
+      "nozzle_max": 225.0,
+      "bed_min": 30.0,
+      "bed_max": 70.0,
+      "dry_temp": 45.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 38,
+      "material_id": 12216,
+      "nozzle_min": 380.0,
+      "nozzle_max": 420.0,
+      "bed_min": 130.0,
+      "bed_max": 160.0,
+      "dry_temp": 120.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 39,
+      "material_id": 30884,
+      "nozzle_min": 220.0,
+      "nozzle_max": 250.0,
+      "bed_min": 55.0,
+      "bed_max": 60.0,
+      "dry_temp": 60.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 40,
+      "material_id": 39944,
+      "nozzle_min": 260.0,
+      "nozzle_max": 300.0,
+      "bed_min": 100.0,
+      "bed_max": 105.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 41,
+      "material_id": 1173,
+      "nozzle_min": 260.0,
+      "nozzle_max": 300.0,
+      "bed_min": 40.0,
+      "bed_max": 45.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 42,
+      "material_id": 62335,
+      "nozzle_min": 370.0,
+      "nozzle_max": 430.0,
+      "bed_min": 80.0,
+      "bed_max": 100.0,
+      "dry_temp": 150.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 43,
+      "material_id": 51007,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 5.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 44,
+      "material_id": 24115,
+      "nozzle_min": 245.0,
+      "nozzle_max": 260.0,
+      "bed_min": 70.0,
+      "bed_max": 80.0,
+      "dry_temp": 65.0,
+      "dry_time": 3.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 45,
+      "material_id": 56666,
+      "nozzle_min": 240.0,
+      "nozzle_max": 280.0,
+      "bed_min": 100.0,
+      "bed_max": 105.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 46,
+      "material_id": 48469,
+      "nozzle_min": 380.0,
+      "nozzle_max": 420.0,
+      "bed_min": 130.0,
+      "bed_max": 160.0,
+      "dry_temp": 120.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 47,
+      "material_id": 35100,
+      "nozzle_min": 250.0,
+      "nozzle_max": 280.0,
+      "bed_min": 90.0,
+      "bed_max": 95.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 48,
+      "material_id": 14508,
+      "nozzle_min": 350.0,
+      "nozzle_max": 390.0,
+      "bed_min": 120.0,
+      "bed_max": 160.0,
+      "dry_temp": 150.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 49,
+      "material_id": 5238,
+      "nozzle_min": 230.0,
+      "nozzle_max": 255.0,
+      "bed_min": 70.0,
+      "bed_max": 80.0,
+      "dry_temp": 55.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 50,
+      "material_id": 54568,
+      "nozzle_min": 250.0,
+      "nozzle_max": 280.0,
+      "bed_min": 90.0,
+      "bed_max": 110.0,
+      "dry_temp": 65.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 51,
+      "material_id": 9483,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 30.0,
+      "bed_max": 60.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 52,
+      "material_id": 10272,
+      "nozzle_min": 360.0,
+      "nozzle_max": 400.0,
+      "bed_min": 140.0,
+      "bed_max": 160.0,
+      "dry_temp": 110.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 53,
+      "material_id": 41134,
+      "nozzle_min": 360.0,
+      "nozzle_max": 400.0,
+      "bed_min": 120.0,
+      "bed_max": 160.0,
+      "dry_temp": 150.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 54,
+      "material_id": 12844,
+      "nozzle_min": 240.0,
+      "nozzle_max": 280.0,
+      "bed_min": 95.0,
+      "bed_max": 100.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 55,
+      "material_id": 63946,
+      "nozzle_min": 360.0,
+      "nozzle_max": 390.0,
+      "bed_min": 0.0,
+      "bed_max": 0.0,
+      "dry_temp": 120.0,
+      "dry_time": 24.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 56,
+      "material_id": 55279,
+      "nozzle_min": 235.0,
+      "nozzle_max": 245.0,
+      "bed_min": 0.0,
+      "bed_max": 0.0,
+      "dry_temp": 75.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 57,
+      "material_id": 20073,
+      "nozzle_min": 215.0,
+      "nozzle_max": 230.0,
+      "bed_min": 80.0,
+      "bed_max": 85.0,
+      "dry_temp": 80.0,
+      "dry_time": 1.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 58,
+      "material_id": 21307,
+      "nozzle_min": 195.0,
+      "nozzle_max": 250.0,
+      "bed_min": 0.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 59,
+      "material_id": 8504,
+      "nozzle_min": 280.0,
+      "nozzle_max": 320.0,
+      "bed_min": 100.0,
+      "bed_max": 105.0,
+      "dry_temp": 110.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 60,
+      "material_id": 35377,
+      "nozzle_min": 360.0,
+      "nozzle_max": 400.0,
+      "bed_min": 120.0,
+      "bed_max": 160.0,
+      "dry_temp": 150.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 61,
+      "material_id": 38250,
+      "nozzle_min": 380.0,
+      "nozzle_max": 430.0,
+      "bed_min": 120.0,
+      "bed_max": 160.0,
+      "dry_temp": 150.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 62,
+      "material_id": 29815,
+      "nozzle_min": 390.0,
+      "nozzle_max": 410.0,
+      "bed_min": 130.0,
+      "bed_max": 145.0,
+      "dry_temp": 120.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 63,
+      "material_id": 38256,
+      "nozzle_min": 220.0,
+      "nozzle_max": 270.0,
+      "bed_min": 70.0,
+      "bed_max": 75.0,
+      "dry_temp": 70.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 64,
+      "material_id": 12878,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 30.0,
+      "bed_max": 45.0,
+      "dry_temp": 70.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 65,
+      "material_id": 55418,
+      "nozzle_min": 240.0,
+      "nozzle_max": 270.0,
+      "bed_min": 75.0,
+      "bed_max": 80.0,
+      "dry_temp": 70.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 66,
+      "material_id": 61563,
+      "nozzle_min": 260.0,
+      "nozzle_max": 280.0,
+      "bed_min": 90.0,
+      "bed_max": 100.0,
+      "dry_temp": 90.0,
+      "dry_time": 2.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 67,
+      "material_id": 34409,
+      "nozzle_min": 280.0,
+      "nozzle_max": 290.0,
+      "bed_min": 70.0,
+      "bed_max": 90.0,
+      "dry_temp": 80.0,
+      "dry_time": 24.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 68,
+      "material_id": 1680,
+      "nozzle_min": 220.0,
+      "nozzle_max": 260.0,
+      "bed_min": 60.0,
+      "bed_max": 80.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 69,
+      "material_id": 59849,
+      "nozzle_min": 80.0,
+      "nozzle_max": 140.0,
+      "bed_min": 25.0,
+      "bed_max": 45.0,
+      "dry_temp": 0.0,
+      "dry_time": 0.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 70,
+      "material_id": 20588,
+      "nozzle_min": 270.0,
+      "nozzle_max": 310.0,
+      "bed_min": 100.0,
+      "bed_max": 120.0,
+      "dry_temp": 90.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 71,
+      "material_id": 15041,
+      "nozzle_min": 240.0,
+      "nozzle_max": 270.0,
+      "bed_min": 70.0,
+      "bed_max": 75.0,
+      "dry_temp": 65.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 72,
+      "material_id": 46154,
+      "nozzle_min": 300.0,
+      "nozzle_max": 340.0,
+      "bed_min": 110.0,
+      "bed_max": 115.0,
+      "dry_temp": 130.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 73,
+      "material_id": 3481,
+      "nozzle_min": 240.0,
+      "nozzle_max": 270.0,
+      "bed_min": 70.0,
+      "bed_max": 75.0,
+      "dry_temp": 65.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 74,
+      "material_id": 46276,
+      "nozzle_min": 280.0,
+      "nozzle_max": 320.0,
+      "bed_min": 100.0,
+      "bed_max": 105.0,
+      "dry_temp": 110.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 75,
+      "material_id": 23080,
+      "nozzle_min": 260.0,
+      "nozzle_max": 300.0,
+      "bed_min": 90.0,
+      "bed_max": 110.0,
+      "dry_temp": 90.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 76,
+      "material_id": 52077,
+      "nozzle_min": 260.0,
+      "nozzle_max": 290.0,
+      "bed_min": 65.0,
+      "bed_max": 70.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 77,
+      "material_id": 22652,
+      "nozzle_min": 270.0,
+      "nozzle_max": 310.0,
+      "bed_min": 90.0,
+      "bed_max": 110.0,
+      "dry_temp": 90.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 78,
+      "material_id": 5733,
+      "nozzle_min": 200.0,
+      "nozzle_max": 250.0,
+      "bed_min": 35.0,
+      "bed_max": 40.0,
+      "dry_temp": 75.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 79,
+      "material_id": 38219,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 80,
+      "material_id": 22678,
+      "nozzle_min": 280.0,
+      "nozzle_max": 300.0,
+      "bed_min": 80.0,
+      "bed_max": 85.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 81,
+      "material_id": 2053,
+      "nozzle_min": 260.0,
+      "nozzle_max": 300.0,
+      "bed_min": 40.0,
+      "bed_max": 45.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 82,
+      "material_id": 12264,
+      "nozzle_min": 260.0,
+      "nozzle_max": 300.0,
+      "bed_min": 40.0,
+      "bed_max": 45.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 83,
+      "material_id": 29272,
+      "nozzle_min": 260.0,
+      "nozzle_max": 290.0,
+      "bed_min": 80.0,
+      "bed_max": 100.0,
+      "dry_temp": 80.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 84,
+      "material_id": 51861,
+      "nozzle_min": 240.0,
+      "nozzle_max": 270.0,
+      "bed_min": 65.0,
+      "bed_max": 70.0,
+      "dry_temp": 70.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 85,
+      "material_id": 47651,
+      "nozzle_min": 260.0,
+      "nozzle_max": 280.0,
+      "bed_min": 90.0,
+      "bed_max": 100.0,
+      "dry_temp": 90.0,
+      "dry_time": 2.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 86,
+      "material_id": 20562,
+      "nozzle_min": 240.0,
+      "nozzle_max": 280.0,
+      "bed_min": 85.0,
+      "bed_max": 90.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 87,
+      "material_id": 53970,
+      "nozzle_min": 380.0,
+      "nozzle_max": 440.0,
+      "bed_min": 120.0,
+      "bed_max": 140.0,
+      "dry_temp": 130.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 88,
+      "material_id": 18451,
+      "nozzle_min": 270.0,
+      "nozzle_max": 300.0,
+      "bed_min": 80.0,
+      "bed_max": 100.0,
+      "dry_temp": 80.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 89,
+      "material_id": 6605,
+      "nozzle_min": 270.0,
+      "nozzle_max": 300.0,
+      "bed_min": 80.0,
+      "bed_max": 100.0,
+      "dry_temp": 80.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 90,
+      "material_id": 48815,
+      "nozzle_min": 260.0,
+      "nozzle_max": 300.0,
+      "bed_min": 100.0,
+      "bed_max": 105.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 91,
+      "material_id": 39667,
+      "nozzle_min": 260.0,
+      "nozzle_max": 300.0,
+      "bed_min": 40.0,
+      "bed_max": 45.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 92,
+      "material_id": 49074,
+      "nozzle_min": 240.0,
+      "nozzle_max": 280.0,
+      "bed_min": 85.0,
+      "bed_max": 90.0,
+      "dry_temp": 80.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 93,
+      "material_id": 55796,
+      "nozzle_min": 250.0,
+      "nozzle_max": 290.0,
+      "bed_min": 70.0,
+      "bed_max": 90.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 94,
+      "material_id": 58498,
+      "nozzle_min": 225.0,
+      "nozzle_max": 250.0,
+      "bed_min": 95.0,
+      "bed_max": 100.0,
+      "dry_temp": 70.0,
+      "dry_time": 3.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 95,
+      "material_id": 61048,
+      "nozzle_min": 240.0,
+      "nozzle_max": 265.0,
+      "bed_min": 90.0,
+      "bed_max": 110.0,
+      "dry_temp": 0.0,
+      "dry_time": 0.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 96,
+      "material_id": 26029,
+      "nozzle_min": 220.0,
+      "nozzle_max": 270.0,
+      "bed_min": 90.0,
+      "bed_max": 95.0,
+      "dry_temp": 80.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 97,
+      "material_id": 8345,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 98,
+      "material_id": 13850,
+      "nozzle_min": 280.0,
+      "nozzle_max": 320.0,
+      "bed_min": 100.0,
+      "bed_max": 105.0,
+      "dry_temp": 110.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 99,
+      "material_id": 10738,
+      "nozzle_min": 270.0,
+      "nozzle_max": 290.0,
+      "bed_min": 110.0,
+      "bed_max": 130.0,
+      "dry_temp": 80.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 100,
+      "material_id": 4587,
+      "nozzle_min": 260.0,
+      "nozzle_max": 280.0,
+      "bed_min": 90.0,
+      "bed_max": 100.0,
+      "dry_temp": 90.0,
+      "dry_time": 2.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 101,
+      "material_id": 10187,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 55.0,
+      "bed_max": 60.0,
+      "dry_temp": 50.0,
+      "dry_time": 24.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 102,
+      "material_id": 735,
+      "nozzle_min": 240.0,
+      "nozzle_max": 290.0,
+      "bed_min": 85.0,
+      "bed_max": 90.0,
+      "dry_temp": 85.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 103,
+      "material_id": 28110,
+      "nozzle_min": 220.0,
+      "nozzle_max": 260.0,
+      "bed_min": 65.0,
+      "bed_max": 70.0,
+      "dry_temp": 45.0,
+      "dry_time": 6.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 104,
+      "material_id": 50497,
+      "nozzle_min": 220.0,
+      "nozzle_max": 250.0,
+      "bed_min": 55.0,
+      "bed_max": 60.0,
+      "dry_temp": 60.0,
+      "dry_time": 4.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 105,
+      "material_id": 30458,
+      "nozzle_min": 260.0,
+      "nozzle_max": 290.0,
+      "bed_min": 110.0,
+      "bed_max": 115.0,
+      "dry_temp": 85.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 106,
+      "material_id": 10478,
+      "nozzle_min": 190.0,
+      "nozzle_max": 220.0,
+      "bed_min": 30.0,
+      "bed_max": 70.0,
+      "dry_temp": 55.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 107,
+      "material_id": 48047,
+      "nozzle_min": 200.0,
+      "nozzle_max": 250.0,
+      "bed_min": 35.0,
+      "bed_max": 40.0,
+      "dry_temp": 75.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 108,
+      "material_id": 18922,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 109,
+      "material_id": 11506,
+      "nozzle_min": 210.0,
+      "nozzle_max": 260.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 110,
+      "material_id": 49152,
+      "nozzle_min": 360.0,
+      "nozzle_max": 400.0,
+      "bed_min": 140.0,
+      "bed_max": 170.0,
+      "dry_temp": 130.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 111,
+      "material_id": 10602,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 45.0,
+      "bed_max": 55.0,
+      "dry_temp": 50.0,
+      "dry_time": 8.0,
+      "source": "tigertag"
+    },
+    {
+      "id": 112,
+      "material_id": 34049,
+      "nozzle_min": 190.0,
+      "nozzle_max": 240.0,
+      "bed_min": 55.0,
+      "bed_max": 60.0,
+      "dry_temp": 85.0,
+      "dry_time": 12.0,
+      "source": "tigertag"
+    }
+  ],
+  "document_refs": []
+}

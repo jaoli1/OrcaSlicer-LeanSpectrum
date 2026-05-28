@@ -1,0 +1,945 @@
+{
+  "cluster": 1,
+  "records": [
+    {
+      "brand": "AzureFilm",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 200,
+        "nozzle_max": 230,
+        "bed_min": 50,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/PLA_TDS.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/EN_Azurefilm_-_Safety_Data_Sheet_PLA_regular.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {
+          "name": "Black",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "White",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Grey",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Red",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Blue",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Green",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Orange",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Yellow",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Navy Blue",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Silver",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Gold",
+          "hex": null,
+          "finish": null
+        },
+        {
+          "name": "Marble",
+          "hex": null,
+          "finish": null
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 220,
+        "nozzle_max": 240,
+        "bed_min": 80,
+        "bed_max": 80,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/TDS-PETG.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/PETG_MSDS.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 240,
+        "nozzle_max": 260,
+        "bed_min": 90,
+        "bed_max": 120,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/TDS-ASA.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/ASA_SDS.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "ABS Plus",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/TDS-ABS-plus.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/ABS_Plus_SDS.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "AzureFilm",
+      "material": "Flexible 98A (TPU)",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/Flexible_98A_TDS.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://azurefilm.com/wp-content/uploads/2023/10/Flexible_98A_MSDS.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "BASF",
+      "material": "Ultrafuse PLA PRO1",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 210,
+        "nozzle_max": 230,
+        "bed_min": 50,
+        "bed_max": 70,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://move.forward-am.com/hubfs/AES%20Documentation/Engineering%20Filaments/PLA%20PRO1/TDS/Ultrafuse_PLA_PRO1_TDS_EN_v3.3.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://move.forward-am.com/hubfs/AES%20Documentation/Standard%20Filaments/PLA/MSDS/Natural/ULTRAFUSE%C2%AEPLANATURAL_11120834_SDS_GEN_00_EN_2-0_NL07.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "BASF",
+      "material": "Ultrafuse PET",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 210,
+        "nozzle_max": 230,
+        "bed_min": 60,
+        "bed_max": 80,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://move.forward-am.com/hubfs/AES%20Documentation/Standard%20Filaments/PET/TDS/Ultrafuse_PET_TDS_EN_v3.2.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "BASF",
+      "material": "Ultrafuse ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 240,
+        "nozzle_max": 260,
+        "bed_min": 90,
+        "bed_max": 110,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://move.forward-am.com/hubfs/AES%20Documentation/Standard%20Filaments/ABS/TDS/Ultrafuse_ABS_TDS_EN_v5.2.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "BASF",
+      "material": "Ultrafuse TPU 95A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 210,
+        "nozzle_max": 230,
+        "bed_min": 40,
+        "bed_max": 40,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://move.forward-am.com/hubfs/AES%20Documentation/Flexible%20Filaments/TPU%2095A/TDS/Ultrafuse_TPU-95A_TDS_EN_v1.0.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "BASF",
+      "material": "Ultrafuse ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://forward-am.com/wp-content/uploads/2021/08/ULTRAFUSE%C2%AEASANATURAL_11146757_SDS_GEN_EU_EN_1-0_NL07.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Biqu",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "BlueCast",
+      "material": "X-One (castable resin)",
+      "base_type": "Resin",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.bluecast.info/upload/download/msds-bluecast-x-onepdf-6117106.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "BlueCast",
+      "material": "Original SLA (castable resin)",
+      "base_type": "Resin",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.bluecast.info/upload/download/msds-bluecast-original-slapdf-3080407.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "BlueCast",
+      "material": "X-Nova (castable resin)",
+      "base_type": "Resin",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.bluecast.info/upload/download/msds-bluecast-x-novapdf-7896494.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "CC3D",
+      "material": "Silk PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 195,
+        "nozzle_max": 220,
+        "bed_min": 40,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [
+        {
+          "name": "Silk Black",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Silver",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Gold",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Copper",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Pink",
+          "hex": null,
+          "finish": "silk"
+        },
+        {
+          "name": "Silk Purple",
+          "hex": null,
+          "finish": "silk"
+        }
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "CaiLab",
+      "material": "PLA+",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Coex 3D",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {
+        "nozzle_min": 215,
+        "nozzle_max": 235,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Coex 3D",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "params": {
+        "nozzle_min": 230,
+        "nozzle_max": 250,
+        "bed_min": 60,
+        "bed_max": 90,
+        "dry_temp": 65,
+        "dry_time": 180
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Creality",
+      "material": "Hyper PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 230,
+        "bed_min": 25,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "DEEPLEE",
+      "material": "PLA PRO",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 230,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Duramic 3D",
+      "material": "PLA Plus",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 210,
+        "nozzle_max": 230,
+        "bed_min": 25,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://cdn.shopifycdn.net/s/files/1/0279/4933/4599/files/Duramic_PLA_Plus_TDS_EN_V1.1.pdf?v=1629881206",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Duramic 3D",
+      "material": "Matte PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 220,
+        "bed_min": 30,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://cdn.shopifycdn.net/s/files/1/0279/4933/4599/files/Duramic_PLA_TDS_EN_V1.1.pdf?v=1629881206",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Duramic 3D",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 230,
+        "nozzle_max": 250,
+        "bed_min": 70,
+        "bed_max": 80,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://cdn.shopifycdn.net/s/files/1/0279/4933/4599/files/Duramic_PETG_TDS_V4-G105.pdf?v=1629881207",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Duramic 3D",
+      "material": "TPU",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://cdn.shopifycdn.net/s/files/1/0279/4933/4599/files/Duramic_TPU_TDS_EN_V1.1.pdf?v=1629881207",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "ELEGOO",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 230,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "EconoFil",
+      "material": "Standard PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 230,
+        "bed_min": 60,
+        "bed_max": 80,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Extrudr",
+      "material": "PLA NX2",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://s3.extrudr.com/extrudr-media/datasheets/tds/tds-en/pla-nx2-matt-TDS-en.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://s3.extrudr.com/extrudr-media/datasheets/msds/msds-en/pla-basic-MSDS-en.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "REACH",
+          "url": "https://s3.extrudr.com/extrudr-media/datasheets/ris/ris-de/pla-nx2-matt-RIS-de.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Extrudr",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 210,
+        "nozzle_max": 230,
+        "bed_min": 60,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://s3.extrudr.com/extrudr-media/datasheets/tds/tds-en/petg-bundle-TDS-en.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://s3.extrudr.com/extrudr-media/datasheets/msds/msds-en/petg-MSDS-en.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Extrudr",
+      "material": "DuraPro ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 220,
+        "nozzle_max": 270,
+        "bed_min": 100,
+        "bed_max": 110,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://s3.extrudr.com/extrudr-media/datasheets/tds/tds-en/durapro-asa-TDS-en.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Extrudr",
+      "material": "DuraPro ABS-CF",
+      "base_type": "ABS",
+      "filled_type": "CF",
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://s3.extrudr.com/extrudr-media/datasheets/tds/tds-en/durapro-abs-cf-TDS-en.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Extrudr",
+      "material": "TPU FLEX Hard",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://s3.extrudr.com/extrudr-media/datasheets/tds/tds-en/flex-hard-TDS-en.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "FDPlast",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 210,
+        "bed_min": 20,
+        "bed_max": 70,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "FDPlast",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 245,
+        "nozzle_max": 260,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "ColorFabb",
+      "material": "PLA/PHA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 220,
+        "bed_min": 50,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://colorfabb.com/media/datasheets/tds/colorfabb/TDS_E_ColorFabb_PLA_PHA.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://colorfabb.com/media/datasheets/sds/colorfabb/SDS_E%20Colorfabb%20PLA_PHA%20Printing%20Filament.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "ColorFabb",
+      "material": "nGen",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 220,
+        "nozzle_max": 240,
+        "bed_min": 75,
+        "bed_max": 85,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://colorfabb.com/media/datasheets/tds/colorfabb/TDS_E_ColorFabb_nGen.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "ColorFabb",
+      "material": "XT",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://colorfabb.com/media/datasheets/sds/colorfabb/SDS_E_Colorfabb_XT_filament.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

@@ -1,0 +1,384 @@
+{
+  "cluster": 14,
+  "records": [
+    {
+      "brand": "Proto-Pasta",
+      "material": "HTPLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 220, "nozzle_max": 240, "bed_min": 55, "bed_max": 55, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/0717/9095/files/TDS__Translucent_Sparkly_HTPLA_1.0.0.pdf?1759", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0717/9095/files/PLA_Colors.pdf?v=1773099686", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://cdn.shopify.com/s/files/1/0717/9095/files/REACH_rohs_-_Google_Docs.pdf?v=1778008418", "rohs_compliant": true},
+        {"doc_type": "REACH", "url": "https://cdn.shopify.com/s/files/1/0717/9095/files/REACH_rohs_-_Google_Docs.pdf?v=1778008418", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Proto-Pasta",
+      "material": "Carbon Fiber HTPLA",
+      "base_type": "PLA",
+      "filled_type": "CF",
+      "density": null,
+      "params": {"nozzle_min": 220, "nozzle_max": 240, "bed_min": 55, "bed_max": 55, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://cdn.shopify.com/s/files/1/0717/9095/files/TDS__CarbonFiber_HTPLA_1.0.1.pdf?1771", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0717/9095/files/PLA_HTPLA_CF.pdf?v=1773099686", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Proto-Pasta",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 250, "nozzle_max": 250, "bed_min": 80, "bed_max": 80, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0717/9095/files/PETG_Colors.pdf?v=1773099686", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Proto-Pasta",
+      "material": "PETG-CF",
+      "base_type": "PETG",
+      "filled_type": "CF",
+      "density": null,
+      "params": {"nozzle_min": 250, "nozzle_max": 250, "bed_min": 80, "bed_max": 80, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://cdn.shopify.com/s/files/1/0717/9095/files/PETG_CF7.pdf?v=1773099686", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "QIDI Tech",
+      "material": "PLA Rapido",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.22,
+      "params": {"nozzle_min": 200, "nozzle_max": 240, "bed_min": 35, "bed_max": 55, "dry_temp": 50, "dry_time": 8},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://drive.google.com/drive/folders/1YsV_yx9Gv-tBJf5bntW6aOF3FkJMrlgo", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://drive.google.com/drive/folders/1g46kr0ISNWbyvv6qKpglv303Lba02c-m", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "QIDI Tech",
+      "material": "PETG Rapido",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.31,
+      "params": {"nozzle_min": 240, "nozzle_max": 275, "bed_min": 70, "bed_max": 80, "dry_temp": 60, "dry_time": 8},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://drive.google.com/drive/folders/1YsV_yx9Gv-tBJf5bntW6aOF3FkJMrlgo", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://drive.google.com/drive/folders/1g46kr0ISNWbyvv6qKpglv303Lba02c-m", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "QIDI Tech",
+      "material": "ABS Rapido",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://drive.google.com/drive/folders/1YsV_yx9Gv-tBJf5bntW6aOF3FkJMrlgo", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://drive.google.com/drive/folders/1g46kr0ISNWbyvv6qKpglv303Lba02c-m", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "QIDI Tech",
+      "material": "PC-ABS-FR",
+      "base_type": "PC-ABS",
+      "filled_type": null,
+      "density": 1.08,
+      "params": {"nozzle_min": 260, "nozzle_max": 280, "bed_min": 70, "bed_max": 80, "dry_temp": 70, "dry_time": 6},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://drive.google.com/drive/folders/1YsV_yx9Gv-tBJf5bntW6aOF3FkJMrlgo", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://drive.google.com/drive/folders/1g46kr0ISNWbyvv6qKpglv303Lba02c-m", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "QIDI Tech",
+      "material": "PAHT-CF",
+      "base_type": "PA",
+      "filled_type": "CF",
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://drive.google.com/drive/folders/1YsV_yx9Gv-tBJf5bntW6aOF3FkJMrlgo", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://drive.google.com/drive/folders/1g46kr0ISNWbyvv6qKpglv303Lba02c-m", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "R3D",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "R3D",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Recreus",
+      "material": "Filaflex 82A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 240, "nozzle_max": 248, "bed_min": 20, "bed_max": 50, "dry_temp": 55, "dry_time": 1},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://drive.google.com/drive/folders/1_JwtOY2UPBNhPmylzeXscT8cFyO9sB5T?usp=drive_link", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://drive.google.com/drive/folders/1uJEfGiPi20s2Cc75dawFfyIVq9Ius_t0?usp=drive_link", "rohs_compliant": null},
+        {"doc_type": "REACH", "url": "https://drive.google.com/drive/folders/1uJEfGiPi20s2Cc75dawFfyIVq9Ius_t0?usp=drive_link", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Recreus",
+      "material": "Filaflex 60A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 235, "nozzle_max": 235, "bed_min": 20, "bed_max": 45, "dry_temp": 55, "dry_time": 1},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://drive.google.com/drive/folders/1FxJYz7wXsoMDsXdjG4lEtX2ZN1MPQXGA?usp=drive_link", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://drive.google.com/drive/folders/1uJEfGiPi20s2Cc75dawFfyIVq9Ius_t0?usp=drive_link", "rohs_compliant": null},
+        {"doc_type": "REACH", "url": "https://drive.google.com/drive/folders/1uJEfGiPi20s2Cc75dawFfyIVq9Ius_t0?usp=drive_link", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Recreus",
+      "material": "Filaflex 70A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 240, "nozzle_max": 240, "bed_min": 20, "bed_max": 50, "dry_temp": 55, "dry_time": 1},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://drive.google.com/drive/folders/1puJY4PCtTS928Oxlk3ewbiUrCxGnXWQZ?usp=drive_link", "rohs_compliant": null},
+        {"doc_type": "RoHS", "url": "https://drive.google.com/drive/folders/1uJEfGiPi20s2Cc75dawFfyIVq9Ius_t0?usp=drive_link", "rohs_compliant": null},
+        {"doc_type": "REACH", "url": "https://drive.google.com/drive/folders/1uJEfGiPi20s2Cc75dawFfyIVq9Ius_t0?usp=drive_link", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "SOVB 3D",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "SOVB 3D",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "SainSmart",
+      "material": "TPU",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": 1.21,
+      "params": {"nozzle_min": 220, "nozzle_max": 250, "bed_min": 40, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://docs.sainsmart.com/article/vp0fa76z6v-flex-tpu-material-data-sheet", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://sainsmart.s3.us-east-1.amazonaws.com/TPU/TPU-MSDS.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "SainSmart",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 180, "nozzle_max": 220, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Smart Materials 3D",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 200, "nozzle_max": 220, "bed_min": 40, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.smartmaterials3d.com/en/index.php?controller=attachment&id_attachment=325", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Smart Materials 3D",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 220, "nozzle_max": 230, "bed_min": 70, "bed_max": 90, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://www.smartmaterials3d.com/en/index.php?controller=attachment&id_attachment=322", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Snapmaker",
+      "material": "Breakaway Support for PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 220, "nozzle_max": 230, "bed_min": 25, "bed_max": 60, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Sovol",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Sovol",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 220, "nozzle_max": 220, "bed_min": 70, "bed_max": 70, "dry_temp": null, "dry_time": null},
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Taulman3D",
+      "material": "Nylon 618",
+      "base_type": "Nylon",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://web.archive.org/web/20170810052951/http://taulman3d.com/uploads/3/1/1/2/3112210/msds040618525.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Taulman3D",
+      "material": "Nylon 645",
+      "base_type": "Nylon",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://web.archive.org/web/20170705023951/http://taulman3d.com/uploads/3/4/4/1/34410163/nylon_645.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Taulman3D",
+      "material": "t-glase",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": 238, "nozzle_max": 245, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://web.archive.org/web/20250820222242/https://www.taulman3d.com/files/uploads/3/4/4/1/34410163/new_tds_-_t-glase.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://web.archive.org/web/20170704060714/http://taulman3d.com/uploads/3/4/4/1/34410163/msds_for_t-glase.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Taulman3D",
+      "material": "PCTPE",
+      "base_type": "Nylon",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://web.archive.org/web/20220303003939/https://taulman3d.com/uploads/3/4/4/1/34410163/new_tds_-_pctpe.pdf", "rohs_compliant": null},
+        {"doc_type": "MSDS", "url": "https://web.archive.org/web/20170624091313/http://taulman3d.com/uploads/3/4/4/1/34410163/nylon_pctpe.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Taulman3D",
+      "material": "TECH-G",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "MSDS", "url": "https://web.archive.org/web/20170628225233/http://taulman3d.com/uploads/3/4/4/1/34410163/msds_for_tech_g.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Taulman3D",
+      "material": "Alloy 910",
+      "base_type": "Nylon",
+      "filled_type": null,
+      "density": null,
+      "params": {"nozzle_min": null, "nozzle_max": null, "bed_min": null, "bed_max": null, "dry_temp": null, "dry_time": null},
+      "docs": [
+        {"doc_type": "TDS", "url": "https://web.archive.org/web/20170828235240/http://taulman3d.com:80/uploads/3/4/4/1/34410163/alloy_910.pdf", "rohs_compliant": null}
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

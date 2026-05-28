@@ -1,0 +1,489 @@
+{
+  "cluster": 7,
+  "records": [
+    {
+      "brand": "UltiMaker",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 220,
+        "bed_min": 60,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://um-support-files.ultimaker.com/materials/2.85mm/tds/PLA/Ultimaker-PLA-TDS-v5.00.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://um-support-files.ultimaker.com/materials/2.85mm/sds/PLA/UM_PLA_US_en_SDSv1.0.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [
+        {"name": "PLA Green", "hex": "#3F4622", "finish": null},
+        {"name": "PLA Black", "hex": "#0A0A0A", "finish": null},
+        {"name": "PLA Silver Metallic", "hex": "#8F8F8F", "finish": null},
+        {"name": "PLA White", "hex": "#F1ECE1", "finish": null},
+        {"name": "PLA Orange", "hex": "#C93C20", "finish": null},
+        {"name": "PLA Blue", "hex": "#1F3438", "finish": null},
+        {"name": "PLA Magenta", "hex": "#AB273E", "finish": null},
+        {"name": "PLA Red", "hex": "#9B2423", "finish": null},
+        {"name": "PLA Yellow", "hex": "#F5D033", "finish": null},
+        {"name": "PLA Pearl White", "hex": "#E7EBDA", "finish": null}
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "UltiMaker",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "params": {
+        "nozzle_min": 230,
+        "nozzle_max": 250,
+        "bed_min": 80,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://um-support-files.ultimaker.com/materials/2.85mm/tds/PETG/Ultimaker-PETG-TDS-v1.00.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Valment",
+      "material": "PLA Premium",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 200,
+        "nozzle_max": 230,
+        "bed_min": 0,
+        "bed_max": 65,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Verbatim",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {
+        "nozzle_min": 200,
+        "nozzle_max": 220,
+        "bed_min": 60,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Verbatim",
+      "material": "PP",
+      "base_type": "PP",
+      "filled_type": null,
+      "density": 0.89,
+      "params": {
+        "nozzle_min": 230,
+        "nozzle_max": 250,
+        "bed_min": 80,
+        "bed_max": 80,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [
+        {"name": "Natural", "hex": null, "finish": "transparent"}
+      ],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Verbatim",
+      "material": "ABS",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": 1.05,
+      "params": {
+        "nozzle_min": 230,
+        "nozzle_max": 240,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Wanhao",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Winkle",
+      "material": "PLA HD",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.24,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 230,
+        "bed_min": 50,
+        "bed_max": 70,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://winkle.shop/index.php?controller=attachment&id_attachment=9",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Wondermaker",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Xstrand",
+      "material": "GF30-PA6",
+      "base_type": "PA",
+      "filled_type": "GF",
+      "density": 1.519,
+      "params": {
+        "nozzle_min": 240,
+        "nozzle_max": 280,
+        "bed_min": 70,
+        "bed_max": 100,
+        "dry_temp": 100,
+        "dry_time": 16
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://forward-am.com/wp-content/uploads/2021/12/Ultrafuse_PA6_GF30_TDS_EN_v1.1.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Xstrand",
+      "material": "GF30-PP",
+      "base_type": "PP",
+      "filled_type": "GF",
+      "density": null,
+      "params": {
+        "nozzle_min": 240,
+        "nozzle_max": 260,
+        "bed_min": 20,
+        "bed_max": 40,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://forward-am.com/wp-content/uploads/2021/07/Ultrafuse_PP_GF30_TDS_EN_v2.3-2.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Yousu",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": 180,
+        "nozzle_max": 220,
+        "bed_min": 40,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://ysfilament.com/u_file/2206/14/file/YOUSUPLATDS-8e09.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Yumi",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Ziro",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "Zortrax",
+      "material": "Z-PLA Pro",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://zortrax.com/wp-content/uploads/2018/06/Z-PLA_Pro_Technical_Data_Sheet_eng.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://zortrax.com/wp-content/uploads/2018/06/Z-PLA_Pro_SDS_eng.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "eSun",
+      "material": "PLA",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.2,
+      "params": {
+        "nozzle_min": 190,
+        "nozzle_max": 230,
+        "bed_min": 45,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.esun3d.com/uploads/eSUN_PLA-Filament_TDS_V4.0.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "eSun",
+      "material": "PLA+",
+      "base_type": "PLA",
+      "filled_type": null,
+      "density": 1.23,
+      "params": {
+        "nozzle_min": 210,
+        "nozzle_max": 230,
+        "bed_min": 45,
+        "bed_max": 60,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.esun3d.com/uploads/eSUN_PLA+-Filament_TDS_V4.0.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "eSun",
+      "material": "PETG",
+      "base_type": "PETG",
+      "filled_type": null,
+      "density": 1.27,
+      "params": {
+        "nozzle_min": 230,
+        "nozzle_max": 250,
+        "bed_min": 75,
+        "bed_max": 90,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.esun3d.com/uploads/eSUN_PETG-Filament_TDS_V4.0.pdf",
+          "rohs_compliant": null
+        },
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.esun3d.com/uploads/PETG-MSDS.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "eSun",
+      "material": "ABS+",
+      "base_type": "ABS",
+      "filled_type": null,
+      "density": 1.06,
+      "params": {
+        "nozzle_min": 230,
+        "nozzle_max": 270,
+        "bed_min": 95,
+        "bed_max": 110,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.esun3d.com/uploads/eSUN_ABS+-Filament_TDS_V4.01.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "eSun",
+      "material": "ASA",
+      "base_type": "ASA",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "TDS",
+          "url": "https://www.esun3d.com/uploads/eSUN_eASA-Filament_TDS_V4.01.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    },
+    {
+      "brand": "eSun",
+      "material": "TPU-95A",
+      "base_type": "TPU",
+      "filled_type": null,
+      "density": null,
+      "params": {
+        "nozzle_min": null,
+        "nozzle_max": null,
+        "bed_min": null,
+        "bed_max": null,
+        "dry_temp": null,
+        "dry_time": null
+      },
+      "docs": [
+        {
+          "doc_type": "MSDS",
+          "url": "https://www.esun3d.com/uploads/eTPU-95A-MSDS.pdf",
+          "rohs_compliant": null
+        }
+      ],
+      "colors": [],
+      "source": "manufacturer"
+    }
+  ]
+}

@@ -11,6 +11,38 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.1.14] — feat: the generated process profile now activates the fork's own features
+
+The companion **process** profile was scarf-only. It now ships every import with
+a *fork-aware* process that turns on the three Snapmaker_Orca-fork capabilities
+the user asked for — seams, filament economy, and color mixing — all of which are
+PROCESS-domain settings that a *filament* profile would silently ignore.
+
+Verified against the fork's C++ so these are not dead keys:
+- `filament_economy_*` and `mixed_filament_*` are members of `PrintConfig` (the
+  process aggregate; `mixed_filament_*` are gated on `Preset::TYPE_PRINT` in the
+  GUI), and `FilamentEconomy::Settings::from_config()` reads them from
+  `full_print_config()`, which folds in the active **process** preset — so a
+  value set in the generated process genuinely reaches the post-processor.
+
+What the process now carries:
+- **Seams** — scarf-joint keys per polymer (unchanged from v0.1.11).
+- **Print speed** — the TDS speed on the wall/infill speeds (from v0.1.13).
+- **Filament economy** — `filament_economy_enable`, `…_remove_noop_swaps`,
+  `…_shrink_purge` (+ `…_shrink_purge_pct=30`), `…_curvature_lh`, `…_force_m83`.
+  Enabled to match the fork's own defaults; benefits single-color (curvature-aware
+  E scaling) and multi-color (purge shrinking + no-op tool-change removal for
+  FullSpectrum) prints alike. `…_merge_travel` stays off (experimental).
+- **Color mixing** — `mixed_filament_region_collapse=1` (the safe optimisation).
+  The experimental gradient / dithering / pointillism / bias modes are
+  intentionally left at their off defaults so single-color prints are unaffected;
+  opt into them from Process ▸ Others.
+
+Because filament economy + color-mixing readiness always apply, **every** import
+now gets a process companion (named `… Scarf @U1` when scarf is enabled, else
+`… Tuned @U1`) — previously a non-scarf, no-speed polymer got none. Three
+process tests updated/added (10 profile tests, 46 total, all pass).
+
 ## [0.1.13] — feat: honour the TDS print speed + manufacturer test-specimen conditions
 
 Three data-fidelity gaps closed, applied **generically to any filament** (not

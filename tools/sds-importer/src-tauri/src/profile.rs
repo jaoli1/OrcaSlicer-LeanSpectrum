@@ -206,42 +206,41 @@ const PRESET_VERSION: &str = "01.10.01.70";
 /// the exact preset NAME, not a display alias.
 const U1_PRINTER: &str = "Snapmaker U1 (0.4 nozzle)";
 
-/// Build a companion **process** profile carrying the settings that only take
-/// effect in the PROCESS domain: scarf-joint seams and the manufacturer print
-/// speed.
+/// Build the companion **process** profile. Every import now gets one — it
+/// carries the four fork-specific PROCESS-domain feature groups the slicer
+/// applies on top of the stock U1 process:
+///   1. scarf-joint seams           (per-polymer; `seam_*` / `scarf_*`)
+///   2. the manufacturer print speed (`*_wall_speed` / `*_infill_speed`)
+///   3. LeanSpectrum filament economy (`filament_economy_*`)
+///   4. color-mixing readiness        (`mixed_filament_region_collapse`)
 ///
-/// `seam_*` / `scarf_*` AND the wall/infill `*_speed` keys are PROCESS-domain
-/// config keys (verified in PrintConfig.cpp + the stock profiles), so they only
-/// take effect in a process profile — putting them in a filament profile, as we
-/// did through v0.1.10, does nothing. This profile inherits the standard U1
-/// process and overrides ONLY those keys.
+/// All of these are PROCESS-domain keys — a *filament* profile silently ignores
+/// them (the v0.1.10 lesson). Verified in the fork's C++:
+///   - `filament_economy_*` and `mixed_filament_*` are members of `PrintConfig`
+///     (the process aggregate; `mixed_filament_*` are gated on
+///     `Preset::TYPE_PRINT` in the GUI), and
+///   - `FilamentEconomy::Settings::from_config()` reads them from
+///     `full_print_config()`, which folds in the active process preset — so a
+///     value set here genuinely reaches the post-processor.
 ///
-/// Value formats follow the process-profile convention (plain string scalars,
-/// NOT the filament profile's string-arrays; bools as "0"/"1"):
-///   - seam_slope_type        coEnum  -> "external"  (contour outer walls)
-///   - seam_slope_conditional coBool  -> "1"
-///   - scarf_angle_threshold  coInt   -> "155"
-///   - scarf_joint_speed      coFloatOrPercent -> "50%"
-///   - scarf_joint_flow_ratio coFloat -> "1"  (ratio, NOT "100%")
-///   - seam_slope_min_length  coFloat -> "20"
-///   - seam_slope_steps       coInt   -> "10"
-///   - outer_wall_speed / inner_wall_speed / sparse_infill_speed /
-///     internal_solid_infill_speed  coFloat -> the TDS print speed (mm/s)
+/// Value formats follow the process-profile convention: plain string scalars
+/// (NOT the filament profile's string-arrays), bools as "0"/"1".
 ///
-/// Returns `None` only when BOTH are absent — scarf disabled for the polymer
-/// (e.g. TPU) AND no print speed on the sheet. When scarf is off but a speed
-/// exists we still emit a "Tuned" companion so the manufacturer speed is
-/// applied (it has nowhere else to live).
+/// Filament economy is enabled to match the fork's own C++ defaults — it
+/// benefits every print (curvature-aware E scaling on single-color, purge
+/// shrinking + no-op tool-change removal on FullSpectrum multi-color). For color
+/// mixing only the safe `region_collapse` optimisation is set; the experimental
+/// gradient / dithering / pointillism / bias modes are left at their off
+/// defaults so single-color prints are unaffected (the user opts into those from
+/// Process ▸ Others). `merge_travel` is left off (experimental) too.
 fn build_process_json(
     product_display: &str,
     scarf: &ScarfSettings,
     print_speed: Option<f64>,
-) -> Option<(String, Value)> {
+) -> (String, Value) {
     let speed = print_speed.filter(|x| x.is_finite() && *x > 0.0);
-    if !scarf.enable_scarf && speed.is_none() {
-        return None;
-    }
-    // Name reflects what the companion actually carries.
+    // Name reflects the headline feature: scarf seams when enabled, else
+    // "Tuned" (still carries filament economy + color-mixing readiness + speed).
     let kind = if scarf.enable_scarf { "Scarf" } else { "Tuned" };
     let name = format!("{product_display} {kind} @U1 (0.4 nozzle)");
 
@@ -253,9 +252,27 @@ fn build_process_json(
         "type":     "process",
         "inherits": BASE_PROCESS_U1,
         "compatible_printers": [U1_PRINTER],
+        // --- LeanSpectrum filament economy. Matches the fork's C++ defaults,
+        //     emitted explicitly so the saving is guaranteed regardless of what
+        //     the inherited base process sets. ---
+        "filament_economy_enable":            "1",
+        "filament_economy_remove_noop_swaps": "1",
+        "filament_economy_shrink_purge":      "1",
+        "filament_economy_shrink_purge_pct":  "30",
+        "filament_economy_curvature_lh":      "1",
+        "filament_economy_force_m83":         "1",
+        // --- Color-mixing readiness: the safe region-collapse optimisation
+        //     only; experimental modes stay off. ---
+        "mixed_filament_region_collapse":     "1",
         "_leanspectrum_metadata": {
             "source":       "SDS/TDS importer — process companion",
             "base_process": BASE_PROCESS_U1,
+            "fork_features": {
+                "scarf_seams":       scarf.enable_scarf,
+                "print_speed_mm_s":  speed,
+                "filament_economy":  true,
+                "color_mixing_note": "region-collapse on; experimental gradient/dither/pointillism/bias left off — opt in via Process > Others",
+            }
         }
     });
     {
@@ -283,7 +300,7 @@ fn build_process_json(
             }
         }
     }
-    Some((name, v))
+    (name, v)
 }
 
 /// Build the filament profile JSON document (pure; no disk I/O). Split out
@@ -449,43 +466,34 @@ pub fn build_and_save(
     let out_path = write_unique_json(&filament_dir, &display, &profile)?;
     log.push(format!("Saved filament profile to {}", out_path.display()));
 
-    // 2) Companion process profile carrying the PROCESS-domain overrides:
-    //    scarf-joint seams AND the manufacturer print speed. seam_*/scarf_* and
-    //    the wall/infill *_speed keys only take effect in a process profile —
-    //    not in the filament profile. We write one that inherits the standard
-    //    U1 process and overrides only those keys, and surface it as the
-    //    recommended process so the UI can point the user straight at it.
+    // 2) Companion process profile carrying the fork's PROCESS-domain features:
+    //    scarf-joint seams, the manufacturer print speed, LeanSpectrum filament
+    //    economy, and color-mixing readiness. These only take effect in a
+    //    process profile — not in the filament profile. Every import gets one
+    //    (filament economy + color mixing always apply); we inherit the standard
+    //    U1 process, override only those keys, and surface it as the recommended
+    //    process so the UI can point the user straight at it.
     let print_speed = effective_print_speed(ef);
-    let recommended = match build_process_json(&product_disp, &scarf, print_speed) {
-        Some((proc_name, proc_json)) => {
-            let process_dir = resolve_dir("process")?;
-            let proc_path = write_unique_json(&process_dir, &proc_name, &proc_json)?;
-            let bits = match (scarf.enable_scarf, print_speed) {
-                (true, Some(s))  => format!("scarf seams + {s:.0} mm/s print speed"),
-                (true, None)     => "scarf seams".to_string(),
-                (false, Some(s)) => format!("{s:.0} mm/s print speed"),
-                (false, None)    => "process overrides".to_string(),
-            };
-            log.push(format!(
-                "Saved companion process profile ({bits}) to {}. Pick it in the Process dropdown to apply them.",
-                proc_path.display()
-            ));
-            Some(RecommendedProcess {
-                name:         proc_name,
-                layer_height: Some(0.20),
-                print_speed,
-                priority:     "balanced".into(),
-                path:         proc_path.display().to_string(),
-            })
-        }
-        None => {
-            log.push(format!(
-                "No process companion for {} (scarf disabled for this polymer family and no print speed on the sheet).",
-                polymer.as_str()
-            ));
-            None
-        }
-    };
+    let (proc_name, proc_json) = build_process_json(&product_disp, &scarf, print_speed);
+    let process_dir = resolve_dir("process")?;
+    let proc_path = write_unique_json(&process_dir, &proc_name, &proc_json)?;
+    let mut feats: Vec<String> = Vec::new();
+    if scarf.enable_scarf { feats.push("scarf seams".into()); }
+    if let Some(s) = print_speed { feats.push(format!("{s:.0} mm/s print speed")); }
+    feats.push("filament economy".into());
+    feats.push("color-mixing ready".into());
+    log.push(format!(
+        "Saved fork-tuned process profile ({}) to {}. Pick it in the Process dropdown to apply them.",
+        feats.join(" + "),
+        proc_path.display()
+    ));
+    let recommended = Some(RecommendedProcess {
+        name:         proc_name,
+        layer_height: Some(0.20),
+        print_speed,
+        priority:     "balanced".into(),
+        path:         proc_path.display().to_string(),
+    });
 
     Ok((Some(out_path), recommended))
 }
@@ -635,7 +643,7 @@ mod tests {
         let scarf = Polymer::Pla.default_scarf_settings();
         assert!(scarf.enable_scarf, "PLA scarf should be enabled by default");
         // 80 mm/s is the ERYONE specimen-note print speed.
-        let (name, v) = build_process_json("Eryone PLA+", &scarf, Some(80.0)).expect("PLA yields a companion");
+        let (name, v) = build_process_json("Eryone PLA+", &scarf, Some(80.0));
 
         assert_eq!(name, "Eryone PLA+ Scarf @U1 (0.4 nozzle)");
         assert_eq!(v["type"], "process");
@@ -662,32 +670,59 @@ mod tests {
         assert_eq!(v["sparse_infill_speed"], "80");
         assert_eq!(v["internal_solid_infill_speed"], "80");
         assert!(v["outer_wall_speed"].is_string());
+        // v0.1.14: the fork's filament economy is enabled (process-domain keys
+        // read by FilamentEconomy::Settings::from_config(full_print_config())).
+        assert_eq!(v["filament_economy_enable"], "1");
+        assert_eq!(v["filament_economy_remove_noop_swaps"], "1");
+        assert_eq!(v["filament_economy_shrink_purge"], "1");
+        assert_eq!(v["filament_economy_shrink_purge_pct"], "30");
+        assert_eq!(v["filament_economy_curvature_lh"], "1");
+        assert_eq!(v["filament_economy_force_m83"], "1");
+        // …and the safe color-mixing optimisation, but NOT the experimental modes.
+        assert_eq!(v["mixed_filament_region_collapse"], "1");
+        let obj = v.as_object().unwrap();
+        for off in ["mixed_filament_gradient_mode", "mixed_filament_advanced_dithering",
+                    "mixed_filament_component_bias_enabled", "filament_economy_merge_travel"] {
+            assert!(!obj.contains_key(off), "{off} must be left at its (off) default");
+        }
     }
 
-    /// A polymer that disables scarf (TPU) but HAS a manufacturer print speed
-    /// still gets a "Tuned" companion carrying the speed — it has nowhere else
-    /// to live (print speed is a process-domain setting).
+    /// Every import now gets a process companion — even a polymer with scarf
+    /// disabled (TPU) and no print speed still gets a "Tuned" companion carrying
+    /// filament economy + color-mixing readiness. The headline feature (the
+    /// whole project) must never be silently dropped.
+    #[test]
+    fn process_companion_always_generated_with_fork_features() {
+        let scarf = Polymer::Tpu.default_scarf_settings();
+        assert!(!scarf.enable_scarf, "TPU scarf should be disabled");
+        let (name, v) = build_process_json("Generic TPU", &scarf, None);
+        assert_eq!(name, "Generic TPU Tuned @U1 (0.4 nozzle)");
+        assert_eq!(v["type"], "process");
+        // Filament economy + color mixing present regardless of scarf/speed.
+        assert_eq!(v["filament_economy_enable"], "1");
+        assert_eq!(v["mixed_filament_region_collapse"], "1");
+        let obj = v.as_object().unwrap();
+        // No scarf keys (TPU) and no speed keys (no speed given).
+        for absent in ["seam_slope_type", "scarf_joint_speed", "outer_wall_speed"] {
+            assert!(!obj.contains_key(absent), "{absent} should be absent here");
+        }
+    }
+
+    /// Scarf-disabled polymer WITH a print speed → "Tuned" companion carrying
+    /// the speed (plus economy/mixing).
     #[test]
     fn speed_only_companion_emitted_when_scarf_disabled() {
         let scarf = Polymer::Tpu.default_scarf_settings();
         assert!(!scarf.enable_scarf, "TPU scarf should be disabled");
-        let (name, v) = build_process_json("Generic TPU", &scarf, Some(30.0))
-            .expect("speed alone yields a companion");
+        let (name, v) = build_process_json("Generic TPU", &scarf, Some(30.0));
         assert_eq!(name, "Generic TPU Tuned @U1 (0.4 nozzle)");
         assert_eq!(v["type"], "process");
         assert_eq!(v["outer_wall_speed"], "30");
+        assert_eq!(v["filament_economy_enable"], "1");
         // Scarf keys must be absent when scarf is disabled.
         let obj = v.as_object().unwrap();
         assert!(!obj.contains_key("seam_slope_type"));
         assert!(!obj.contains_key("scarf_joint_speed"));
-    }
-
-    /// No scarf AND no print speed → no companion at all.
-    #[test]
-    fn scarf_companion_skipped_when_disabled_and_no_speed() {
-        let scarf = Polymer::Tpu.default_scarf_settings();
-        assert!(!scarf.enable_scarf, "TPU scarf should be disabled");
-        assert!(build_process_json("Generic TPU", &scarf, None).is_none());
     }
 
     /// effective_print_speed: specimen-note recommendation wins; else range

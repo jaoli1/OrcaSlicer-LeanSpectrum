@@ -11,6 +11,52 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.1.9] — fix: nozzle temp lost + manufacturer "Unknown" on real Eryone TDS
+
+v0.1.8 stopped the crash, but the profile it produced from the real
+ERYONE PLA+ TDS was incomplete: **nozzle temperature missing**,
+**manufacturer "Unknown"**, product name reduced to a bare polymer.
+Diagnosed by dumping the exact `pdf-extract` output of the actual PDF
+(not a hand-built fixture).
+
+Two layout realities of that file broke the heuristics:
+
+1. **Unit glyph BETWEEN the range numbers.** The nozzle row extracts
+   as `Nozzle temperature 190℃-220℃` — the `℃` clings to each number.
+   The bed row is `Bed temperature 55-70℃` with the unit only at the
+   end. `RANGE_RX` was `(\d+)\s*(-|to|…)\s*(\d+)`: it matched `55-70`
+   (unit trailing) but **not** `190℃-220` because `℃` (or `°C` after
+   normalisation) sits between the first number and the dash, where the
+   regex expected only whitespace. Result: bed extracted, nozzle lost.
+   - Fix: `RANGE_RX` (tds.rs) and `TEMP_RANGE_RX` (sds.rs) now skip an
+     optional inline unit `(?:°\s*[cf]|℃|℉|°)?` between the first number
+     and the separator. Both the raw glyph and the normalised `°C` form
+     are accepted.
+
+2. **Glued legal suffix.** pdf-extract drops the space, so the company
+   line is `Shenzhen Eryone TechnologyCo,.Ltd`. `MANUFACTURER_RX`
+   required a word boundary `\b` immediately before the legal form,
+   which doesn't exist between "Technology" and "Co" → no match →
+   "Unknown" manufacturer, and (because the brand prefix is derived from
+   the manufacturer) a bare `PLA+` product name.
+   - Fix: the distinctive multi-char / punctuated forms (Co Ltd, GmbH,
+     Inc, LLC, Limited, B.V., …) may now be glued to the preceding word.
+     The ambiguous two-letter forms (AG, KG, Oy, AB) keep their leading
+     `\b` so they don't match inside ordinary words.
+
+With both fixes the ERYONE PLA+ TDS now yields: nozzle 190-220 °C, bed
+55-70 °C, print speed 30-100 mm/s, density 1.23 g/cm³, Vicat 54 °C,
+manufacturer "Shenzhen Eryone …", product name "Eryone PLA+", and the
+profile is no longer flagged *Needs review*.
+
+A new test `parses_real_eryone_pdf_extract_text` pins the whole chain
+against the verbatim pdf-extract output, run through `normalize_unicode`
+exactly as the live import does. A `pdf::dump_pdf_text` (`#[ignore]`)
+helper was added for future "this PDF extracts weird" diagnosis:
+`DUMP_PDF=/path cargo test --release dump_pdf_text -- --ignored --nocapture`.
+
+Identifier unchanged → upgrades over v0.1.8 in place.
+
 ## [0.1.8] — fix: window closed silently on PDF import (UTF-8 panic)
 
 The 0.1.7 release installed and launched correctly, but clicking

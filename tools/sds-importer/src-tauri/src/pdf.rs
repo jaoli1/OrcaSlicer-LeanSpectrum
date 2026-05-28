@@ -22,4 +22,17 @@ mod tests {
         let r = extract_text(Path::new("/this/does/not/exist.pdf"));
         assert!(matches!(r, Err(Error::Io(_))));
     }
+
+    /// Temporary debug helper: dump the exact pdf-extract output of a PDF
+    /// given via the DUMP_PDF env var. Run with:
+    ///   DUMP_PDF=/path/to.pdf cargo test --release dump_pdf_text -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn dump_pdf_text() {
+        let path = std::env::var("DUMP_PDF").expect("set DUMP_PDF=/path/to.pdf");
+        let text = extract_text(Path::new(&path)).expect("extract failed");
+        eprintln!("===== {} chars =====", text.len());
+        eprintln!("{text}");
+        eprintln!("===== end =====");
+    }
 }

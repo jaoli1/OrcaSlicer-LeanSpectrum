@@ -10,7 +10,14 @@ use crate::text_utils::safe_slice;
 use crate::{polymer, ExtractedFilament};
 
 static RANGE_RX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)(\d{2,3}(?:\.\d+)?)\s*(?:-|to|–|à|au)\s*(\d{2,3}(?:\.\d+)?)").unwrap()
+    // An optional inline temperature unit (°C / ℃ / ℉ / °) is allowed
+    // BETWEEN the first number and the separator. Vendor TDS such as the
+    // Eryone PLA+ write ranges as "190℃-220℃" where the unit clings to
+    // each number; without skipping it the first number's trailing unit
+    // blocks the dash match and the whole range is lost. Both the raw
+    // glyph (℃) and the normalized form (°C) are accepted so the regex is
+    // robust whether or not normalize_unicode ran first.
+    Regex::new(r"(?i)(\d{2,3}(?:\.\d+)?)\s*(?:°\s*[cf]|℃|℉|°)?\s*(?:-|to|–|à|au)\s*(\d{2,3}(?:\.\d+)?)").unwrap()
 });
 
 static SPEED_UNIT_RX: Lazy<Regex> = Lazy::new(|| {
@@ -28,14 +35,20 @@ static DENSITY_VALUE_WITH_UNIT_BEFORE_RX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static MANUFACTURER_RX: Lazy<Regex> = Lazy::new(|| {
-    // Captures common company suffixes worldwide. Two safeguards against
+    // Captures common company suffixes worldwide. Safeguards against
     // false positives:
-    //   1. \b boundaries so "AS" doesn't match inside "Class" or "ASTM".
-    //   2. The suffix must be at the END of the line (with optional trailing
-    //      period and whitespace). Real company-name lines end with the
-    //      legal form — "Polymaker GmbH" — whereas false friends like
-    //      "190/2.16 kg g/10 min" have more text after the kg/etc.
-    Regex::new(r"(?im)^\s*([^\n]{2,80}\b(?:Co[.,\s]{0,3}Ltd|GmbH|S\.A\.S?|S\.L\.|S\.R\.L|Inc\.?|LLC|Corp\.?|Limited|B\.V\.|N\.V\.|Pty\.?\s*Ltd|AG|KG|Oy|AB|A/S|Sp\.?\s*z\.?\s*o\.?\s*o\.?|s\.r\.o\.?)\b\.?)\s*$").unwrap()
+    //   1. The distinctive multi-char / punctuated forms (Co Ltd, GmbH,
+    //      Inc, LLC, Limited, B.V., …) may be GLUED to the preceding word
+    //      because pdf-extract frequently drops the space — the Eryone
+    //      TDS extracts as "Shenzhen Eryone TechnologyCo,.Ltd". A leading
+    //      \b would reject that, so it is omitted for these forms.
+    //   2. The ambiguous 2-letter forms (AG, KG, Oy, AB) DO keep a leading
+    //      \b so "AG" doesn't match inside "drAG" / "KG" inside "10KG".
+    //   3. The suffix must be at the END of the line (optional trailing
+    //      period + whitespace). Real company-name lines end with the
+    //      legal form; false friends like "190/2.16 kg g/10 min" have more
+    //      text after.
+    Regex::new(r"(?im)^\s*([^\n]{2,80}(?:Co[.,;\s]{0,3}Ltd|GmbH|S\.A\.S?|S\.L\.|S\.R\.L|Inc\.?|LLC|Corp\.?|Limited|B\.V\.|N\.V\.|Pty\.?\s*Ltd|A/S|Sp\.?\s*z\.?\s*o\.?\s*o\.?|s\.r\.o\.?|\b(?:AG|KG|Oy|AB))\b\.?)\s*$").unwrap()
 });
 
 static PRODUCT_LINE_RX: Lazy<Regex> = Lazy::new(|| {
@@ -564,6 +577,70 @@ Drying Temp.                                  50
         assert_eq!(r.bed_temp_min_c,    Some(55.0));
         assert_eq!(r.bed_temp_max_c,    Some(70.0));
         assert_eq!(r.density_g_cm3,     Some(1.23));
+    }
+
+    /// Full end-to-end regression on the EXACT text that `pdf-extract`
+    /// produces from the real ERYONE-PLA-plus_TDS.pdf (captured via the
+    /// pdf::dump_pdf_text helper). This is the file that shipped a broken
+    /// profile in v0.1.8: nozzle temperature was missing because the unit
+    /// glyph sits BETWEEN the numbers ("190℃-220℃"), and the manufacturer
+    /// was Unknown because pdf-extract glued "TechnologyCo,.Ltd".
+    ///
+    /// The text is fed through normalize_unicode first, exactly as lib.rs
+    /// does before calling parse(), so this exercises the real production
+    /// path.
+    #[test]
+    fn parses_real_eryone_pdf_extract_text() {
+        let raw = "aasdadsd\n 1\n Shenzhen Eryone TechnologyCo,.Ltd\n\n\
+version 1.0\n08/2024\n\nTechnical DataSheet (TDS)\n\nPLA+\n\n\
+The Eryone PLA+ filament is a printing material known for its exceptional toughness.\n\n\
+Part I: Suggests Printing Parameters\n\n\
+Parameter Set up\n\n\
+Nozzle temperature 190℃-220℃\n\n\
+Bed temperature 55-70℃\n\n\
+Bed material glass, PEI, spring steel plate\n\n\
+Bottom printing temperature 190℃-220℃\n\n\
+Sealed printing Open Printing/closed printing\n\n\
+Printing speed 30-100mm/s\n\n\
+Drying conditions 65℃-75℃，12H\n\n\
+Part II: Physical Properties of Materials\n\n\
+Property Testing Method Unit Typical Value\n\n\
+Density(g/cm³ at 21.5 ° C） ASTM D792 (ISO 1183, GB/T 1033) g/cm³ 1.23\n\n\
+Vicat Softening Temperature(° C) ASTM D1525 (ISO 306 GB/T 1633) ℃ 54\n";
+        // Production path: normalize the unicode, THEN parse.
+        let text = crate::text_utils::normalize_unicode(raw);
+        assert!(looks_like_tds(&text));
+        let r = parse(&text);
+
+        assert_eq!(r.polymer, Some(Polymer::Pla));
+        // Nozzle 190-220 — the v0.1.8 miss. Unit glyph between the numbers
+        // must no longer block the range.
+        assert_eq!(r.nozzle_temp_min_c, Some(190.0));
+        assert_eq!(r.nozzle_temp_max_c, Some(220.0));
+        // Bed 55-70 (worked in v0.1.8, must still work).
+        assert_eq!(r.bed_temp_min_c, Some(55.0));
+        assert_eq!(r.bed_temp_max_c, Some(70.0));
+        // Print speed 30-100 mm/s.
+        assert_eq!(r.print_speed_min_mm_s, Some(30.0));
+        assert_eq!(r.print_speed_max_mm_s, Some(100.0));
+        // Density 1.23 g/cm³.
+        assert_eq!(r.density_g_cm3, Some(1.23));
+        // Vicat softening 54 °C as a glass-transition proxy.
+        assert_eq!(r.glass_transition_c, Some(54.0));
+        // Manufacturer detected despite the glued "TechnologyCo,.Ltd".
+        assert!(
+            r.manufacturer.as_deref().unwrap_or("").contains("Eryone"),
+            "manufacturer was {:?}", r.manufacturer,
+        );
+        // Brand prefix applied to the bare "PLA+" product line.
+        assert!(
+            r.product_name.as_deref().unwrap_or("").starts_with("Eryone"),
+            "product_name was {:?}", r.product_name,
+        );
+        assert!(r.product_name.as_deref().unwrap_or("").contains("PLA"));
+        // With nozzle + polymer present, the profile is no longer flagged
+        // for review.
+        assert!(!r.needs_review);
     }
 
     /// ROSA3D PLA Speed TDS layout — pdftotext extracted the VALUE column

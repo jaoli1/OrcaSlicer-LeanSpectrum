@@ -38,10 +38,13 @@ static DATE_RX: Lazy<Regex> = Lazy::new(|| {
 });
 
 static TEMP_RANGE_RX: Lazy<Regex> = Lazy::new(|| {
-    // Trailing "°C" is now optional; the plausibility check in the caller
+    // Trailing "°C" is optional; the plausibility check in the caller
     // ((50, 500) °C) filters spurious matches. Accepts "180-200",
-    // "180 - 200", "180 to 200", "180 à 220".
-    Regex::new(r"(?i)(\d{2,3}(?:\.\d+)?)\s*(?:-|to|–|à|au)\s*(\d{2,3}(?:\.\d+)?)\s*(?:°\s*c)?").unwrap()
+    // "180 - 200", "180 to 200", "180 à 220". An optional inline unit
+    // (°C / ℃ / ℉ / °) is also allowed BETWEEN the first number and the
+    // separator to handle the "190℃-220℃" form vendors embed in SDS
+    // section 9 (raw glyph or normalized °C both accepted).
+    Regex::new(r"(?i)(\d{2,3}(?:\.\d+)?)\s*(?:°\s*[cf]|℃|℉|°)?\s*(?:-|to|–|à|au)\s*(\d{2,3}(?:\.\d+)?)\s*(?:°\s*c)?").unwrap()
 });
 
 static SINGLE_TEMP_RX: Lazy<Regex> = Lazy::new(|| {

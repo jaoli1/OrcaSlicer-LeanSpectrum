@@ -11,6 +11,60 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.1.10] — fix: broken profile inheritance + incomplete bed temps
+
+Auditing the generated profile against the real Snapmaker_Orca filament
+schema (the "Réglages des matériaux" dialog + the shipped stock
+profiles) surfaced four schema bugs that made the output profile
+inherit incorrectly or carry dead keys. None of them crashed, but they
+silently degraded the result.
+
+1. **`inherits` pointed at 9 non-existent parents (P0).** Only
+   `Snapmaker PLA SnapSpeed @U1` (PLA) actually existed in the shipped
+   profile set. The other ten polymers inherited from names that don't
+   exist — `Snapmaker PETG HF @U1`, `Generic ABS @U1`, `Generic PA @U1`,
+   `Generic PC @U1`, `Generic HIPS @U1`, `Generic PP @U1`, … When a
+   filament profile's `inherits` can't be resolved, the slicer drops the
+   parent and the filament falls back to bare defaults. Fixed: every
+   target is now a profile that ships AND is compatible with
+   `Snapmaker U1 (0.4 nozzle)`:
+   - PLA → Snapmaker PLA SnapSpeed @U1
+   - PETG → Snapmaker PETG @U1 · ABS → Snapmaker ABS @U1 ·
+     ASA → Snapmaker ASA @U1 · TPU → Snapmaker TPU @U1
+   - PC → Generic PC · PA6/PA12 → Generic PA (U1-compatible, no @U1 leaf)
+   - HIPS → Snapmaker ABS @U1 (no HIPS profile; HIPS≈ABS) ·
+     PP → Snapmaker PETG @U1 (no PP profile; nearest mid-temp leaf)
+
+2. **Bed temperature reached only one plate type (P1).** We set
+   `hot_plate_temp` only. The U1's default build plate is **textured
+   PEI** (`textured_plate_temp`), so the extracted bed temperature
+   silently never applied on the default plate. Fixed: the bed
+   temperature is now written to all four plate types and their
+   initial-layer variants (`hot_/cool_/eng_/textured_plate_temp`
+   ×2).
+
+3. **Glass-transition temperature was extracted but never emitted (P2).**
+   We pull the Vicat / Tg value (54 °C for the Eryone PLA+) but only
+   stored it in metadata. It's now written to the real
+   `temperature_vitrification` key the dialog exposes.
+
+4. **~10 dead process-domain keys in the filament profile (P2).** The
+   `seam_*` / `scarf_*` keys we injected are PROCESS settings — no stock
+   *filament* profile carries them and the slicer ignores them inside a
+   filament profile, so the scarf seams were never actually applied.
+   They're removed from the top level (the per-polymer scarf values stay
+   in `_leanspectrum_metadata` for reference and a future process-profile
+   companion). Proper scarf application needs a process profile — tracked
+   as a follow-up.
+
+Also hardened: data-driven keys are now emitted **only when a value is
+present**. Previously a missing value wrote `[""]`, which could
+overwrite the inherited parent's nozzle/bed temperature with an empty
+string. Three new unit tests pin the inherit map, the full PLA schema,
+and the empty-value guard.
+
+Identifier unchanged → upgrades over v0.1.9 in place.
+
 ## [0.1.9] — fix: nozzle temp lost + manufacturer "Unknown" on real Eryone TDS
 
 v0.1.8 stopped the crash, but the profile it produced from the real

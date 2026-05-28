@@ -233,12 +233,30 @@ const U1_PRINTER: &str = "Snapmaker U1 (0.4 nozzle)";
 /// gradient / dithering / pointillism / bias modes are left at their off
 /// defaults so single-color prints are unaffected (the user opts into those from
 /// Process ▸ Others). `merge_travel` is left off (experimental) too.
+/// Material-adaptive bed-adhesion / anti-warp settings:
+/// (brim width mm, draft-shield enabled, first-layer speed mm/s).
+/// High-warp families (ABS/ASA/PC/PA/HIPS) get a wide brim + draft shield + slow
+/// first layer; PLA/PETG stay light; PLA gets only a small brim. Conservative
+/// researched defaults — see data/RESEARCH_supports_adhesion.md — user-tunable.
+fn anti_warp_for(p: Polymer) -> (f64, bool, f64) {
+    use Polymer::*;
+    match p {
+        Abs | Asa | Pc | NylonPa6 | NylonPa12 | Hips => (8.0, true, 20.0),
+        Petg | Pp => (5.0, false, 25.0),
+        Tpu => (5.0, false, 20.0),
+        Pla => (3.0, false, 25.0),
+        Other => (4.0, false, 25.0),
+    }
+}
+
 fn build_process_json(
     product_display: &str,
     scarf: &ScarfSettings,
     print_speed: Option<f64>,
+    polymer: Polymer,
 ) -> (String, Value) {
     let speed = print_speed.filter(|x| x.is_finite() && *x > 0.0);
+    let (brim_w, draft_shield, first_layer_speed) = anti_warp_for(polymer);
     // Name reflects the headline feature: scarf seams when enabled, else
     // "Tuned" (still carries filament economy + color-mixing readiness + speed).
     let kind = if scarf.enable_scarf { "Scarf" } else { "Tuned" };
@@ -264,6 +282,14 @@ fn build_process_json(
         // --- Color-mixing readiness: the safe region-collapse optimisation
         //     only; experimental modes stay off. ---
         "mixed_filament_region_collapse":     "1",
+        // --- supports tuned to grip the plate but peel cleanly off the MODEL
+        //     (geometric; only take effect when the slice generates supports) ---
+        "support_top_z_distance":       "0.2",
+        "support_bottom_z_distance":    "0.2",
+        "support_interface_spacing":    "0.5",
+        "support_interface_pattern":    "rectilinear",
+        "support_interface_top_layers": "2",
+        "support_object_xy_distance":   "0.35",
         "_leanspectrum_metadata": {
             "source":       "SDS/TDS importer — process companion",
             "base_process": BASE_PROCESS_U1,
@@ -299,6 +325,16 @@ fn build_process_json(
                 obj.insert(key.to_string(), json!(fmt_num(s)));
             }
         }
+
+        // --- material-adaptive bed adhesion / anti-warp ---
+        // brim (outer, fused to the part for max grip) sized by warp tendency;
+        // draft shield + slow first layer for the high-warp families; a slow
+        // first layer also helps the supports anchor to the plate.
+        obj.insert("brim_type".into(),       json!("outer_only"));
+        obj.insert("brim_width".into(),      json!(fmt_num(brim_w)));
+        obj.insert("brim_object_gap".into(), json!("0"));
+        obj.insert("draft_shield".into(),    json!(if draft_shield { "enabled" } else { "disabled" }));
+        obj.insert("initial_layer_speed".into(), json!(fmt_num(first_layer_speed)));
     }
     (name, v)
 }
@@ -474,7 +510,7 @@ pub fn build_and_save(
     //    U1 process, override only those keys, and surface it as the recommended
     //    process so the UI can point the user straight at it.
     let print_speed = effective_print_speed(ef);
-    let (proc_name, proc_json) = build_process_json(&product_disp, &scarf, print_speed);
+    let (proc_name, proc_json) = build_process_json(&product_disp, &scarf, print_speed, polymer);
     let process_dir = resolve_dir("process")?;
     let proc_path = write_unique_json(&process_dir, &proc_name, &proc_json)?;
     let mut feats: Vec<String> = Vec::new();
@@ -643,7 +679,7 @@ mod tests {
         let scarf = Polymer::Pla.default_scarf_settings();
         assert!(scarf.enable_scarf, "PLA scarf should be enabled by default");
         // 80 mm/s is the ERYONE specimen-note print speed.
-        let (name, v) = build_process_json("Eryone PLA+", &scarf, Some(80.0));
+        let (name, v) = build_process_json("Eryone PLA+", &scarf, Some(80.0), Polymer::Pla);
 
         assert_eq!(name, "Eryone PLA+ Scarf @U1 (0.4 nozzle)");
         assert_eq!(v["type"], "process");
@@ -680,6 +716,13 @@ mod tests {
         assert_eq!(v["filament_economy_force_m83"], "1");
         // …and the safe color-mixing optimisation, but NOT the experimental modes.
         assert_eq!(v["mixed_filament_region_collapse"], "1");
+        // v0.1.19: supports tuned for clean model release + material-adaptive
+        // anti-warp (PLA → light 3 mm brim, no draft shield).
+        assert_eq!(v["support_interface_pattern"], "rectilinear");
+        assert_eq!(v["support_top_z_distance"], "0.2");
+        assert_eq!(v["brim_type"], "outer_only");
+        assert_eq!(v["brim_width"], "3");
+        assert_eq!(v["draft_shield"], "disabled");
         let obj = v.as_object().unwrap();
         for off in ["mixed_filament_gradient_mode", "mixed_filament_advanced_dithering",
                     "mixed_filament_component_bias_enabled", "filament_economy_merge_travel"] {
@@ -695,7 +738,7 @@ mod tests {
     fn process_companion_always_generated_with_fork_features() {
         let scarf = Polymer::Tpu.default_scarf_settings();
         assert!(!scarf.enable_scarf, "TPU scarf should be disabled");
-        let (name, v) = build_process_json("Generic TPU", &scarf, None);
+        let (name, v) = build_process_json("Generic TPU", &scarf, None, Polymer::Tpu);
         assert_eq!(name, "Generic TPU Tuned @U1 (0.4 nozzle)");
         assert_eq!(v["type"], "process");
         // Filament economy + color mixing present regardless of scarf/speed.
@@ -714,7 +757,7 @@ mod tests {
     fn speed_only_companion_emitted_when_scarf_disabled() {
         let scarf = Polymer::Tpu.default_scarf_settings();
         assert!(!scarf.enable_scarf, "TPU scarf should be disabled");
-        let (name, v) = build_process_json("Generic TPU", &scarf, Some(30.0));
+        let (name, v) = build_process_json("Generic TPU", &scarf, Some(30.0), Polymer::Tpu);
         assert_eq!(name, "Generic TPU Tuned @U1 (0.4 nozzle)");
         assert_eq!(v["type"], "process");
         assert_eq!(v["outer_wall_speed"], "30");

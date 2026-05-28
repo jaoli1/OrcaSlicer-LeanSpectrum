@@ -241,6 +241,13 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
         "filament_economy_curvature_lh":      "1",
         "filament_economy_force_m83":         "1",
         "mixed_filament_region_collapse":     "1",
+        // supports: grip the plate, peel cleanly off the MODEL (geometric)
+        "support_top_z_distance":       "0.2",
+        "support_bottom_z_distance":    "0.2",
+        "support_interface_spacing":    "0.5",
+        "support_interface_pattern":    "rectilinear",
+        "support_interface_top_layers": "2",
+        "support_object_xy_distance":   "0.35",
 
         "_leanspectrum_metadata": {
             "source": "Optimisateur — bibliothèque process par type de projet (multi-imprimante)",

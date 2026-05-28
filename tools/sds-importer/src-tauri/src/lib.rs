@@ -14,6 +14,7 @@ mod ocr;
 mod pdf;
 mod polymer;
 mod profile;
+mod project_process;
 mod sds;
 mod tds;
 mod text_utils;

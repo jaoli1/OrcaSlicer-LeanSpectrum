@@ -161,6 +161,37 @@ fn inherit_stub_for(polymer: Polymer) -> &'static str {
     }
 }
 
+/// Choose the filament parent for the chosen printer. The Snapmaker U1 keeps its
+/// hand-verified U1-tuned parents (best hardware tuning, see `inherit_stub_for`);
+/// any OTHER OrcaSlicer-family printer (Creality / Bambu / Prusa …) inherits the
+/// broadly-compatible stock "Generic <polymer>" leaf instead, since the
+/// "@U1" parents do not exist for those machines (inheriting a missing parent
+/// silently breaks the preset — the v0.1.9 lesson).
+fn inherit_stub_for_printer(polymer: Polymer, is_u1: bool) -> String {
+    if is_u1 {
+        inherit_stub_for(polymer).to_string()
+    } else {
+        polymer.orca_generic_parent().to_string()
+    }
+}
+
+/// Build a filament profile (name, json) from extracted/DB data for a chosen set
+/// of printer presets — the universal one-click path (v0.2.0). `is_u1` selects
+/// the U1-tuned parent; otherwise a generic parent is used and the filament is
+/// made compatible with exactly the chosen `printers`.
+pub fn build_filament_json_for(
+    ef: &ExtractedFilament,
+    polymer: Polymer,
+    printers: &[String],
+    is_u1: bool,
+    log: &mut Vec<String>,
+) -> (String, Value) {
+    let inherits = inherit_stub_for_printer(polymer, is_u1);
+    let v = build_profile_json(ef, polymer, &inherits, printers, log);
+    let name = v["name"].as_str().unwrap_or("Imported filament").to_string();
+    (name, v)
+}
+
 /// Format a float without trailing zeros: 220.0 -> "220", 1.23 -> "1.23".
 /// Stock Snapmaker profiles store temperatures / counts as integer strings
 /// and ratios as short decimals; this matches both.
@@ -345,6 +376,8 @@ fn build_process_json(
 fn build_profile_json(
     ef: &ExtractedFilament,
     polymer: Polymer,
+    inherits: &str,
+    compatible: &[String],
     log: &mut Vec<String>,
 ) -> Value {
     let product_name = ef.product_name.as_deref().unwrap_or("Imported filament");
@@ -391,8 +424,8 @@ fn build_profile_json(
         "from":     "User",
         "is_custom_defined": "1",
         "type":     "filament",
-        "inherits": inherit_stub_for(polymer),
-        "compatible_printers": [U1_PRINTER],
+        "inherits": inherits,
+        "compatible_printers": compatible,
         "filament_type":   [polymer.as_str()],
         "filament_vendor": [manufacturer],
         "_leanspectrum_metadata": {
@@ -405,7 +438,7 @@ fn build_profile_json(
             "revision_date":    ef.revision_date,
             "scarf_settings":   scarf_value,
             "scarf_note":       "seam_*/scarf_* are process-domain keys; apply them in a process profile, not here",
-            "inherit_target":   inherit_stub_for(polymer),
+            "inherit_target":   inherits,
         }
     });
 
@@ -473,7 +506,16 @@ pub fn build_and_save(
     let product_disp = ef.product_name.clone()
         .unwrap_or_else(|| polymer.as_str().to_string());
 
-    let profile = build_profile_json(ef, polymer, log);
+    // The PDF single-import path always targets the Snapmaker U1 (U1-tuned
+    // parent + U1 printer). The Bibliothèque Filament one-click path uses
+    // `build_filament_json_for` instead, for any chosen printer.
+    let profile = build_profile_json(
+        ef,
+        polymer,
+        inherit_stub_for(polymer),
+        &[U1_PRINTER.to_string()],
+        log,
+    );
     let display = profile["name"].as_str().unwrap_or("Imported filament").to_string();
 
     let user_dir = snapmaker_orca_user_dir();
@@ -630,7 +672,13 @@ mod tests {
     #[test]
     fn pla_profile_has_correct_schema() {
         let mut log = Vec::new();
-        let v = build_profile_json(&eryone_pla(), Polymer::Pla, &mut log);
+        let v = build_profile_json(
+            &eryone_pla(),
+            Polymer::Pla,
+            inherit_stub_for(Polymer::Pla),
+            &[U1_PRINTER.to_string()],
+            &mut log,
+        );
 
         assert_eq!(v["inherits"], "Snapmaker PLA SnapSpeed @U1");
         assert_eq!(v["type"],     "filament");
@@ -792,7 +840,13 @@ mod tests {
             ..Default::default()
         };
         let mut log = Vec::new();
-        let v = build_profile_json(&ef, Polymer::Pla, &mut log);
+        let v = build_profile_json(
+            &ef,
+            Polymer::Pla,
+            inherit_stub_for(Polymer::Pla),
+            &[U1_PRINTER.to_string()],
+            &mut log,
+        );
         let obj = v.as_object().unwrap();
         assert!(!obj.contains_key("nozzle_temperature"));
         assert!(!obj.contains_key("nozzle_temperature_range_low"));
@@ -802,5 +856,28 @@ mod tests {
         assert!(!obj.contains_key("textured_plate_temp"));
         // Max volumetric speed still comes from the polymer default.
         assert_eq!(v["filament_max_volumetric_speed"][0], "12");
+    }
+
+    /// v0.2.0 universal path: a filament generated for a NON-U1 printer must
+    /// inherit a stock "Generic <polymer>" parent and be compatible with exactly
+    /// the chosen printer — not the U1. The U1 path keeps its tuned parent.
+    #[test]
+    fn universal_filament_targets_chosen_printer_with_generic_parent() {
+        let mut log = Vec::new();
+        let printers = vec!["Creality K1 (0.4 nozzle)".to_string()];
+        let (name, v) =
+            build_filament_json_for(&eryone_pla(), Polymer::Pla, &printers, false, &mut log);
+        assert!(name.starts_with("PLA — Eryone PLA+"), "name was {name}");
+        assert_eq!(v["inherits"], "Generic PLA");
+        assert_eq!(v["compatible_printers"][0], "Creality K1 (0.4 nozzle)");
+        assert_eq!(v["type"], "filament");
+        // Data-sheet temperatures are still carried through.
+        assert_eq!(v["nozzle_temperature"][0], "210");
+
+        // The U1 path keeps the hand-verified U1-tuned parent + U1 printer.
+        let u1 = vec![U1_PRINTER.to_string()];
+        let (_, vu) = build_filament_json_for(&eryone_pla(), Polymer::Pla, &u1, true, &mut log);
+        assert_eq!(vu["inherits"], "Snapmaker PLA SnapSpeed @U1");
+        assert_eq!(vu["compatible_printers"][0], "Snapmaker U1 (0.4 nozzle)");
     }
 }

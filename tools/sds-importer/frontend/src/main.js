@@ -18,22 +18,250 @@ const invoke = resolveInvoke();
 // i18n helpers loaded from i18n.js (window.leanspectrumI18n.t / setLang).
 const tr = (key, vars) => window.leanspectrumI18n.t(key, vars);
 
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
 // ----- tabs -----
+let filamentInitialised = false;
 document.querySelectorAll(".tab").forEach(tab => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach(x => x.classList.toggle("active", x === tab));
     document.querySelectorAll(".tab-panel").forEach(p => {
       p.classList.toggle("active", p.id === `tab-${tab.dataset.tab}`);
     });
-    if (tab.dataset.tab === "database" && !corpusInitialised) {
-      corpusInitialised = true;
-      initCorpusPath();
+    if (tab.dataset.tab === "filament" && !filamentInitialised) {
+      filamentInitialised = true;
+      loadFilaments("");
     }
   });
 });
 
+function fillSelect(sel, items, placeholder) {
+  if (!sel) return;
+  sel.innerHTML = "";
+  const o0 = document.createElement("option");
+  o0.value = "";
+  o0.textContent = placeholder;
+  sel.appendChild(o0);
+  for (const it of items) {
+    const o = document.createElement("option");
+    o.value = String(it && it.value !== undefined ? it.value : it);
+    o.textContent = String(it && it.label !== undefined ? it.label : it);
+    sel.appendChild(o);
+  }
+}
+
 // ============================================================
-// Single PDF tab
+// Global printer selector (v0.2.0) — brand → model → nozzle (or "all nozzles").
+// Shared by the Filament library (one-click) and the Process library tab.
+// ============================================================
+const gVendor = document.getElementById("gVendor");
+const gModel  = document.getElementById("gModel");
+const gNozzle = document.getElementById("gNozzle");
+
+/// {vendor, model, nozzle:number|null, all:bool} or null when incomplete.
+function currentPrinter() {
+  if (!gVendor || !gVendor.value || !gModel.value) return null;
+  const nv = gNozzle.value;
+  if (nv === "all") return { vendor: gVendor.value, model: gModel.value, nozzle: null, all: true };
+  if (nv)           return { vendor: gVendor.value, model: gModel.value, nozzle: parseFloat(nv), all: false };
+  // Model chosen but no nozzle yet → backend defaults to 0.4 / smallest.
+  return { vendor: gVendor.value, model: gModel.value, nozzle: null, all: false };
+}
+
+function refreshGenEnabled() {
+  const p = currentPrinter();
+  if (genForPrinter)       genForPrinter.disabled = !p;
+  if (genFilamentProcess)  genFilamentProcess.disabled = !(p && selectedFilamentId != null);
+}
+
+if (gVendor && invoke) {
+  gVendor.addEventListener("change", async () => {
+    gModel.disabled = true; gNozzle.disabled = true;
+    fillSelect(gModel, [], tr("library_model"));
+    fillSelect(gNozzle, [], tr("library_nozzle"));
+    refreshGenEnabled();
+    if (!gVendor.value) return;
+    try {
+      fillSelect(gModel, await invoke("list_printer_models", { vendor: gVendor.value }), tr("library_model"));
+      gModel.disabled = false;
+    } catch (e) { console.error(e); }
+  });
+  gModel.addEventListener("change", async () => {
+    gNozzle.disabled = true;
+    fillSelect(gNozzle, [], tr("library_nozzle"));
+    refreshGenEnabled();
+    if (!gModel.value) return;
+    try {
+      const nz = await invoke("list_printer_nozzles", { vendor: gVendor.value, model: gModel.value });
+      const items = nz.map(n => ({ value: n, label: n + " mm" }));
+      items.push({ value: "all", label: tr("printer_all") });
+      fillSelect(gNozzle, items, tr("library_nozzle"));
+      gNozzle.disabled = false;
+      refreshGenEnabled(); // model chosen → process generation allowed (nozzle optional)
+    } catch (e) { console.error(e); }
+  });
+  gNozzle.addEventListener("change", refreshGenEnabled);
+  invoke("list_printer_vendors")
+    .then(v => fillSelect(gVendor, v, tr("library_vendor")))
+    .catch(() => {});
+}
+
+// ============================================================
+// Filament library tab (v0.2.0) — search the DB, pick a material, then
+// one-click generate the filament profile + the 7 process profiles for the
+// printer chosen in the global selector.
+// ============================================================
+const filamentSearch     = document.getElementById("filamentSearch");
+const filamentList       = document.getElementById("filamentList");
+const filamentCount      = document.getElementById("filamentCount");
+const genFilamentProcess = document.getElementById("genFilamentProcess");
+const filamentStatus     = document.getElementById("filamentStatus");
+const filamentResult     = document.getElementById("filamentResult");
+let selectedFilamentId = null;
+let searchTimer = null;
+
+async function loadFilaments(query) {
+  if (!invoke || !filamentList) return;
+  try {
+    const rows = await invoke("list_filaments", { query: query || null });
+    renderFilaments(rows);
+  } catch (e) {
+    filamentList.innerHTML = "";
+    filamentCount.textContent = "";
+    filamentResult.style.display = "block";
+    filamentResult.textContent = String(e);
+  }
+}
+
+function renderFilaments(rows) {
+  filamentCount.textContent = rows.length ? String(rows.length) : tr("filament_none");
+  selectedFilamentId = null;
+  refreshGenEnabled();
+  filamentList.innerHTML = rows.map(r => {
+    const fam    = escapeHtml(r.base_type || "?") + (r.filled_type ? " " + escapeHtml(r.filled_type) : "");
+    const params = r.has_params ? `<span class="badge params" title="manufacturer temps">°C</span>` : "";
+    const colors = r.colors ? `<span class="sub">${r.colors} ◐</span>` : "";
+    const dens   = r.density ? `<span class="sub">${r.density} g/cm³</span>` : "";
+    return `<li data-id="${r.id}">
+      <div style="flex:1;">
+        <div class="meta">
+          <span class="badge fam">${fam}</span>
+          <span class="anchor">${escapeHtml(r.brand)} — ${escapeHtml(r.label)}</span>
+          ${params} ${colors} ${dens}
+        </div>
+      </div>
+    </li>`;
+  }).join("");
+  for (const li of filamentList.querySelectorAll("li[data-id]")) {
+    li.addEventListener("click", () => {
+      selectedFilamentId = parseInt(li.dataset.id, 10);
+      for (const x of filamentList.querySelectorAll("li")) x.classList.toggle("selected", x === li);
+      refreshGenEnabled();
+    });
+  }
+}
+
+if (filamentSearch) {
+  filamentSearch.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadFilaments(filamentSearch.value.trim()), 200);
+  });
+}
+
+if (genFilamentProcess) {
+  genFilamentProcess.addEventListener("click", async () => {
+    const p = currentPrinter();
+    if (!p)                       { filamentStatus.textContent = tr("filament_pick_printer"); return; }
+    if (selectedFilamentId == null) { filamentStatus.textContent = tr("filament_pick_one"); return; }
+    genFilamentProcess.disabled = true;
+    filamentStatus.textContent = tr("filament_working");
+    filamentResult.style.display = "none";
+    try {
+      const r = await invoke("generate_filament_and_process", {
+        materialId: selectedFilamentId,
+        vendor: p.vendor,
+        model: p.model,
+        nozzle: p.nozzle,
+        allNozzles: p.all,
+      });
+      const printers = (r.printers || []).join(", ");
+      filamentResult.style.display = "block";
+      filamentResult.innerHTML =
+        `<h2 style="margin-top:0;">${escapeHtml(tr("filament_result_for", { printer: printers }))}</h2>`
+        + `<div class="field"><span>${escapeHtml(tr("filament_result_filament"))}</span><span><code>${escapeHtml(r.filamentName)}</code></span></div>`
+        + `<div class="field"><span>${escapeHtml(tr("filament_result_process"))}</span><span><strong>${r.processCount}</strong></span></div>`
+        + `<div class="sub" style="margin-top:8px;"><code>${escapeHtml(r.processDir)}</code></div>`;
+      filamentStatus.textContent = tr("open_orca");
+    } catch (e) {
+      filamentResult.style.display = "block";
+      filamentResult.textContent = String(e);
+      filamentStatus.textContent = "";
+    } finally {
+      genFilamentProcess.disabled = false;
+      refreshGenEnabled();
+    }
+  });
+}
+
+// ============================================================
+// Process library tab — the 7 project-type process profiles for the printer
+// chosen in the global selector, or the full Snapmaker U1 set (28 profiles).
+// ============================================================
+const genForPrinter = document.getElementById("genForPrinter");
+const genLibraryBtn = document.getElementById("genLibraryBtn");
+const libraryStatus = document.getElementById("libraryStatus");
+const libraryResult = document.getElementById("libraryResult");
+
+function renderLibraryResult(r) {
+  libraryResult.style.display = "block";
+  libraryResult.innerHTML = `<strong>${r.count}</strong> ${escapeHtml(tr("library_done"))} <code>${escapeHtml(r.dir)}</code>`;
+}
+
+if (genForPrinter) {
+  genForPrinter.addEventListener("click", async () => {
+    const p = currentPrinter();
+    if (!p) { libraryStatus.textContent = tr("filament_pick_printer"); return; }
+    genForPrinter.disabled = true;
+    libraryStatus.textContent = tr("library_working");
+    libraryResult.style.display = "none";
+    try {
+      const r = await invoke("generate_process_library_for", {
+        vendor: p.vendor, model: p.model, nozzle: p.nozzle, allNozzles: p.all,
+      });
+      renderLibraryResult(r);
+    } catch (e) {
+      libraryResult.style.display = "block";
+      libraryResult.textContent = `${tr("library_fail")}: ${e}`;
+    } finally {
+      libraryStatus.textContent = "";
+      genForPrinter.disabled = false;
+      refreshGenEnabled();
+    }
+  });
+}
+
+if (genLibraryBtn) {
+  genLibraryBtn.addEventListener("click", async () => {
+    genLibraryBtn.disabled = true;
+    libraryStatus.textContent = tr("library_working");
+    libraryResult.style.display = "none";
+    try {
+      renderLibraryResult(await invoke("generate_process_library"));
+    } catch (e) {
+      libraryResult.style.display = "block";
+      libraryResult.textContent = `${tr("library_fail")}: ${e}`;
+    } finally {
+      libraryStatus.textContent = "";
+      genLibraryBtn.disabled = false;
+    }
+  });
+}
+
+// ============================================================
+// Single PDF tab — fallback for a filament that is not yet in the database.
+// Imports one SDS/TDS PDF and produces a Snapmaker U1 filament profile.
 // ============================================================
 const drop      = document.getElementById("drop");
 const pickedEl  = document.getElementById("pickedPath");
@@ -51,24 +279,28 @@ function setChosen(path) {
   runBtn.disabled = !path;
 }
 
-drop.addEventListener("click", async () => {
-  try {
-    const p = await invoke("pick_pdf");
-    if (p) setChosen(p);
-  } catch (e) { status.textContent = `${tr("err_picker")}: ${e}`; }
-});
-["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => {
-  e.preventDefault(); drop.classList.add("hover");
-}));
-["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => {
-  e.preventDefault(); drop.classList.remove("hover");
-}));
-drop.addEventListener("drop", e => {
-  const path = e.dataTransfer?.files?.[0]?.path;
-  if (path) setChosen(path);
-});
+if (drop) {
+  drop.addEventListener("click", async () => {
+    try {
+      const p = await invoke("pick_pdf");
+      if (p) setChosen(p);
+    } catch (e) { status.textContent = `${tr("err_picker")}: ${e}`; }
+  });
+  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.add("hover");
+  }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault(); drop.classList.remove("hover");
+  }));
+  drop.addEventListener("drop", e => {
+    const path = e.dataTransfer?.files?.[0]?.path;
+    if (path) setChosen(path);
+  });
+}
 
-runBtn.addEventListener("click", () => importPdfAndShow(chosenPath, fetchOnline.checked, result, status, logPanel, logEl, runBtn));
+if (runBtn) {
+  runBtn.addEventListener("click", () => importPdfAndShow(chosenPath, fetchOnline.checked, result, status, logPanel, logEl, runBtn));
+}
 
 async function importPdfAndShow(path, online, resultEl, statusEl, logPanelEl, logElEl, runButton) {
   if (!path) return;
@@ -96,8 +328,8 @@ function renderResult(r, resultEl, statusEl, logPanelEl, logElEl) {
     ? `<span class="badge review">${tr("needs_review_badge")}</span>`
     : `<span class="badge ok">${tr("ready_badge")}</span>`;
   resultEl.innerHTML = `
-    <h2 style="margin-top:0;">${e.product_name ?? "Imported filament"} ${badge}</h2>
-    <div class="sub">${e.manufacturer ?? "Unknown manufacturer"} — ${e.polymer ?? "Unknown polymer"}</div>
+    <h2 style="margin-top:0;">${escapeHtml(e.product_name ?? "Imported filament")} ${badge}</h2>
+    <div class="sub">${escapeHtml(e.manufacturer ?? "Unknown manufacturer")} — ${escapeHtml(e.polymer ?? "Unknown polymer")}</div>
     ${field(tr("field_density"), e.density_g_cm3)}
     ${field(tr("field_glass"), e.glass_transition_c)}
     ${field(tr("field_melt"), e.melt_temp_min_c && e.melt_temp_max_c ? `${e.melt_temp_min_c} – ${e.melt_temp_max_c}` : null)}
@@ -117,284 +349,6 @@ function renderResult(r, resultEl, statusEl, logPanelEl, logElEl) {
 }
 
 // ============================================================
-// Catalog tab
-// ============================================================
-const catalogUrl       = document.getElementById("catalogUrl");
-const crawlBtn         = document.getElementById("crawlBtn");
-const catalogPanel     = document.getElementById("catalogPanel");
-const catalogList      = document.getElementById("catalogList");
-const catalogSkipped   = document.getElementById("catalogSkipped");
-const catalogStatus    = document.getElementById("catalogStatus");
-const selectAllBtn     = document.getElementById("selectAll");
-const selectNoneBtn    = document.getElementById("selectNone");
-const batchImportBtn   = document.getElementById("batchImport");
-const batchResult      = document.getElementById("batchResult");
-const batchProgress    = document.getElementById("batchProgress");
-const batchProgressBar = batchProgress.querySelector(".bar");
-const catalogFetch     = document.getElementById("catalogFetchOnline");
-
-let catalogEntries = [];
-
-crawlBtn.addEventListener("click", async () => {
-  const url = catalogUrl.value.trim();
-  if (!url) return;
-  crawlBtn.disabled = true;
-  catalogStatus.textContent = tr("status_discovering");
-  catalogPanel.style.display = "none";
-  batchResult.style.display = "none";
-  try {
-    const r = await invoke("crawl_catalog", { url });
-    catalogEntries = r.entries;
-    renderCatalog(r);
-  } catch (e) {
-    catalogStatus.textContent = `${tr("err_discovery")}: ${e}`;
-  } finally {
-    crawlBtn.disabled = false;
-  }
-});
-
-function badgeFor(docType) {
-  const lower = (docType || "Unknown").toLowerCase();
-  return `<span class="badge ${lower}">${docType ?? "Unknown"}</span>`;
-}
-
-function renderCatalog(r) {
-  catalogPanel.style.display = "block";
-  catalogStatus.textContent = `${r.entries.length} doc(s)`;
-  catalogList.innerHTML = r.entries.map((e, i) => `
-    <li>
-      <input type="checkbox" data-i="${i}" ${e.doc_type !== "Unknown" ? "checked" : ""} />
-      <div style="flex:1;">
-        <div class="meta">
-          ${badgeFor(e.doc_type)}
-          ${e.guessed_polymer ? `<span class="badge unknown">${e.guessed_polymer}</span>` : ""}
-          <span class="anchor">${escapeHtml(e.anchor_text || "(no anchor)")}</span>
-        </div>
-        <div class="url">${escapeHtml(e.url)}</div>
-      </div>
-    </li>
-  `).join("");
-  catalogSkipped.textContent = r.skipped?.length
-    ? `Skipped ${r.skipped.length}: ${r.skipped.slice(0, 4).join("; ")}${r.skipped.length > 4 ? "…" : ""}`
-    : "";
-}
-
-selectAllBtn .addEventListener("click", () => catalogList.querySelectorAll("input[type=checkbox]").forEach(c => c.checked = true));
-selectNoneBtn.addEventListener("click", () => catalogList.querySelectorAll("input[type=checkbox]").forEach(c => c.checked = false));
-
-batchImportBtn.addEventListener("click", async () => {
-  const selected = Array.from(catalogList.querySelectorAll("input[type=checkbox]:checked"))
-    .map(c => catalogEntries[parseInt(c.dataset.i, 10)].url);
-  if (!selected.length) {
-    catalogStatus.textContent = tr("status_no_docs");
-    return;
-  }
-  batchImportBtn.disabled = true;
-  catalogStatus.textContent = tr("status_working");
-  batchProgress.style.display = "block";
-  batchProgressBar.style.width = "10%";
-  try {
-    const r = await invoke("import_from_urls", {
-      req: { urls: selected, fetchOnline: catalogFetch.checked }
-    });
-    batchProgressBar.style.width = "100%";
-    renderBatchResult(r);
-  } catch (e) {
-    catalogStatus.textContent = `${tr("err_batch")}: ${e}`;
-  } finally {
-    batchImportBtn.disabled = false;
-    setTimeout(() => { batchProgress.style.display = "none"; batchProgressBar.style.width = "0%"; }, 800);
-  }
-});
-
-function renderBatchResult(r) {
-  const ok   = r.succeeded?.length || 0;
-  const fail = r.failed?.length    || 0;
-  const lines = [];
-  for (const item of (r.succeeded || [])) {
-    const e = item.extracted;
-    lines.push(`✓ ${e.product_name ?? "Imported"} (${e.polymer ?? "?"}) → ${item.profile_path ?? "(not saved)"}`);
-  }
-  for (const [url, err] of (r.failed || [])) {
-    lines.push(`✗ ${url} — ${err}`);
-  }
-  batchResult.innerHTML = `
-    <h2 style="margin-top:0;">${tr("batch_summary", { ok, fail })}</h2>
-    <div class="log">${lines.map(l => `<div>${escapeHtml(l)}</div>`).join("")}</div>
-  `;
-  batchResult.style.display = "block";
-  catalogStatus.textContent = tr("batch_done_status", { ok, fail });
-}
-
-// ============================================================
-// Database tab (local corpus browser)
-// ============================================================
-const corpusPath    = document.getElementById("corpusPath");
-const corpusScan    = document.getElementById("corpusScanBtn");
-const corpusPanel   = document.getElementById("corpusPanel");
-const corpusBrands  = document.getElementById("corpusBrands");
-const corpusStatus  = document.getElementById("corpusStatus");
-const corpusResult  = document.getElementById("corpusResult");
-let corpusInitialised = false;
-
-async function initCorpusPath() {
-  try {
-    const def = await invoke("corpus_default_path");
-    corpusPath.value = corpusPath.value || def;
-  } catch { /* ignore — user types path manually */ }
-}
-
-corpusScan.addEventListener("click", async () => {
-  const path = corpusPath.value.trim();
-  if (!path) return;
-  corpusScan.disabled = true;
-  corpusPanel.style.display = "none";
-  corpusResult.style.display = "none";
-  try {
-    const r = await invoke("scan_corpus", { path });
-    renderCorpus(r);
-  } catch (e) {
-    corpusPanel.style.display = "block";
-    corpusStatus.textContent = `${tr("err_scan")}: ${e}`;
-    corpusBrands.innerHTML = "";
-  } finally {
-    corpusScan.disabled = false;
-  }
-});
-
-function renderCorpus(idx) {
-  corpusPanel.style.display = "block";
-  if (!idx.brands.length) {
-    corpusStatus.textContent = tr("database_empty");
-    corpusBrands.innerHTML = "";
-    return;
-  }
-  corpusStatus.textContent = `${idx.pdf_count} PDFs / ${idx.brands.length} brands`;
-  corpusBrands.innerHTML = idx.brands.map(b => `
-    <div class="brand-group">
-      <div class="brand-name">${escapeHtml(b.brand)} <span class="size">(${b.pdfs.length})</span></div>
-      <ul class="brand-pdfs">
-        ${b.pdfs.map(p => `
-          <li data-path="${escapeHtml(p.absolute_path)}">
-            <span>${escapeHtml(p.filename)}</span>
-            <span class="size">${Math.round(p.size_bytes / 1024)} KB</span>
-          </li>
-        `).join("")}
-      </ul>
-    </div>
-  `).join("");
-
-  for (const li of corpusBrands.querySelectorAll("li[data-path]")) {
-    li.addEventListener("click", () => {
-      const p = li.dataset.path;
-      const statusSpan = document.createElement("span");
-      corpusStatus.textContent = `${tr("status_working")} — ${p}`;
-      importPdfAndShow(p, false, corpusResult, corpusStatus, null, null, null);
-    });
-  }
-}
-
-function escapeHtml(s) {
-  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
-}
-
-// ============================================================
-// Process library tab (v0.1.16) — write the 28 shared project-type process
-// profiles (7 project types × 4 nozzles) into the Snapmaker_Orca user folder.
-// ============================================================
-const genLibraryBtn = document.getElementById("genLibraryBtn");
-const libraryStatus = document.getElementById("libraryStatus");
-const libraryResult = document.getElementById("libraryResult");
-if (genLibraryBtn) {
-  genLibraryBtn.addEventListener("click", async () => {
-    genLibraryBtn.disabled = true;
-    libraryStatus.textContent = tr("library_working");
-    libraryResult.style.display = "none";
-    try {
-      const r = await invoke("generate_process_library");
-      libraryResult.style.display = "block";
-      libraryResult.innerHTML =
-        `<strong>${r.count}</strong> ${escapeHtml(tr("library_done"))} <code>${escapeHtml(r.dir)}</code>`;
-    } catch (e) {
-      libraryResult.style.display = "block";
-      libraryResult.textContent = `${tr("library_fail")}: ${e}`;
-    } finally {
-      libraryStatus.textContent = "";
-      genLibraryBtn.disabled = false;
-    }
-  });
-}
-
-// ============================================================
-// Universal printer selector (v0.1.18) — generate the 7 project-type process
-// profiles for ANY catalogue printer (vendor -> model -> nozzle).
-// ============================================================
-const pVendor = document.getElementById("pVendor");
-const pModel = document.getElementById("pModel");
-const pNozzle = document.getElementById("pNozzle");
-const genForPrinter = document.getElementById("genForPrinter");
-
-function fillSelect(sel, items, placeholder) {
-  if (!sel) return;
-  sel.innerHTML = "";
-  const o0 = document.createElement("option");
-  o0.value = "";
-  o0.textContent = placeholder;
-  sel.appendChild(o0);
-  for (const it of items) {
-    const o = document.createElement("option");
-    o.value = String(it && it.value !== undefined ? it.value : it);
-    o.textContent = String(it && it.label !== undefined ? it.label : it);
-    sel.appendChild(o);
-  }
-}
-
-if (pVendor && invoke) {
-  pVendor.addEventListener("change", async () => {
-    pModel.disabled = true; pNozzle.disabled = true; genForPrinter.disabled = true;
-    fillSelect(pModel, [], tr("library_model"));
-    fillSelect(pNozzle, [], tr("library_nozzle"));
-    if (!pVendor.value) return;
-    try {
-      fillSelect(pModel, await invoke("list_printer_models", { vendor: pVendor.value }), tr("library_model"));
-      pModel.disabled = false;
-    } catch (e) { libraryStatus.textContent = String(e); }
-  });
-  pModel.addEventListener("change", async () => {
-    pNozzle.disabled = true; genForPrinter.disabled = true;
-    fillSelect(pNozzle, [], tr("library_nozzle"));
-    if (!pModel.value) return;
-    try {
-      const nz = await invoke("list_printer_nozzles", { vendor: pVendor.value, model: pModel.value });
-      fillSelect(pNozzle, nz.map(n => ({ value: n, label: n + " mm" })), tr("library_nozzle"));
-      pNozzle.disabled = false;
-      genForPrinter.disabled = false; // nozzle optional (defaults to 0.4 / smallest)
-    } catch (e) { libraryStatus.textContent = String(e); }
-  });
-  genForPrinter.addEventListener("click", async () => {
-    genForPrinter.disabled = true;
-    libraryStatus.textContent = tr("library_working");
-    libraryResult.style.display = "none";
-    try {
-      const args = { vendor: pVendor.value, model: pModel.value };
-      if (pNozzle.value) args.nozzle = parseFloat(pNozzle.value);
-      const r = await invoke("generate_process_library_for", args);
-      libraryResult.style.display = "block";
-      libraryResult.innerHTML = `<strong>${r.count}</strong> ${escapeHtml(tr("library_done"))} <code>${escapeHtml(r.dir)}</code>`;
-    } catch (e) {
-      libraryResult.style.display = "block";
-      libraryResult.textContent = `${tr("library_fail")}: ${e}`;
-    } finally {
-      libraryStatus.textContent = "";
-      genForPrinter.disabled = false;
-    }
-  });
-  invoke("list_printer_vendors")
-    .then(v => fillSelect(pVendor, v, tr("library_vendor")))
-    .catch(() => {});
-}
-
-// ============================================================
 // Update checker (v0.1.17) — manual button + silent launch check.
 // The database is downloaded automatically when newer; a newer APP is only
 // proposed (button opens the download page in the browser).
@@ -408,6 +362,8 @@ function renderUpdate(st, manual) {
     updateStatus.textContent = `${tr("update_error")}: ${st.error}`;
   } else if (st.dbDownloaded) {
     updateStatus.textContent = `${tr("update_db_done")} ${st.latestDbVersion}`;
+    // A fresh database may have new materials — refresh the list if it loaded.
+    if (filamentInitialised) loadFilaments(filamentSearch ? filamentSearch.value.trim() : "");
   } else if (st.upToDate) {
     updateStatus.textContent = manual ? tr("update_uptodate") : "";
   } else {
@@ -450,5 +406,13 @@ async function checkUpdates(manual) {
 }
 
 if (updateBtn) updateBtn.addEventListener("click", () => checkUpdates(true));
+
+// ----- initial load -----
+// Filament library is the default tab → populate it immediately.
+if (invoke && filamentList) {
+  filamentInitialised = true;
+  loadFilaments("");
+}
+refreshGenEnabled();
 // Silent background check at launch — only surfaces something if found.
 checkUpdates(false);

@@ -12,6 +12,7 @@ use tauri::Manager;
 mod catalog;
 mod crawler;
 mod fetcher;
+mod library;
 mod ocr;
 mod pdf;
 mod polymer;
@@ -438,15 +439,42 @@ fn list_printer_nozzles(vendor: String, model: String) -> std::result::Result<Ve
 /// Generate the 7 project-type process profiles for a chosen catalogue printer
 /// (on-demand). Resolves the printer's stock base process + preset name from the
 /// machine catalogue, then writes the profiles to the Snapmaker_Orca process/ dir.
+/// Resolve the catalogue print target(s): one nozzle, or EVERY nozzle of the
+/// model when `all_nozzles` is set. Shared by the process-only and the
+/// filament+process commands so "toutes les buses" behaves identically.
+fn resolve_specs(
+    vendor: &str,
+    model: &str,
+    nozzle: Option<f64>,
+    all_nozzles: bool,
+) -> Result<Vec<project_process::PrinterSpec>> {
+    let specs: Vec<project_process::PrinterSpec> = if all_nozzles {
+        catalog::nozzles(vendor, model)
+            .into_iter()
+            .filter_map(|n| catalog::resolve(vendor, model, Some(n)))
+            .collect()
+    } else {
+        vec![catalog::resolve(vendor, model, nozzle).ok_or_else(|| {
+            Error::Other(format!("Unknown printer in catalogue: {vendor} / {model}"))
+        })?]
+    };
+    if specs.is_empty() {
+        return Err(Error::Other(format!(
+            "No printer variant resolved for {vendor} / {model}."
+        )));
+    }
+    Ok(specs)
+}
+
 #[tauri::command]
 fn generate_process_library_for(
     vendor: String,
     model: String,
     nozzle: Option<f64>,
+    all_nozzles: bool,
 ) -> std::result::Result<ProcessLibraryResult, Error> {
     run_command(move || {
-        let spec = catalog::resolve(&vendor, &model, nozzle)
-            .ok_or_else(|| Error::Other(format!("Unknown printer in catalogue: {vendor} / {model}")))?;
+        let specs = resolve_specs(&vendor, &model, nozzle, all_nozzles)?;
         let user = profile::snapmaker_orca_user_dir().ok_or_else(|| {
             Error::Profile(
                 "Snapmaker_Orca user directory not found — open the slicer once so it creates your profile folder, then retry.".into(),
@@ -455,11 +483,107 @@ fn generate_process_library_for(
         let dir = user.join("process");
         std::fs::create_dir_all(&dir)?;
         let mut names = Vec::new();
-        for (name, value) in project_process::build_library_for(&[spec]) {
+        for (name, value) in project_process::build_library_for(&specs) {
             profile::write_unique_json(&dir, &name, &value)?;
             names.push(name);
         }
         Ok(ProcessLibraryResult { count: names.len(), dir: dir.display().to_string(), names })
+    })
+}
+
+// --- v0.2.0 Bibliothèque Filament: read the bundled/updatable filament
+//     database, and the one-click flow that turns a chosen material + printer
+//     into a filament profile + the 7 project-type process profiles. ---
+
+#[tauri::command]
+fn list_filaments(
+    query: Option<String>,
+) -> std::result::Result<Vec<library::FilamentSummary>, Error> {
+    run_command(move || library::list(query, 500))
+}
+
+#[tauri::command]
+fn get_filament(id: i64) -> std::result::Result<library::FilamentDetail, Error> {
+    run_command(move || library::get(id))
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CombinedResult {
+    filament_name: String,
+    filament_path: String,
+    process_count: usize,
+    process_dir: String,
+    process_names: Vec<String>,
+    printers: Vec<String>,
+    log: Vec<String>,
+}
+
+/// The one-click flow: from a chosen DATABASE material + a chosen printer
+/// (vendor/model + one nozzle, or every nozzle of the machine via `all_nozzles`),
+/// generate the filament profile AND the 7 project-type process profiles in a
+/// single action. The filament-specific tuning stays on the filament profile;
+/// the shared process set carries the fork features + cornering/resonance.
+#[tauri::command]
+fn generate_filament_and_process(
+    material_id: i64,
+    vendor: String,
+    model: String,
+    nozzle: Option<f64>,
+    all_nozzles: bool,
+) -> std::result::Result<CombinedResult, Error> {
+    run_command(move || {
+        // 1. Resolve the print target(s) from the machine catalogue.
+        let specs = resolve_specs(&vendor, &model, nozzle, all_nozzles)?;
+        // Distinct printer preset names → the filament's compatible_printers.
+        let mut printers: Vec<String> = Vec::new();
+        for s in &specs {
+            if !printers.contains(&s.printer_name) {
+                printers.push(s.printer_name.clone());
+            }
+        }
+        let is_u1 = printers.iter().any(|p| p.contains("Snapmaker U1"));
+
+        // 2. Build the filament profile from the database material.
+        let mut log = Vec::new();
+        let ef = library::material_to_extracted(material_id)?;
+        let polymer = ef.polymer.unwrap_or(Polymer::Other);
+        let (fname, fval) =
+            profile::build_filament_json_for(&ef, polymer, &printers, is_u1, &mut log);
+
+        // 3. Write into the slicer's user dir: 1 filament + the 7×N process.
+        let user = profile::snapmaker_orca_user_dir().ok_or_else(|| {
+            Error::Profile(
+                "Snapmaker_Orca / OptimusOrca user directory not found — open the slicer once so it creates your profile folder, then retry.".into(),
+            )
+        })?;
+        let fdir = user.join("filament");
+        std::fs::create_dir_all(&fdir)?;
+        let fpath = profile::write_unique_json(&fdir, &fname, &fval)?;
+        log.push(format!("Saved filament profile to {}", fpath.display()));
+
+        let pdir = user.join("process");
+        std::fs::create_dir_all(&pdir)?;
+        let mut names = Vec::new();
+        for (name, value) in project_process::build_library_for(&specs) {
+            profile::write_unique_json(&pdir, &name, &value)?;
+            names.push(name);
+        }
+        log.push(format!(
+            "Saved {} process profiles across {} printer variant(s).",
+            names.len(),
+            specs.len()
+        ));
+
+        Ok(CombinedResult {
+            filament_name: fname,
+            filament_path: fpath.display().to_string(),
+            process_count: names.len(),
+            process_dir: pdir.display().to_string(),
+            process_names: names,
+            printers,
+            log,
+        })
     })
 }
 
@@ -571,9 +695,37 @@ pub fn run() {
             corpus_default_path, scan_corpus, generate_process_library,
             check_updates, open_external,
             list_printer_vendors, list_printer_models, list_printer_nozzles,
-            generate_process_library_for
+            generate_process_library_for,
+            list_filaments, get_filament, generate_filament_and_process
         ])
         .setup(|app| {
+            // First run: seed the bundled filament database into the app-data
+            // dir so the Bibliothèque Filament works offline immediately. The
+            // launch `check_updates` then refreshes it from the server whenever
+            // a newer version is published.
+            if let Some(db) = update::db_path() {
+                if !db.exists() {
+                    match app
+                        .path()
+                        .resolve("filaments.sqlite", tauri::path::BaseDirectory::Resource)
+                    {
+                        Ok(res) if res.exists() => {
+                            if let Some(parent) = db.parent() {
+                                let _ = std::fs::create_dir_all(parent);
+                            }
+                            match std::fs::copy(&res, &db) {
+                                Ok(n) => log::info!(
+                                    "Seeded filament DB ({n} bytes) from bundle to {}",
+                                    db.display()
+                                ),
+                                Err(e) => log::warn!("Could not seed filament DB: {e}"),
+                            }
+                        }
+                        Ok(res) => log::warn!("Bundled filament DB missing at {}", res.display()),
+                        Err(e) => log::warn!("Could not resolve bundled filament DB: {e}"),
+                    }
+                }
+            }
             log::info!(
                 "main window ready: {}",
                 app.get_webview_window("main").map(|_| "main").unwrap_or("?"),

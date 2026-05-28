@@ -76,10 +76,13 @@ pub struct UpdateStatus {
     pub error: Option<String>,
 }
 
-fn data_dir() -> Option<PathBuf> {
+pub(crate) fn data_dir() -> Option<PathBuf> {
     dirs::data_local_dir().map(|d| d.join("Optimisateur MD"))
 }
-fn db_path() -> Option<PathBuf> {
+/// Canonical on-disk location of the filament database. `update::download_db`
+/// writes here; the first-run seeder copies the bundled snapshot here; and
+/// `library` reads from here. One location, three writers/readers.
+pub(crate) fn db_path() -> Option<PathBuf> {
     data_dir().map(|d| d.join("filaments.sqlite"))
 }
 fn db_version_path() -> Option<PathBuf> {

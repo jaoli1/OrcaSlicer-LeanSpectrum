@@ -39,6 +39,48 @@ impl Polymer {
         }
     }
 
+    /// Map a filament database `base_type` string (e.g. "PLA", "PETG", "PA12",
+    /// "PC-ABS", "TPE") to the closest polymer family. Flexible families collapse
+    /// to TPU, polyamides to PA6/PA12, and anything we have no FDM profile for
+    /// (resin, PEEK, PEI, …) falls back to `Other` — the generator then leans on
+    /// the data sheet's own temperatures plus a generic parent.
+    pub fn from_base_type(s: &str) -> Polymer {
+        match s.trim().to_ascii_uppercase().as_str() {
+            "PLA" | "PLA+" | "PLA-CF" | "PLGA" | "PLCL" | "PCL" | "PDO" => Polymer::Pla,
+            "PETG" | "PET-G" | "PCTG" | "PET" | "RPET" | "PBT" => Polymer::Petg,
+            "ABS" | "PC-ABS" | "ABS-GF" => Polymer::Abs,
+            "ASA" => Polymer::Asa,
+            "PC" => Polymer::Pc,
+            "TPU" | "TPE" | "TPC" | "TPS" | "TPI" | "SEBS" | "SBS" | "SBC" | "PEBA" | "EVA" | "OBC" => Polymer::Tpu,
+            "PA12" | "NYLON12" => Polymer::NylonPa12,
+            "PA" | "PA6" | "NYLON" | "PPA" | "PAHT" | "PA-CF" => Polymer::NylonPa6,
+            "HIPS" | "PS" => Polymer::Hips,
+            "PP" => Polymer::Pp,
+            _ => Polymer::Other,
+        }
+    }
+
+    /// Name of the stock OrcaSlicer-family "Generic …" filament to inherit from
+    /// when the chosen printer is NOT the Snapmaker U1 (those generic profiles
+    /// ship across the OrcaSlicer family and are broadly printer-compatible).
+    /// HIPS/PP have no "Generic" leaf in the shipped set, so they fall back to
+    /// the nearest thermal sibling (HIPS≈ABS, PP≈PETG); `Other`→Generic PLA.
+    pub fn orca_generic_parent(&self) -> &'static str {
+        match self {
+            Polymer::Pla       => "Generic PLA",
+            Polymer::Petg      => "Generic PETG",
+            Polymer::Abs       => "Generic ABS",
+            Polymer::Asa       => "Generic ASA",
+            Polymer::Pc        => "Generic PC",
+            Polymer::Tpu       => "Generic TPU",
+            Polymer::NylonPa6  => "Generic PA",
+            Polymer::NylonPa12 => "Generic PA",
+            Polymer::Hips      => "Generic ABS",
+            Polymer::Pp        => "Generic PETG",
+            Polymer::Other     => "Generic PLA",
+        }
+    }
+
     /// Conservative default printing temperatures used when no TDS data is
     /// available. The values come from public consumer-grade filament data
     /// and are intentionally a starting point — users are expected to tune.

@@ -11,6 +11,40 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.2.0] — Bibliothèque Filament + génération filament & process en un clic
+
+- **Bibliothèque Filament** : nouvel onglet relié à la base de données de
+  filaments (construite depuis les fiches TDS / SDS / MSDS / RoHS officielles des
+  fabricants — 709 matériaux, 122 marques). Recherche par marque / nom / famille,
+  badges température et couleurs. La base est **embarquée** (instantané hors-ligne,
+  posée à la première utilisation) puis **rafraîchie depuis le serveur** par le
+  vérificateur de mise à jour.
+- **Sélecteur d'imprimante global** : Marque → Modèle → Buse (ou *toutes les
+  buses* de la machine), partagé par les deux bibliothèques.
+- **Un clic = filament + process** : depuis un matériau choisi + l'imprimante
+  choisie, génère le profil filament **et** les 7 profils process par type de
+  projet d'un coup (× le nombre de buses si « toutes les buses »). Le réglage
+  propre au filament reste sur le profil filament.
+- **Multi-imprimante** : le profil filament cible l'imprimante choisie
+  (`compatible_printers`) ; il hérite du parent « @U1 » réglé pour le Snapmaker U1,
+  sinon du « Generic <polymère> » de la famille OrcaSlicer.
+- **Onglets réorganisés** : la « Base de données locale » devient la Bibliothèque
+  Filament, le « Catalogue fabricant » (outil de construction de la base) est
+  retiré du client, et « PDF unique » passe en dernier (filament de secours pour
+  un matériau pas encore dans la base).
+
+## [0.1.19] — supports & anti-warping
+
+- Supports calibrés pour bien adhérer au plateau mais se **détacher proprement
+  du modèle** ; réglages d'adhérence / anti-warping **adaptés à la matière**
+  (bordure, bouclier anti-courant d'air, vitesse de 1re couche).
+
+## [0.1.18] — imprimantes universelles
+
+- Génération des profils process pour **toute imprimante de la famille
+  OrcaSlicer** (catalogue 57 marques / 326 modèles), à la demande par
+  marque → modèle → buse.
+
 ## [0.1.17] — vérificateur de mise à jour + ZIP client multi-OS
 
 - **Mises à jour** : bouton « Rechercher une mise à jour » + vérification

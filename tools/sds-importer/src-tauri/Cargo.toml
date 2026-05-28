@@ -1,6 +1,6 @@
 [package]
 name        = "custom-filament-profile-creator"
-version     = "0.1.19"
+version     = "0.2.0"
 edition     = "2021"
 description = "Optimisateur de filament et de profils d'impression by Maison Drabiec — profils filament + process Snapmaker_Orca optimisés depuis une fiche SDS/TDS"
 license     = "AGPL-3.0-or-later"
@@ -29,6 +29,11 @@ env_logger   = "0.11"
 chrono       = { version = "0.4", features = ["serde"] }
 dirs         = "5"
 open         = "5"   # open the download page in the user's default browser (app-update flow)
+
+# Filament database reader (v0.2.0 — Bibliothèque Filament). `bundled` compiles
+# SQLite from source so there is no system-library dependency on any CI runner
+# (Windows/macOS/Linux all just need a C compiler, which they have).
+rusqlite     = { version = "0.31", features = ["bundled"] }
 
 # PDF text extraction (born-digital documents).
 pdf-extract  = "0.7"

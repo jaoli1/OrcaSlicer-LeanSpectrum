@@ -48,6 +48,10 @@
       flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
       background: var(--panel); color: var(--fg); font-size: 0.95rem;
     }
+    select {
+      padding: 9px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--panel); color: var(--fg); font-size: 0.95rem;
+    }
     button {
       background: var(--accent); color: white; border: 0; padding: 10px 18px;
       border-radius: 8px; font-weight: 600; cursor: pointer;
@@ -69,32 +73,23 @@
     .badge.sds    { background: var(--tag-sds); }
     .badge.tds    { background: var(--tag-tds); }
     .badge.unknown{ background: var(--tag-unknown); }
-    ul.catalog { list-style: none; padding: 0; max-height: 350px; overflow-y: auto;
-                 border: 1px solid var(--border); border-radius: 8px; }
+    .badge.fam    { background: #8e44ad; }
+    .badge.params { background: #27ae60; }
+    ul.catalog { list-style: none; padding: 0; max-height: 360px; overflow-y: auto;
+                 border: 1px solid var(--border); border-radius: 8px; margin: 8px 0; }
     ul.catalog li {
       display: flex; align-items: center; gap: 12px; padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); cursor: pointer;
     }
     ul.catalog li:last-child { border-bottom: 0; }
     ul.catalog li:hover { background: rgba(0,0,0,0.03); }
-    ul.catalog input[type=checkbox] { width: 18px; height: 18px; }
-    ul.catalog .meta { display: flex; gap: 8px; align-items: center; font-size: 0.85rem; }
-    ul.catalog .anchor { font-weight: 500; word-break: break-word; }
+    ul.catalog li.selected { background: rgba(211,84,0,0.12); box-shadow: inset 3px 0 0 var(--accent); }
+    ul.catalog .meta { display: flex; gap: 8px; align-items: center; font-size: 0.85rem; flex-wrap: wrap; }
+    ul.catalog .anchor { font-weight: 600; word-break: break-word; }
     ul.catalog .url { color: var(--muted); font-size: 0.78rem; word-break: break-all; }
-    .progress {
-      width: 100%; height: 6px; background: var(--border); border-radius: 3px;
-      overflow: hidden; margin-top: 8px;
-    }
-    .progress .bar { height: 100%; background: var(--accent); width: 0%; transition: width .2s; }
-    .brand-group { margin-bottom: 14px; }
-    .brand-name { font-weight: 600; padding: 6px 0; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
-    .brand-pdfs { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow-y: auto; }
-    .brand-pdfs li {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 4px 8px; cursor: pointer; border-radius: 4px;
-    }
-    .brand-pdfs li:hover { background: rgba(0,0,0,0.05); }
-    .brand-pdfs .size { color: var(--muted); font-size: 0.78rem; }
+    .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border); vertical-align: middle; }
+    .printer-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .printer-bar strong { white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -158,15 +153,54 @@
     </div>
     <div id="updateBanner" class="panel" style="display:none;"></div>
 
-    <div class="tabs">
-      <div class="tab active" data-tab="single"   data-i18n="tab_single">Single PDF</div>
-      <div class="tab"        data-tab="catalog"  data-i18n="tab_catalog">Vendor catalog</div>
-      <div class="tab"        data-tab="database" data-i18n="tab_database">Local database</div>
-      <div class="tab"        data-tab="library"  data-i18n="tab_library">Process library</div>
+    <!-- ============ Global printer selector (shared by both libraries) ============ -->
+    <div class="panel" id="printerBar" style="margin-top:0;">
+      <div class="row printer-bar" style="margin:0;">
+        <strong data-i18n="printer_label">Printer</strong>
+        <select id="gVendor"><option value="" data-i18n="library_vendor">— brand —</option></select>
+        <select id="gModel" disabled><option value="" data-i18n="library_model">— model —</option></select>
+        <select id="gNozzle" disabled><option value="" data-i18n="library_nozzle">— nozzle —</option></select>
+      </div>
+      <div class="sub" id="printerHint" data-i18n="printer_hint" style="margin-top:8px;">Pick brand → model → nozzle (or all nozzles).</div>
     </div>
 
-    <!-- ============ Single PDF tab ============ -->
-    <div id="tab-single" class="tab-panel active">
+    <div class="tabs">
+      <div class="tab active" data-tab="filament" data-i18n="tab_filament">Filament library</div>
+      <div class="tab"        data-tab="process"  data-i18n="tab_process">Process library</div>
+      <div class="tab"        data-tab="single"   data-i18n="tab_single">Single PDF</div>
+    </div>
+
+    <!-- ============ Filament library tab (v0.2.0) ============ -->
+    <div id="tab-filament" class="tab-panel active">
+      <p class="sub" data-i18n="filament_intro">Search the filament database, pick a material, choose your printer above, then generate the filament + its process profiles in one click.</p>
+      <div class="row">
+        <input id="filamentSearch" type="text" data-i18n-placeholder="filament_search_ph" placeholder="Search a filament (brand, name, PLA / PETG…)" />
+        <span id="filamentCount" class="sub"></span>
+      </div>
+      <ul id="filamentList" class="catalog"></ul>
+      <div class="row">
+        <button id="genFilamentProcess" disabled data-i18n="filament_generate">Generate filament + process</button>
+        <span id="filamentStatus" class="sub"></span>
+      </div>
+      <div id="filamentResult" class="panel" style="display:none;"></div>
+    </div>
+
+    <!-- ============ Process library tab ============ -->
+    <div id="tab-process" class="tab-panel">
+      <p class="sub" data-i18n="process_intro">Generate the 7 project-type process profiles for the printer selected above (or the full Snapmaker U1 set).</p>
+      <div class="row">
+        <button id="genForPrinter" data-i18n="process_generate_printer">Generate process for the selected printer</button>
+        <span id="libraryStatus" class="sub"></span>
+      </div>
+      <p class="sub" data-i18n="library_or_u1">— or generate the full Snapmaker U1 set (all 4 nozzles) —</p>
+      <div class="row">
+        <button id="genLibraryBtn" class="secondary" data-i18n="library_generate">Generate the Snapmaker U1 set</button>
+      </div>
+      <div id="libraryResult" class="panel" style="display:none;"></div>
+    </div>
+
+    <!-- ============ Single PDF tab (fallback for a material not in the DB) ============ -->
+    <div id="tab-single" class="tab-panel">
       <div id="drop" class="drop">
         <div data-i18n="drop_hint">Drop a .pdf here, or click to pick a file.</div>
         <div id="pickedPath" class="sub" style="margin-top: 8px;"></div>
@@ -187,75 +221,6 @@
         <strong data-i18n="log_heading">Log</strong>
         <div id="log" class="log"></div>
       </div>
-    </div>
-
-    <!-- ============ Catalog tab ============ -->
-    <div id="tab-catalog" class="tab-panel">
-      <p class="sub" data-i18n="catalog_intro">
-        Paste a vendor's certificates or downloads page URL. The app fetches the
-        page, lists every SDS / TDS PDF it can identify, and lets you batch-import
-        them in a single click.
-      </p>
-      <div class="row">
-        <input id="catalogUrl" type="url" data-i18n-placeholder="catalog_placeholder" placeholder="https://<vendor>/path/to/certificates" />
-        <button id="crawlBtn" data-i18n="catalog_discover">Discover PDFs</button>
-      </div>
-      <div class="row">
-        <label><input id="catalogFetchOnline" type="checkbox" />
-               <span data-i18n="catalog_fetch">Also try to fetch related TDS for each downloaded PDF</span></label>
-      </div>
-
-      <div id="catalogPanel" class="panel" style="display:none;">
-        <h2 data-i18n="catalog_discovered">Discovered documents</h2>
-        <div class="row" style="margin-top:0;">
-          <button id="selectAll"  class="secondary" data-i18n="catalog_select_all">Select all</button>
-          <button id="selectNone" class="secondary" data-i18n="catalog_select_none">Select none</button>
-          <button id="batchImport" data-i18n="catalog_import_btn">Import selected</button>
-          <span id="catalogStatus" class="sub"></span>
-        </div>
-        <div class="progress" style="display:none;" id="batchProgress"><div class="bar"></div></div>
-        <ul id="catalogList" class="catalog"></ul>
-        <div id="catalogSkipped" class="sub" style="margin-top: 10px;"></div>
-      </div>
-
-      <div id="batchResult" class="panel" style="display:none;"></div>
-    </div>
-
-    <!-- ============ Local database tab ============ -->
-    <div id="tab-database" class="tab-panel">
-      <p class="sub" data-i18n="database_intro">
-        Browse PDFs already downloaded on this machine. Defaults to the corpus folder
-        under your Downloads directory; change the path if your collection lives
-        elsewhere.
-      </p>
-      <div class="row">
-        <input id="corpusPath" type="text" />
-        <button id="corpusScanBtn" data-i18n="database_scan">Scan folder</button>
-      </div>
-
-      <div id="corpusPanel" class="panel" style="display:none;">
-        <div id="corpusStatus" class="sub" style="margin-bottom: 12px;"></div>
-        <div id="corpusBrands"></div>
-      </div>
-
-      <div id="corpusResult" class="panel" style="display:none;"></div>
-    </div>
-
-    <!-- ============ Process library tab (v0.1.16) ============ -->
-    <div id="tab-library" class="tab-panel">
-      <p class="sub" data-i18n="library_intro">Generate the shared set of process profiles by project type (Vase, Decoration, Figurine, Mechanical part…) for every nozzle (0.2 / 0.4 / 0.6 / 0.8) — 28 profiles tuned for cornering, resonance and the fork features. Filament-specific tuning stays on the filament profile.</p>
-      <div class="row" style="flex-wrap:wrap;">
-        <select id="pVendor" style="flex:1;min-width:150px;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--fg);"><option value="" data-i18n="library_vendor">— brand —</option></select>
-        <select id="pModel" disabled style="flex:2;min-width:170px;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--fg);"><option value="" data-i18n="library_model">— model —</option></select>
-        <select id="pNozzle" disabled style="min-width:95px;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--fg);"><option value="" data-i18n="library_nozzle">— nozzle —</option></select>
-        <button id="genForPrinter" disabled data-i18n="library_generate_printer">Generate for this printer</button>
-      </div>
-      <p class="sub" data-i18n="library_or_u1">— or generate the full Snapmaker U1 set (all 4 nozzles) —</p>
-      <div class="row">
-        <button id="genLibraryBtn" class="secondary" data-i18n="library_generate">Generate the Snapmaker U1 set</button>
-        <span id="libraryStatus" class="sub"></span>
-      </div>
-      <div id="libraryResult" class="panel" style="display:none;"></div>
     </div>
   </div>
 

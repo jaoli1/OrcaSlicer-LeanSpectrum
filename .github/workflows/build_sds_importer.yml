@@ -81,19 +81,13 @@ jobs:
           - os: macos-14
             artifact-name: custom-filament-profile-creator_macos-arm64
             bundle-glob: tools/sds-importer/src-tauri/target/release/bundle/dmg/*.dmg
-          # macos-13 (Intel) is BEST-EFFORT — GitHub macos-13 runners have a
-          # history of saturation (2h+ queues that blocked publication and cost
-          # us v0.6.0). We still ship a native Intel DMG when the runner is
-          # available; `continue-on-error: true` + a tight `timeout-minutes`
-          # mean an unavailable runner is dropped silently, so the release
-          # still publishes for Linux / Windows / Apple Silicon on time.
-          # Intel users who don't see a DMG can fall back to Rosetta on the
-          # arm64 DMG (Tauri 2 runs fine under Rosetta).
-          - os: macos-13
-            artifact-name: custom-filament-profile-creator_macos-x86_64
-            bundle-glob: tools/sds-importer/src-tauri/target/release/bundle/dmg/*.dmg
-            continue-on-error: true
-            timeout-minutes: 60
+          # macos-13 (Intel) is dropped again — the v0.8.0 re-introduction
+          # attempt left the macos-13 runner stuck in queue indefinitely while
+          # the other three release jobs sat there waiting. `continue-on-error`
+          # only fires once a runner picks the job up; in queue, the job blocks
+          # `publish-release` without ever timing out. Until that GitHub
+          # behaviour changes, Intel Mac users continue to use Rosetta on the
+          # arm64 DMG (Tauri 2 runs fine under Rosetta), or rebuild from source.
           - os: windows-latest
             artifact-name: custom-filament-profile-creator_windows-amd64
             bundle-glob: |

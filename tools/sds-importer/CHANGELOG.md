@@ -11,6 +11,28 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.6.2] — Volume d'amorçage adapté à la buse (toutes imprimantes)
+
+Généralisation du raisonnement « quel levier de tour pour quelle architecture »
+à tout le catalogue (57 marques / 326 modèles).
+
+- **`prime_volume` mis à l'échelle de la buse** (≈38×Ø : 0,2 → 8, 0,4 → 15,
+  0,6 → 23, 0,8 → 30 mm³). Une valeur fixe **sous-amorçait** les buses larges
+  (bavure de couleur au 1ᵉʳ segment après un changement) et sur-amorçait les
+  fines.
+- **Le bon levier selon l'architecture** (vérifié dans le code du slicer) :
+  - **Tool-changers / IDEX** (Snapmaker U1 / J1 / Dual, Prusa XL 5T) **et
+    multi-matériaux mono-buse sans purge-in-tower** (Creality K2, Flashforge
+    AD5X, Prusa MMU3) → le slicer dépose `prime_volume` : c'est LE levier
+    (désormais mis à l'échelle de la buse).
+  - **AMS mono-buse** (Bambu X1/P1/A1 — forcés sur ce chemin —, Qidi…) →
+    `flush_multiplier` (0,2) est le levier ; `prime_volume` y est ignoré.
+  - **Mono-matériau (~90 % du catalogue)** → aucune tour de purge, les trois
+    clés sont sans effet.
+  On pose donc les **deux** leviers : chaque slicer applique le bon et ignore
+  l'autre (le catalogue n'expose pas l'architecture, impossible de brancher
+  dessus de façon fiable — une piste d'enrichissement pour une version future).
+
 ## [0.6.1] — Tour de purge enfin réduite sur l'U1 + supports adaptés
 
 - **Tour de purge divisée par ~3 sur le Snapmaker U1.** L'U1 est une imprimante

@@ -216,6 +216,13 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
     let base_process = spec.base_process.clone();
     let name = format!("{} @{}", pt.label(), spec.printer_name);
 
+    // prime_volume scales with nozzle bore: a coarser nozzle holds more ooze to
+    // clear at each tool change, so a flat value either over-primes fine nozzles
+    // or UNDER-primes coarse ones (colour bleed on the first segment after a
+    // change). ≈38×nozzle anchors the validated 0.4 mm → 15 mm³ (0.2→8, 0.6→23,
+    // 0.8→30); floor 4 mm³. See the json note below for which printers use it.
+    let prime_volume = ((spec.nozzle * 38.0).round().max(4.0) as i64).to_string();
+
     let mut v = json!({
         "name": name,
         "version": PRESET_VERSION,
@@ -274,14 +281,20 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
         //     per tool, per tool-change layer (Print.cpp ~3125 / ~3347). The
         //     inherited default (45, from the 0.20 base) made our tower 1.7× the
         //     stock 0.12 preset (27). Each nozzle keeps its own colour, so the
-        //     prime only clears ooze — 15 mm³ is ample (the U1 also pre-purges
-        //     at the bed edge), shrinking the tower ~3×.
-        //   • flush_multiplier — the lever on single-nozzle AMS printers
-        //     (Bambu, etc.): scales each colour-change purge. 0.2 (vs the 0.3
-        //     default) trims ~⅓, staying above the ~0.15 colour-bleed floor.
-        //     Inert on the U1 but correct for AMS, so we set both.
+        //     prime only clears ooze — scaled ≈38×nozzle (0.4→15, 0.8→30) so
+        //     coarse nozzles aren't under-primed; the U1 also pre-purges at the
+        //     bed edge. Shrinks the tower ~3×. ALSO fires on single-nozzle MM
+        //     printers whose tower isn't a purge tower — Creality K2, Flashforge
+        //     AD5X, Prusa MMU3 (single_extruder_multi_material + purge_in_prime
+        //     _tower=0): the slicer replaces flush with prime_volume there too.
+        //   • flush_multiplier — the lever on single-nozzle AMS / purge-in-tower
+        //     printers (Bambu — hard-gated to this path — Qidi, etc.): scales
+        //     each colour-change purge. 0.2 (vs 0.3 default) trims ~⅓, above the
+        //     ~0.15 colour-bleed floor. Inert on tool-changers, so we set both.
         //   • prime_tower_width caps the tower footprint (30 mm).
-        "prime_volume":               "15",
+        //   On single-material printers (~90% of the catalogue) there is no
+        //   tower at all, so all three keys are harmless no-ops.
+        "prime_volume":               prime_volume,
         "flush_multiplier":           "0.2",
         "prime_tower_width":          "30",
 
@@ -547,9 +560,11 @@ mod tests {
             assert_eq!(v["flush_into_infill"], "1", "{name}");
             assert_eq!(v["flush_into_support"], "1", "{name}");
             assert_eq!(v["wipe_tower_no_sparse_layers"], "1", "{name}");
-            // prime_volume is THE tower lever on tool-changer printers (U1);
-            // flush_multiplier is the AMS lever. We set both.
-            assert_eq!(v["prime_volume"], "15", "{name}");
+            // prime_volume is THE tower lever on tool-changer / non-purge-in-
+            // tower printers; flush_multiplier is the AMS lever. We set both.
+            // prime_volume now scales with nozzle (~38×), so assert a sane range.
+            let pv: i64 = v["prime_volume"].as_str().unwrap().parse().unwrap();
+            assert!((4..=40).contains(&pv), "{name}: prime_volume {pv} out of range");
             assert_eq!(v["flush_multiplier"], "0.2", "{name}");
             assert_eq!(v["prime_tower_width"], "30", "{name}");
             assert!(

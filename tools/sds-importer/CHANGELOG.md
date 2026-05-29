@@ -11,6 +11,24 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.6.1] — Supports adaptés à l'objet (arbre / normal)
+
+- **Type de support adapté à la géométrie** : les **figurines** et **jouets**
+  (formes organiques, courbes) utilisent désormais des **supports arbre
+  organiques** — beaucoup moins de matière, moins de marques sur la surface,
+  retrait plus facile, et **plus de coque qui emprisonne le modèle**. Les
+  **pièces mécaniques** (porte-à-faux plats) gardent des supports **normaux
+  (« snug »)**, plus prévisibles sur les grandes surfaces planes.
+- **Seuil de porte-à-faux relevé 30° → 45°** (valeur PLA recommandée) : le 30°
+  posait du support partout et enfermait le modèle ; 45° n'en met que là où le
+  surplomb le nécessite vraiment.
+  Sources : wiki OrcaSlicer + guides communautaires (arbre = organique,
+  normal = surfaces planes).
+- **Interne (CI)** : le job de publication restaure le cache mais ne le
+  ré-enregistre plus — l'étape de sauvegarde du cache échouait par intermittence
+  sur le runner Windows et bloquait la publication alors que les installeurs
+  étaient bien produits (c'est ce qui avait empêché la sortie de la 0.6.0).
+
 ## [0.6.0] — Durcissement, qualité par matériau, glisser-déposer
 
 Issue d'un audit multi-agents. Quatre axes (le manifeste signé arrive en 0.6.1,

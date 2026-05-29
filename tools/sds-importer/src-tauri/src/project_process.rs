@@ -345,14 +345,26 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
         } else {
             obj.insert("brim_type".into(), json!("no_brim"));
         }
-        // v0.4.1 — auto-support (threshold) on overhang-prone intents only. Normal
-        // (auto): the slicer adds support solely where the model overhangs past
-        // the threshold — not on flat prints. The support-release distances above
-        // keep it peeling cleanly off the model.
+        // v0.4.1/v0.6.1 — auto-support on overhang-prone intents only, with the
+        // support TYPE matched to the geometry:
+        //   • Figurine / Jouet (organic, curvy) → ORGANIC TREE: far less
+        //     material, fewer surface marks, easier removal, and it does not
+        //     encase the model the way a normal grid does.
+        //   • Pièce mécanique (flat, planar overhangs) → NORMAL (snug): tighter
+        //     and more predictable on large flat overhangs than tree.
+        // Threshold raised 30° → 45° (the practical PLA value): 30° over-
+        // supported and wrapped the whole model; 45° supports only the real
+        // overhangs. Sources: OrcaSlicer wiki + community guides.
         if pt.wants_support() {
+            let (s_type, s_style) = if matches!(pt, ProjectType::PieceMecanique) {
+                ("normal(auto)", "snug")
+            } else {
+                ("tree(auto)", "organic")
+            };
             obj.insert("enable_support".into(), json!("1"));
-            obj.insert("support_type".into(), json!("normal(auto)"));
-            obj.insert("support_threshold_angle".into(), json!("30"));
+            obj.insert("support_type".into(), json!(s_type));
+            obj.insert("support_style".into(), json!(s_style));
+            obj.insert("support_threshold_angle".into(), json!("45"));
         }
     }
     (name, v)
@@ -429,13 +441,22 @@ mod tests {
             assert_eq!(v["brim_type"], "no_brim", "{pt:?} should NOT brim");
             assert!(v.get("brim_width").is_none(), "{pt:?} has no brim_width");
         }
-        // Auto-support (threshold) on overhang-prone intents only…
+        // Auto-support on overhang-prone intents only, with the TYPE matched to
+        // the geometry: organic tree for the curvy intents, normal(snug) for the
+        // flat mechanical one, and a 45° threshold for all.
         for pt in [Figurine, Jouet, PieceMecanique] {
             let (_, v) = build_one(pt, 0.4);
             assert_eq!(v["enable_support"], "1", "{pt:?} should auto-support");
-            assert_eq!(v["support_type"], "normal(auto)");
-            assert_eq!(v["support_threshold_angle"], "30");
+            assert_eq!(v["support_threshold_angle"], "45", "{pt:?} threshold");
         }
+        for pt in [Figurine, Jouet] {
+            let (_, v) = build_one(pt, 0.4);
+            assert_eq!(v["support_type"], "tree(auto)", "{pt:?} organic tree");
+            assert_eq!(v["support_style"], "organic", "{pt:?} organic style");
+        }
+        let (_, mech) = build_one(PieceMecanique, 0.4);
+        assert_eq!(mech["support_type"], "normal(auto)");
+        assert_eq!(mech["support_style"], "snug");
         // …never on Vase (spiral forbids it), Prototype, or flat intents.
         for pt in [Vase, PrototypeRapide, ObjetDuQuotidien, Decoration] {
             let (_, v) = build_one(pt, 0.4);

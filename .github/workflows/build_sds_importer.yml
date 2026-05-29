@@ -54,6 +54,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: tools/sds-importer/src-tauri
+          shared-key: "sdsimporter-rust"
 
       - name: cargo check
         working-directory: tools/sds-importer/src-tauri
@@ -115,6 +116,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: tools/sds-importer/src-tauri
+          shared-key: "sdsimporter-rust"
+          # Restore the shared cache (populated by the `test` job, which runs
+          # first) for speed, but never SAVE it here: the cache-save post-step
+          # occasionally fails on the Windows runner and would otherwise fail the
+          # whole release job and skip publishing — even though the installers
+          # built fine. (This is exactly what blocked the v0.6.0 release.)
+          save-if: false
 
       - name: Install tauri-cli
         run: cargo install tauri-cli --version "^2.0.0" --locked

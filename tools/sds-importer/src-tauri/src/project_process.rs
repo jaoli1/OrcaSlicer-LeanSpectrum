@@ -90,7 +90,7 @@ impl ProjectType {
         match self {
             PrototypeRapide  => Ref { layer: 0.28, walls: 1, infill: 8,  pattern: "grid",      spd: (150.0, 200.0, 250.0, 120.0), accel: 10000.0, jerk: 12.0, spiral: false, ironing: false, top: 3, bot: 3 },
             ObjetDuQuotidien => Ref { layer: 0.20, walls: 3, infill: 15, pattern: "grid",      spd: (120.0, 150.0, 200.0, 100.0), accel: 6000.0,  jerk: 9.0,  spiral: false, ironing: false, top: 4, bot: 4 },
-            Figurine         => Ref { layer: 0.12, walls: 3, infill: 15, pattern: "gyroid",    spd: (50.0,  80.0,  100.0, 40.0),  accel: 2000.0,  jerk: 5.0,  spiral: false, ironing: false, top: 5, bot: 4 },
+            Figurine         => Ref { layer: 0.12, walls: 3, infill: 15, pattern: "gyroid",    spd: (75.0,  80.0,  100.0, 40.0),  accel: 4500.0,  jerk: 8.0,  spiral: false, ironing: false, top: 4, bot: 4 },
             Vase             => Ref { layer: 0.20, walls: 1, infill: 0,  pattern: "gyroid",    spd: (60.0,  60.0,  60.0,  50.0),  accel: 4000.0,  jerk: 7.0,  spiral: true,  ironing: false, top: 0, bot: 4 },
             Decoration       => Ref { layer: 0.16, walls: 2, infill: 10, pattern: "lightning", spd: (80.0,  120.0, 150.0, 60.0),  accel: 4000.0,  jerk: 7.0,  spiral: false, ironing: true,  top: 5, bot: 4 },
             Jouet            => Ref { layer: 0.20, walls: 4, infill: 30, pattern: "grid",      spd: (100.0, 140.0, 180.0, 80.0),  accel: 6000.0,  jerk: 9.0,  spiral: false, ironing: false, top: 5, bot: 5 },

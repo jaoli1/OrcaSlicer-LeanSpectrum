@@ -11,7 +11,13 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
-## [0.6.2] — Volume d'amorçage adapté à la buse (toutes imprimantes)
+## [0.6.2] — Amorçage adapté à la buse + profil Figurine rééquilibré
+
+- **Profil « Figurine » rééquilibré (qualité ↔ efficacité)** : accélération
+  2000 → 4500, jerk 5 → 8, vitesse de paroi extérieure 50 → 75 mm/s, couches du
+  dessus 5 → 4. On conserve les supports arbre, les coutures écharpe, le brim et
+  l'économie de tour. Objectif : ~12-13 h au lieu de ~17 h sur une figurine
+  4 couleurs, un peu plus légère, courbes toujours lisses sur l'U1.
 
 Généralisation du raisonnement « quel levier de tour pour quelle architecture »
 à tout le catalogue (57 marques / 326 modèles).

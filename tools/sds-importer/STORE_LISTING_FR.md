@@ -1,7 +1,7 @@
 # Fiche produit — Optimisateur de filament et de profils d'impression by Maison Drabiec
 
 > Document de travail destiné au propriétaire pour relecture. **Ne pas publier en l'état.**
-> Tous les chiffres sont formulés en « jusqu'à » et reflètent l'état réel du logiciel (v0.2.0).
+> Tous les chiffres sont formulés en « jusqu'à » et reflètent l'état réel du logiciel (v0.4.0).
 
 ---
 
@@ -35,15 +35,17 @@
 
 ### Choisissez votre filament, le profil est prêt en un clic
 
-Chaque nouvelle bobine, c'est la même corvée : retrouver la fiche technique, déchiffrer un tableau de températures, lancer une calibration, rater une première impression… et recommencer. L'**Optimisateur MD** supprime cette étape. Vous **choisissez votre imprimante** en haut de la fenêtre (marque → modèle → buse, ou « toutes les buses »), vous **cherchez votre filament dans la bibliothèque** (700+ matériaux issus des fiches officielles des fabricants), et **un seul clic** génère ensemble le **profil filament** optimisé *et* ses **7 profils de process par type de projet**.
+Chaque nouvelle bobine, c'est la même corvée : retrouver la fiche technique, déchiffrer un tableau de températures, lancer une calibration, rater une première impression… et recommencer. L'**Optimisateur MD** supprime cette étape. Vous **choisissez votre slicer** (OrcaSlicer, Bambu Studio, Creality Print, SnapmakerOrca / OptimusOrca, ou un dossier personnalisé), vous **choisissez votre imprimante** en haut de la fenêtre (marque → modèle → buse, ou « toutes les buses »), vous **cherchez votre filament dans la bibliothèque** (700+ matériaux issus des fiches officielles des fabricants — avec un filtre par **marque** pour aller droit au but), et **un seul clic** génère ensemble le **profil filament** optimisé *et* ses **7 profils de process par type de projet**. Vous pouvez même **cocher plusieurs matériaux** d'un coup : l'application crée alors un profil filament par matière, plus un jeu commun des 7 profils de process.
 
-Plus besoin d'être un expert en extrusion : la température de buse, la température de plateau, le séchage, la densité et le débit volumétrique sont renseignés à partir des **données officielles du fabricant** — pas de valeurs approximatives glanées ailleurs.
+Plus besoin d'être un expert en extrusion : la température de buse, la température de plateau, le séchage, la densité et le débit volumétrique sont renseignés à partir des **données officielles du fabricant** — pas de valeurs approximatives glanées ailleurs. Les profils générés sont écrits directement dans le dossier de préréglages du **slicer que vous avez choisi**, et ce choix est mémorisé d'une session à l'autre.
 
 ### Des données dignes de confiance, pas du copier-coller de forum
 
 Le cœur du logiciel, c'est sa **base de données de plus de 700 matériaux** (709 références, 122 marques) construite à partir **des fiches officielles des fabricants** (TDS / SDS / MSDS / RoHS). La règle interne est stricte : quand une donnée fabricant existe (Polymaker, Prusament, Bambu Lab, eSUN, SUNLU, Eryone…), elle **prime** toujours sur toute autre source. Pour chaque matériau, vous disposez des températures recommandées, de la densité, des conditions de séchage, des codes couleur et de **liens directs vers les fiches officielles TDS / MSDS / RoHS** hébergées par le fabricant lui-même.
 
 La base est **livrée prête à l'emploi** : l'application embarque un instantané complet utilisable **hors-ligne**, et le **vérificateur de mise à jour** se charge de la garder à jour — au premier lancement il télécharge la base courante depuis le serveur, et plus tard un « rechercher les mises à jour » récupère une base plus récente dès qu'elle est disponible.
+
+Et la base **continue de s'enrichir grâce à la communauté**. Lors d'un import PDF, vous pouvez (c'est **coché par défaut, mais facultatif**) partager de façon **anonyme** les seuls **faits fabricant** de la fiche — marque, matière, type de base, fenêtre buse / plateau, densité, lien, date de révision — vers la file de modération de Maison Drabiec. Jamais le PDF, jamais vos chemins de fichiers, jamais de données personnelles ou liées à votre machine. Après relecture, les entrées validées rejoignent la base partagée (la donnée fabricant gardant toujours la priorité). C'est ainsi que la base s'étoffe au fil du temps, au bénéfice de tous.
 
 > Important : le logiciel ne réhéberge **jamais** les PDF des fabricants. Il stocke les faits utiles (températures, densité…) et un lien profond vers le document d'origine.
 
@@ -65,7 +67,7 @@ Le même clic qui crée le profil filament génère aussi ses **7 profils de pro
 - **Jouet** — parois renforcées, remplissage généreux
 - **Pièce mécanique** — parois multiples, remplissage dense
 
-Chaque profil est calibré pour le **cornering** et la **résonance / VFA** (via les limites d'accélération et de jerk) et pour rester sous le plafond de débit de la machine. Le réglage propre au filament (températures, débit, rétraction) reste sur le profil filament : un jeu de process partagé + un réglage matière, c'est tout ce qu'il faut.
+Chaque profil est calibré pour le **cornering** et la **résonance / VFA** (via les limites d'accélération et de jerk) et pour rester sous le plafond de débit de la machine. Les types fonctionnels à plus grande empreinte (Objet du quotidien, Jouet, Pièce mécanique) reçoivent en plus un **brim extérieur modéré** pour limiter le warping et le décollement du plateau ; les types esthétiques (Figurine, Vase, Décoration) et le Prototype rapide n'en ont pas. (Comme un jeu de process est partagé, l'adhérence se règle selon le **type de projet**, pas selon la matière.) Le réglage propre au filament (températures, débit, rétraction) reste sur le profil filament : un jeu de process partagé + un réglage matière, c'est tout ce qu'il faut.
 
 Le profil filament cible l'**imprimante choisie** (`compatible_printers`) : il hérite du **parent réglé pour le Snapmaker U1** quand c'est cette machine, et du « **Generic &lt;polymère&gt;** » d'origine de la famille OrcaSlicer pour les autres. Le jeu de process partagé porte le cornering / résonance et les fonctions du fork.
 
@@ -90,9 +92,9 @@ La base de données reçoit des **mises à jour régulières** : l'application e
 | Type de produit | Application de bureau (utilitaire pour l'impression 3D FDM) |
 | Systèmes d'exploitation | Windows · macOS (Apple Silicon & Intel) · Linux |
 | Format de distribution | **Un ZIP unique** avec trois dossiers : Windows (**`.exe`**), macOS (**`.dmg`**), Linux (**`.AppImage`**) |
-| Slicers cibles | **Famille OrcaSlicer** : OrcaSlicer · Creality Print · Bambu Studio · SnapmakerOrca / OptimusOrca (profils écrits dans le dossier utilisateur du slicer) |
-| Entrées acceptées | **Sélection d'un matériau dans la base embarquée** (flux principal) ; en secours pour un filament absent : PDF de fiche fabricant (SDS / TDS), avec recherche optionnelle de la TDS en ligne |
-| Sorties générées | Profil filament `.json` + ses 7 profils de process `.json` (par type de projet, pour l'imprimante choisie ; × 4 en « toutes les buses ») |
+| Slicers cibles | **Sélecteur de slicer** : OrcaSlicer · Bambu Studio · Creality Print · SnapmakerOrca / OptimusOrca · dossier personnalisé (profils écrits dans le dossier de préréglages du slicer choisi, résolu selon l'OS ; choix mémorisé) |
+| Entrées acceptées | **Sélection d'un ou plusieurs matériaux dans la base embarquée** (flux principal ; filtre par marque + recherche texte) ; en secours pour un filament absent : PDF de fiche fabricant (SDS / TDS), avec recherche optionnelle de la TDS en ligne |
+| Sorties générées | Profil filament `.json` nommé « Marque Matière » + ses 7 profils de process `.json` (par type de projet, pour l'imprimante choisie ; × 4 en « toutes les buses »). En multi-sélection : un profil filament par matière + un seul jeu commun de process |
 | Base de données | 700+ matériaux (709 réf., 122 marques) issus des fiches officielles fabricant (TDS / SDS / MSDS / RoHS) ; livrée embarquée, tenue à jour par le vérificateur |
 | Imprimantes couvertes | Famille OrcaSlicer — 57 marques / 326 modèles (Creality, Bambu, Snapmaker, Anycubic, Prusa…) ; toutes leurs buses |
 | Langues de l'interface | Français · Anglais (commutable, mémorisé) |
@@ -109,9 +111,10 @@ La base de données reçoit des **mises à jour régulières** : l'application e
 
 - L'application **Optimisateur MD** pour votre système (Windows / macOS / Linux).
 - La **base de données de 700+ matériaux** livrée prête à l'emploi (températures, densité, séchage, couleurs, liens vers les fiches officielles), tenue à jour par le vérificateur.
-- Le **flux en un clic** : sélecteur d'imprimante (marque → modèle → buse), bibliothèque de filaments, puis génération conjointe du **profil filament** + de ses **7 profils de process** par type de projet (jusqu'au jeu complet Snapmaker U1).
+- Le **flux en un clic** : sélecteur de slicer (OrcaSlicer, Bambu Studio, Creality Print, SnapmakerOrca / OptimusOrca, dossier personnalisé), sélecteur d'imprimante (marque → modèle → buse), bibliothèque de filaments avec **filtre par marque** et **multi-sélection**, puis génération conjointe du **profil filament** + de ses **7 profils de process** par type de projet (jusqu'au jeu complet Snapmaker U1).
 - L'**import PDF de secours** (PDF SDS/TDS, recherche TDS en ligne optionnelle) pour générer un filament encore absent de la base.
-- Le **vérificateur de mise à jour** (téléchargement de la base au 1er lancement, base plus récente ensuite) et des réglages **supports / anti-warping** adaptés à la matière.
+- La **contribution communautaire optionnelle** (anonyme, cochée par défaut, désactivable) qui partage les seuls faits fabricant d'une fiche importée pour enrichir la base partagée.
+- Le **vérificateur de mise à jour** (téléchargement de la base au 1er lancement, base plus récente ensuite) et des réglages **supports / anti-warping** (brim extérieur sur les types de projet fonctionnels, détachement propre des supports).
 - L'**activation des fonctions du fork** : économie de filament, coutures scarf, préparation au mélange de couleurs.
 - L'interface **bilingue FR / EN**.
 - Les **mises à jour régulières de la base de données**.
@@ -133,10 +136,16 @@ La base de données reçoit des **mises à jour régulières** : l'application e
 ## 8. FAQ
 
 **Est-ce compatible avec mon imprimante / mon slicer ?**
-Oui, pour toute la **famille OrcaSlicer** : OrcaSlicer, Creality Print, Bambu Studio, SnapmakerOrca / OptimusOrca. Tout commence par le **sélecteur d'imprimante en haut de la fenêtre** : vous choisissez marque, modèle et buse (ou « toutes les buses ») parmi **leurs imprimantes** (57 marques, 326 modèles), et les profils apparaissent dans les menus du slicer après génération. PrusaSlicer (format `.ini`) est prévu prochainement.
+Oui, pour toute la **famille OrcaSlicer** : OrcaSlicer, Bambu Studio, Creality Print, SnapmakerOrca / OptimusOrca. Un **sélecteur de slicer** en haut de la fenêtre indique où écrire les profils (vous pouvez aussi pointer un dossier personnalisé), et le choix est mémorisé. Vient ensuite le **sélecteur d'imprimante** : vous choisissez marque, modèle et buse (ou « toutes les buses ») parmi **leurs imprimantes** (57 marques, 326 modèles), et les profils apparaissent dans les menus du slicer après génération. PrusaSlicer (format `.ini`) est prévu prochainement.
 
 **D'où viennent les données ? Sont-elles fiables ?**
 La base privilégie **les sites et fiches officiels des fabricants**. Quand une donnée fabricant existe, elle prime toujours sur toute autre source. Pour chaque matériau, vous avez accès aux **liens vers les fiches officielles** (TDS / MSDS / RoHS) hébergées par le fabricant. Le logiciel ne réhéberge jamais ces PDF.
+
+**Qu'est-ce qui est partagé avec la « base communautaire », et qu'en est-il de ma vie privée ?**
+Lors d'un import PDF, une case **« Partager cette fiche (anonyme) avec la base communautaire »** est **cochée par défaut**, mais reste entièrement **facultative** (décochez-la quand vous voulez ; elle ne bloque jamais l'import). Après un import réussi, seuls les **faits fabricant** sont envoyés à la file de modération de Maison Drabiec : marque, matière, type de base, fenêtre buse / plateau, densité, lien et date de révision. **Jamais** le PDF, **jamais** vos chemins de fichiers, **aucune** donnée personnelle ou liée à votre machine ; le serveur ne conserve qu'un identifiant d'IP haché pour limiter les abus. Après relecture, les entrées validées rejoignent la base partagée — la donnée fabricant gardant toujours la priorité.
+
+**Comment retrouver vite mon filament dans la base ?**
+Un menu déroulant **« Marque »** au-dessus de la recherche permet de filtrer par fabricant, en combinaison avec la recherche par texte (nom de produit ou famille). Vous pouvez aussi **cocher plusieurs matériaux** et générer, en un clic, un profil filament par matière plus un seul jeu commun des 7 profils de process.
 
 **En quoi est-ce mieux qu'un profil générique « PLA » ?**
 Un profil générique applique des moyennes. L'Optimisateur part de **votre filament précis** : il puise dans une **base de 700+ matériaux** bâtie sur les fiches officielles des fabricants (et, à défaut, lit le tableau de paramètres *et* la note « éprouvette » du PDF — les conditions de test qui font autorité) pour caler buse, plateau, vitesse et débit au plus juste, puis ajoute des process pensés pour votre type de projet.

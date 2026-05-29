@@ -1,6 +1,6 @@
 # Filament & Print-Profile Optimiser by Maison Drabiec — User Manual
 
-> **Software version:** 0.2.0 · **Language of this document:** English ([Version française](WIKI_FR.md))
+> **Software version:** 0.4.0 · **Language of this document:** English ([Version française](WIKI_FR.md))
 >
 > A desktop application built around a **filament database** (compiled from manufacturers' own official sheets) that generates, in one click, optimised **filament** and **process** profiles for the **OptimusOrca / Snapmaker_Orca** slicer.
 
@@ -30,9 +30,10 @@ At the heart of the app is now a **filament database**. Built from the **manufac
 
 The workflow is simple:
 
-1. you pick your **printer** in the selector at the top of the window (brand → model → nozzle);
-2. you **search for a material** in the database (by brand, name or family: PLA, PETG…);
-3. the app generates, in **a single click**, the filament profile **and** the seven project-type process profiles, tuned for that printer.
+1. you pick your **slicer** in the selector at the top of the window (OrcaSlicer, Bambu Studio, Creality Print, SnapmakerOrca / OptimusOrca, or a custom folder) — that's where the profiles will be written;
+2. you pick your **printer** (brand → model → nozzle);
+3. you **search for a material** in the database (by brand, name or family: PLA, PETG…), and can **tick several** at once;
+4. the app generates, in **a single click**, the filament profile **and** the seven project-type process profiles, tuned for that printer.
 
 In return, the app writes for you:
 
@@ -89,13 +90,15 @@ The application ships as a lightweight binary (Tauri technology) for each operat
 
 ### Where does the app write the profiles?
 
-The Optimiser writes its profiles into the **Snapmaker_Orca user folder**, where the slicer reads them:
+The Optimiser writes its profiles into the **user folder of the chosen slicer** (see the [slicer selector](#3-first-launch--interface)), where the slicer reads them. For SnapmakerOrca / OptimusOrca, for example:
 
-- **filament profiles** go into the `filament/` subfolder of your Snapmaker_Orca user profile;
+- **filament profiles** go into the `filament/` subfolder of your user profile;
 - **process profiles** go into the `process/` subfolder.
 
+The other OrcaSlicer-family slicers (OrcaSlicer, Bambu Studio, Creality Print) follow the same layout in their own preset folder; with the "custom folder" option you point directly at the location you want.
+
 > **Important**
-> The Snapmaker_Orca user folder must already exist. If it does not, **open OptimusOrca / Snapmaker_Orca at least once** so it creates your profile folder, then run the generation again.
+> The chosen slicer's user folder must already exist. If it does not, **open the slicer at least once** so it creates your profile folder, then run the generation again.
 
 The app also keeps a **log file** in its own system data folder (useful for support if something goes wrong).
 
@@ -112,6 +115,10 @@ In the top-right corner, two buttons **EN** and **FR** switch the interface lang
 ### "Check for updates" button
 
 Below the header is a **"Check for updates"** button with a status area next to it. This is what installs and updates the **filament database**: on first use it downloads the current database, and afterwards it pulls a newer one whenever the server publishes it. See the [Updates](#8-updates) section.
+
+### Slicer selector
+
+At the very top of the window, a **"Slicer"** selector decides which slicer the generated profiles are written into: **OrcaSlicer**, **Bambu Studio**, **Creality Print**, **SnapmakerOrca / OptimusOrca**, or a **custom folder** you point to yourself. The app automatically resolves the chosen slicer's user preset folder for your system (Windows / macOS / Linux), and **remembers** that choice between sessions. See also the [global printer selector](#5-the-global-printer-selector).
 
 ### Global printer selector
 
@@ -137,11 +144,11 @@ This is the app's central mode, in the **Filament Library** tab. It links the **
 
 ### Steps
 
-1. **Pick your printer** in the global selector at the top of the window (see the [global printer selector](#5-the-global-printer-selector) section).
-2. **Search for a filament** in the search box: type a **brand**, a **product name** or a **family** (PLA, PETG, ABS…). The list filters as you type.
-3. **Select a material** in the list. You see its information drawn from the manufacturer sheets: polymer family, **temperature** ranges (nozzle / bed), **density**, available **colours** and links to the source documents.
+1. **Pick your slicer**, then your **printer**, in the selectors at the top of the window (see the [global printer selector](#5-the-global-printer-selector) section).
+2. **Search for a filament.** You can first narrow the list with the **"Brand"** dropdown placed above the search, then refine in the text box by typing a **product name** or a **family** (PLA, PETG, ABS…). The brand filter and the text search combine; the list filters as you type.
+3. **Select one or several materials** in the list (tick several to process them at once). You see the information drawn from the manufacturer sheets: polymer family, **temperature** ranges (nozzle / bed), **density**, available **colours** and links to the source documents.
 4. Click **"Generate filament + process"**.
-5. The app writes the **filament profile** and the **7 process profiles** by project type, then shows a summary (filament profile created, number of process profiles, target printer) and a **log**.
+5. The app writes one **filament profile** per selected material and a **shared set of 7 process profiles** by project type, then shows a summary (filament profiles created, number of process profiles, target printer) and a **log**.
 
 ### One click = filament + process
 
@@ -153,7 +160,10 @@ From the chosen material and the printer in the global selector, the app generat
 The split stays "**one shared process set + per-filament tuning**": the filament-specific tuning (temperatures, flow, retraction) lives on the **filament profile**, while the process profiles carry the print geometry, cornering / resonance and the fork features.
 
 > **Note — the "All nozzles" option**
-> If you ticked **"All nozzles"** in the selector, the app generates the **7 process profiles per nozzle** of the machine (for example ×4 for the Snapmaker U1, i.e. 28 profiles), in addition to the filament profile.
+> If you ticked **"All nozzles"** in the selector, the app generates the **7 process profiles per nozzle** of the machine (for example ×4 for the Snapmaker U1, i.e. 28 profiles), in addition to the filament profile(s).
+
+> **Note — multi-select and profile names**
+> If you tick **several materials**, the app creates **one filament profile per material** but a **single shared set** of the 7 process profiles (a shared process set cannot be per-material). Each filament profile is named "**Brand Material**" (e.g. "Eryone PLA+"); legal filename characters such as "+" are preserved.
 
 ### What the displayed information contains
 
@@ -171,7 +181,7 @@ Fields that had to be **estimated** (because the sheet gave no value) are backfi
 
 ## 5. The global printer selector
 
-At the top of the window, **above the tabs**, the **"Printer"** selector decides which machine the profiles are generated for. It is **shared by the Filament Library and the Process library**.
+At the top of the window, **above the tabs**, the **"Printer"** selector decides which machine the profiles are generated for. It is **shared by the Filament Library and the Process library**. It works hand in hand with the **slicer selector** (see [section 3](#slicer-selector)), which decides *which slicer* the profiles are written into.
 
 ### Choosing your machine
 
@@ -200,8 +210,9 @@ For a filament that is **not yet in the database**, the **Single PDF** tab lets 
 
 1. **Drop a PDF** onto the drop zone ("Drop a .pdf here, or click to pick a file"), or click to open the file picker.
 2. Keep checked (or not) the option **"Also look for the manufacturer's TDS online (recommended)"**. If your PDF is a plain safety sheet (SDS) without printing data, this option fetches the matching technical sheet (TDS) from the manufacturer's site to complete the profile.
-3. Click **"Create filament profile"**.
-4. The app shows the result (extracted fields, any badges) and a **log** detailing what it did.
+3. Keep checked (or not) the option **"Share this sheet (anonymous) with the community database"**, **checked by default**. After a successful import, it sends only the **manufacturer facts** from the sheet to help grow the shared database (see the [Community contributions](#community-contributions-anonymous-and-optional) subsection below). It is entirely optional and never blocks the import.
+4. Click **"Create filament profile"**.
+5. The app shows the result (extracted fields, any badges) and a **log** detailing what it did.
 
 ### What is extracted
 
@@ -217,6 +228,21 @@ The parser does more than copy a table — it reads the sheet and pulls the genu
 > Many sheets state the exact conditions under which the mechanical-test bars were printed (for example: *"all splines are printed at 210 °C, 80 mm/s, base plate 60 °C"*). When this note exists, its values **override** the midpoints of the parameter table, because they describe precisely how the manufacturer obtained its results.
 
 Fields that had to be **estimated** (because the sheet gave no value) are flagged, and the profile may then carry a **"Needs review"** badge inviting you to double-check before a critical print. A complete profile carries the **"Ready"** badge.
+
+### Community contributions (anonymous and optional)
+
+The filament database **grows over time thanks to shared imports**. On the **Single PDF** tab, the checkbox **"Share this sheet (anonymous) with the community database"** is **checked by default**, but you can untick it at any time.
+
+Concretely, after a **successful import**:
+
+- the app sends **only the manufacturer facts** extracted from the sheet: brand, material, base type, temperature window (nozzle / bed), density, link to the sheet and revision date;
+- this data goes to Maison Drabiec's **moderation queue**; after review, approved entries enter the shared database distributed to users;
+- **manufacturer data always keeps priority** over any other source.
+
+What is **never** sent: the **PDF** itself, your **file paths**, and any **personal or machine data**. The server keeps only a **hashed-IP identifier** to curb abuse.
+
+> **Note**
+> Sharing is **entirely optional** and **never blocks** the import: if you untick the box, the profile is generated in exactly the same way, simply without a contribution.
 
 ---
 
@@ -263,9 +289,8 @@ Reference values (at the **0.4 mm** nozzle):
 
 The process profiles ship settings designed so **supports grip the plate but peel cleanly off the model**, and to **limit warping and part detachment**:
 
-- **Support → model release**: a vertical gap above supports (`support_top_z_distance` 0.2 mm), a spaced rectilinear interface (`support_interface_spacing` 0.5 mm, `support_interface_pattern` rectilinear), 0.35 mm XY distance — supports lift off by hand without scarring the surface.
-- **Plate grip & anti-detachment**: an **outer brim fused to the part** (`brim_type` outer_only, `brim_object_gap` 0) and a **slow first layer** (`initial_layer_speed` 20–25 mm/s).
-- **Material-adaptive anti-warp** (on the imported filament's process, which knows the polymer): a wide brim (≈ 8 mm) + **draft shield** (`draft_shield` enabled) for ABS / ASA / PC / PA, a light brim (≈ 5 mm) for PETG / TPU, a small brim (≈ 3 mm) for PLA.
+- **Support → model release**: a vertical gap above supports (`support_top_z_distance` 0.2 mm), a spaced rectilinear interface (`support_interface_spacing` 0.5 mm, `support_interface_pattern` rectilinear), 0.35 mm XY distance — supports lift off by hand without scarring the surface. (This setting is **unchanged** across project types.)
+- **Anti-warp by project type**: because the process profiles form a **shared set** (not tied to the material), plate grip keys off the **project type**. The **functional, larger-footprint** types — **Everyday object, Toy, Mechanical part** — get a **modest outer brim** (`brim_type` outer_only) to limit warping and detachment. The **aesthetic** types — **Figurine, Vase, Decoration** — and the **Fast prototype** get none, to avoid extra cleanup or marking the part.
 
 > These only take effect when the slice generates supports / a brim; they are conservative starting values you can fine-tune. (Research: `data/RESEARCH_supports_adhesion.md`.)
 
@@ -356,8 +381,8 @@ The "look for the TDS online" option depends on the links present on the manufac
 
 ## 11. Credits & legal
 
-- **Target slicer.** The profiles are intended for **OptimusOrca / Snapmaker_Orca**, an open-source slicer. The slicer is distributed under the **AGPL-3.0-or-later** license.
-- **Filament data.** The data comes from the **manufacturers' official sites**. When a manufacturer value exists, it takes precedence over any other source. The app **does not re-host** manufacturer PDFs: it stores the useful facts and, where relevant, a link back to the original document.
+- **Licensing.** The **Filament & Print-Profile Optimiser by Maison Drabiec** is **proprietary** software, for strictly **personal & private use** (see `LICENSE.md`). The target slicer **OptimusOrca / Snapmaker_Orca**, by contrast, remains **open-source** software distributed under the **AGPL-3.0-or-later** license: the two licenses are separate.
+- **Filament data.** The data comes from the **manufacturers' official sites**. When a manufacturer value exists, it takes precedence over any other source. The app **does not re-host** manufacturer PDFs: it stores the useful facts and, where relevant, a link back to the original document. Any **community contributions** (see [section 6](#community-contributions-anonymous-and-optional)) are anonymous and limited to manufacturer facts.
 - **Brand.** "Filament & Print-Profile Optimiser by Maison Drabiec" and the MD monogram are the trademark of Maison Drabiec.
 
 > Public standards (GHS, ISO 11014-1) are public references; no proprietary schema or profile content is reproduced.

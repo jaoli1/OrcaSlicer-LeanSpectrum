@@ -1,6 +1,6 @@
 # Optimisateur de filament et de profils d'impression by Maison Drabiec — Manuel utilisateur
 
-> **Version du logiciel :** 0.2.0 · **Langue de ce document :** Français ([English version](WIKI_EN.md))
+> **Version du logiciel :** 0.4.0 · **Langue de ce document :** Français ([English version](WIKI_EN.md))
 >
 > Application de bureau qui s'appuie sur une **base de données de filaments** (construite à partir des fiches officielles des fabricants) pour générer, en un clic, des profils **filament** et **process** optimisés pour le slicer **OptimusOrca / Snapmaker_Orca**.
 
@@ -30,9 +30,10 @@ Au cœur du logiciel se trouve désormais une **base de données de filaments**.
 
 Le principe d'utilisation est simple :
 
-1. vous choisissez votre **imprimante** dans le sélecteur en haut de la fenêtre (marque → modèle → buse) ;
-2. vous **recherchez un matériau** dans la base (par marque, nom ou famille : PLA, PETG…) ;
-3. l'application génère, **en un seul clic**, le profil filament **et** les sept profils process par type de projet, calibrés pour cette imprimante.
+1. vous choisissez votre **slicer** dans le sélecteur en haut de la fenêtre (OrcaSlicer, Bambu Studio, Creality Print, SnapmakerOrca / OptimusOrca, ou un dossier personnalisé) — c'est là que les profils seront écrits ;
+2. vous choisissez votre **imprimante** (marque → modèle → buse) ;
+3. vous **recherchez un matériau** dans la base (par marque, nom ou famille : PLA, PETG…), avec la possibilité d'en **cocher plusieurs** ;
+4. l'application génère, **en un seul clic**, le profil filament **et** les sept profils process par type de projet, calibrés pour cette imprimante.
 
 En retour, le logiciel écrit pour vous :
 
@@ -89,13 +90,15 @@ L'application est distribuée sous forme de binaire léger (technologie Tauri) p
 
 ### Où l'application écrit-elle les profils ?
 
-L'Optimisateur écrit ses profils dans le **dossier utilisateur de Snapmaker_Orca**, là où le slicer va les lire :
+L'Optimisateur écrit ses profils dans le **dossier utilisateur du slicer choisi** (voir le [sélecteur de slicer](#3-premier-lancement--interface)), là où le slicer va les lire. Pour SnapmakerOrca / OptimusOrca, par exemple :
 
-- les **profils filament** vont dans le sous-dossier `filament/` de votre profil utilisateur Snapmaker_Orca ;
+- les **profils filament** vont dans le sous-dossier `filament/` de votre profil utilisateur ;
 - les **profils process** vont dans le sous-dossier `process/`.
 
+Les autres slicers de la famille OrcaSlicer (OrcaSlicer, Bambu Studio, Creality Print) suivent la même organisation, dans leur propre dossier de préréglages ; avec l'option « dossier personnalisé », vous pointez directement l'emplacement voulu.
+
 > **Important**
-> Le dossier utilisateur de Snapmaker_Orca doit déjà exister. Si ce n'est pas le cas, **ouvrez OptimusOrca / Snapmaker_Orca au moins une fois** pour qu'il crée son dossier de profils, puis relancez la génération.
+> Le dossier utilisateur du slicer choisi doit déjà exister. Si ce n'est pas le cas, **ouvrez le slicer au moins une fois** pour qu'il crée son dossier de profils, puis relancez la génération.
 
 L'application tient aussi un **journal** dans son propre dossier de données système (utile pour le support en cas de problème).
 
@@ -112,6 +115,10 @@ En haut à droite, deux boutons **EN** et **FR** permettent de basculer l'interf
 ### Bouton « Rechercher une mise à jour »
 
 Sous l'en-tête se trouve un bouton **« Rechercher une mise à jour »**, accompagné d'une zone de statut. C'est lui qui installe et met à jour la **base de filaments** : au premier usage il télécharge la base courante, puis il récupère une version plus récente si le serveur en publie une. Voir la section [Mises à jour](#8-mises-à-jour).
+
+### Sélecteur de slicer
+
+Tout en haut de la fenêtre, un sélecteur **« Slicer »** indique dans quel slicer écrire les profils générés : **OrcaSlicer**, **Bambu Studio**, **Creality Print**, **SnapmakerOrca / OptimusOrca**, ou un **dossier personnalisé** que vous désignez vous-même. L'application résout automatiquement le dossier de préréglages utilisateur du slicer choisi selon votre système (Windows / macOS / Linux), et **mémorise** ce choix d'une session à l'autre. Voir aussi [Le sélecteur d'imprimante global](#5-le-sélecteur-dimprimante-global).
 
 ### Sélecteur d'imprimante global
 
@@ -137,11 +144,11 @@ C'est le mode central de l'application, dans l'onglet **Bibliothèque Filament**
 
 ### Étapes
 
-1. **Choisissez votre imprimante** dans le sélecteur global, en haut de la fenêtre (voir la section [Le sélecteur d'imprimante global](#5-le-sélecteur-dimprimante-global)).
-2. **Recherchez un filament** dans le champ de recherche : tapez une **marque**, un **nom de produit** ou une **famille** (PLA, PETG, ABS…). La liste se filtre au fur et à mesure.
-3. **Sélectionnez un matériau** dans la liste. Vous voyez ses informations issues des fiches fabricant : famille de polymère, plage de **températures** (buse / plateau), **densité**, **couleurs** disponibles et liens vers les documents d'origine.
+1. **Choisissez votre slicer** puis votre **imprimante** dans les sélecteurs en haut de la fenêtre (voir [Le sélecteur d'imprimante global](#5-le-sélecteur-dimprimante-global)).
+2. **Recherchez un filament**. Vous pouvez d'abord restreindre la liste avec le menu déroulant **« Marque »** placé au-dessus de la recherche, puis affiner dans le champ de texte en tapant un **nom de produit** ou une **famille** (PLA, PETG, ABS…). Le filtre par marque et la recherche texte se combinent ; la liste se filtre au fur et à mesure.
+3. **Sélectionnez un ou plusieurs matériaux** dans la liste (cochez-en plusieurs pour les traiter en une fois). Vous voyez les informations issues des fiches fabricant : famille de polymère, plage de **températures** (buse / plateau), **densité**, **couleurs** disponibles et liens vers les documents d'origine.
 4. Cliquez sur **« Générer filament + process »**.
-5. L'application écrit le **profil filament** et les **7 profils process** par type de projet, puis affiche un récapitulatif (profil filament créé, nombre de profils process, imprimante visée) et un **journal**.
+5. L'application écrit un **profil filament** par matière sélectionnée et un **jeu commun de 7 profils process** par type de projet, puis affiche un récapitulatif (profils filament créés, nombre de profils process, imprimante visée) et un **journal**.
 
 ### Un clic = filament + process
 
@@ -153,7 +160,10 @@ Depuis le matériau choisi et l'imprimante du sélecteur global, l'application g
 Le partage des réglages reste « **un jeu de process partagé + un réglage matière** » : le réglage propre au filament (températures, débit, rétraction) vit sur le **profil filament**, tandis que les profils process portent la géométrie d'impression, le cornering / la résonance et les fonctions du fork.
 
 > **Note — option « Toutes les buses »**
-> Si vous avez coché **« Toutes les buses »** dans le sélecteur, l'application génère les **7 profils process par buse** de la machine (par exemple ×4 pour le Snapmaker U1, soit 28 profils), en plus du profil filament.
+> Si vous avez coché **« Toutes les buses »** dans le sélecteur, l'application génère les **7 profils process par buse** de la machine (par exemple ×4 pour le Snapmaker U1, soit 28 profils), en plus du ou des profils filament.
+
+> **Note — multi-sélection et nom des profils**
+> Si vous cochez **plusieurs matériaux**, l'application crée **un profil filament par matière** mais **un seul jeu commun** des 7 profils process (un jeu de process partagé ne peut pas être propre à chaque matière). Chaque profil filament est nommé « **Marque Matière** » (par exemple « Eryone PLA+ ») ; les caractères de nom de fichier légaux comme « + » sont conservés.
 
 ### Ce que contiennent les informations affichées
 
@@ -171,7 +181,7 @@ Les champs qui ont dû être **estimés** (faute de valeur dans la fiche) sont c
 
 ## 5. Le sélecteur d'imprimante global
 
-En haut de la fenêtre, **au-dessus des onglets**, le sélecteur **« Imprimante »** détermine la machine pour laquelle les profils seront générés. Il est **partagé par la Bibliothèque Filament et la Bibliothèque process**.
+En haut de la fenêtre, **au-dessus des onglets**, le sélecteur **« Imprimante »** détermine la machine pour laquelle les profils seront générés. Il est **partagé par la Bibliothèque Filament et la Bibliothèque process**. Il fonctionne en tandem avec le **sélecteur de slicer** (voir la [section 3](#sélecteur-de-slicer)), qui décide *dans quel slicer* les profils sont écrits.
 
 ### Choisir sa machine
 
@@ -200,8 +210,9 @@ Pour un filament qui ne figure **pas encore dans la base de données**, l'onglet
 
 1. **Déposez un PDF** dans la zone prévue (« Glisser un .pdf ici, ou cliquer pour choisir un fichier »), ou cliquez pour ouvrir le sélecteur de fichiers.
 2. Laissez cochée (ou non) l'option **« Chercher aussi la TDS du fabricant en ligne (recommandé) »**. Si votre PDF est une simple fiche de sécurité (SDS) sans données d'impression, cette option permet d'aller chercher la fiche technique (TDS) correspondante sur le site du fabricant pour compléter le profil.
-3. Cliquez sur **« Créer le profil filament »**.
-4. L'application affiche le résultat (champs extraits, éventuels badges) et un **journal** détaillant ce qui a été fait.
+3. Laissez cochée (ou non) l'option **« Partager cette fiche (anonyme) avec la base communautaire »**, **cochée par défaut**. Après un import réussi, elle envoie les seuls **faits fabricant** de la fiche pour enrichir la base partagée (voir la sous-section [Contributions communautaires](#contributions-communautaires-anonymes-et-facultatives) ci-dessous). Elle est entièrement facultative et ne bloque jamais l'import.
+4. Cliquez sur **« Créer le profil filament »**.
+5. L'application affiche le résultat (champs extraits, éventuels badges) et un **journal** détaillant ce qui a été fait.
 
 ### Ce qui est extrait
 
@@ -217,6 +228,21 @@ L'analyseur ne se contente pas de recopier un tableau : il lit la fiche et en ti
 > Beaucoup de fiches indiquent les conditions exactes dans lesquelles les barreaux de test mécanique ont été imprimés (par exemple : *« toutes les éprouvettes sont imprimées à 210 °C, 80 mm/s, plateau 60 °C »*). Quand cette note existe, ses valeurs **remplacent** les moyennes du tableau de paramètres, car elles décrivent précisément la façon dont le fabricant a obtenu ses résultats.
 
 Les champs qui ont dû être **estimés** (faute de valeur dans la fiche) sont signalés, et le profil peut alors porter un badge **« À vérifier »** pour vous inviter à contrôler avant une impression critique. Un profil complet porte le badge **« Prêt »**.
+
+### Contributions communautaires (anonymes et facultatives)
+
+La base de filaments **s'enrichit au fil du temps grâce aux imports partagés**. Sur l'onglet **PDF unique**, la case **« Partager cette fiche (anonyme) avec la base communautaire »** est **cochée par défaut**, mais vous pouvez la décocher à tout moment.
+
+Concrètement, après un **import réussi** :
+
+- l'application envoie **uniquement les faits fabricant** extraits de la fiche : marque, matière, type de base, fenêtre de température (buse / plateau), densité, lien vers la fiche et date de révision ;
+- ces données rejoignent la **file de modération** de Maison Drabiec ; après relecture, les entrées validées intègrent la base partagée distribuée aux utilisateurs ;
+- la **donnée fabricant garde toujours la priorité** sur toute autre source.
+
+Ce qui **n'est jamais** envoyé : le **PDF** lui-même, vos **chemins de fichiers**, et toute **donnée personnelle ou liée à votre machine**. Le serveur ne conserve qu'un **identifiant d'IP haché** pour limiter les abus.
+
+> **Note**
+> Le partage est **entièrement optionnel** et **ne bloque jamais** l'import : si vous décochez la case, le profil est généré exactement de la même façon, simplement sans contribution.
 
 ---
 
@@ -260,9 +286,8 @@ Valeurs de référence (au diamètre **0.4 mm**) :
 
 Les profils process intègrent des réglages pensés pour que **les supports tiennent au plateau mais se détachent proprement du modèle**, et pour **limiter le warping et le décollement** de la pièce :
 
-- **Détachement support → modèle** : jeu vertical au-dessus du support (`support_top_z_distance` 0,2 mm), interface rectiligne espacée (`support_interface_spacing` 0,5 mm, `support_interface_pattern` rectilinear), distance XY 0,35 mm — le support s'enlève à la main sans arracher la surface.
-- **Accroche au plateau & anti-décollement** : un **brim extérieur collé à la pièce** (`brim_type` outer_only, `brim_object_gap` 0) et une **première couche lente** (`initial_layer_speed` 20–25 mm/s).
-- **Anti-warping adapté à la matière** (sur le profil filament importé, qui connaît le polymère) : brim large (≈ 8 mm) + **bouclier (`draft_shield` enabled)** pour ABS / ASA / PC / PA, brim léger (≈ 5 mm) pour PETG / TPU, petit brim (≈ 3 mm) pour le PLA.
+- **Détachement support → modèle** : jeu vertical au-dessus du support (`support_top_z_distance` 0,2 mm), interface rectiligne espacée (`support_interface_spacing` 0,5 mm, `support_interface_pattern` rectilinear), distance XY 0,35 mm — le support s'enlève à la main sans arracher la surface. (Ce réglage est **inchangé** quel que soit le type de projet.)
+- **Anti-warping par type de projet** : comme les profils process forment un **jeu partagé** (non lié à la matière), l'adhérence au plateau se règle selon le **type de projet**. Les types **fonctionnels à plus grande empreinte** — **Objet du quotidien, Jouet, Pièce mécanique** — reçoivent un **brim extérieur modéré** (`brim_type` outer_only) pour limiter le warping et le décollement. Les types **esthétiques** — **Figurine, Vase, Décoration** — et le **Prototype rapide** n'en reçoivent pas, pour ne pas alourdir le nettoyage ni marquer la pièce.
 
 > Ces réglages ne s'activent que lorsque la découpe génère des supports / un brim ; ce sont des valeurs de départ prudentes, ajustables ensuite. (Recherche : `data/RESEARCH_supports_adhesion.md`.)
 
@@ -353,8 +378,8 @@ L'option « chercher la TDS en ligne » dépend des liens présents sur la page 
 
 ## 11. Mentions
 
-- **Slicer cible.** Les profils sont destinés à **OptimusOrca / Snapmaker_Orca**, un slicer libre. Le slicer est distribué sous licence **AGPL-3.0-or-later**.
-- **Données filaments.** Les données proviennent des **sites officiels des fabricants**. Quand une donnée fabricant existe, elle prime sur toute autre source. L'application **ne réhéberge pas** les PDF des fabricants : elle stocke les faits utiles et, le cas échéant, un lien vers le document d'origine.
+- **Licences.** L'**Optimisateur de filament et de profils d'impression by Maison Drabiec** est un logiciel **propriétaire**, réservé à un usage strictement **personnel et privé** (voir `LICENSE.md`). Le slicer cible **OptimusOrca / Snapmaker_Orca**, lui, reste un logiciel **libre** distribué sous licence **AGPL-3.0-or-later** : les deux licences sont distinctes.
+- **Données filaments.** Les données proviennent des **sites officiels des fabricants**. Quand une donnée fabricant existe, elle prime sur toute autre source. L'application **ne réhéberge pas** les PDF des fabricants : elle stocke les faits utiles et, le cas échéant, un lien vers le document d'origine. Les **contributions communautaires** éventuelles (voir [section 6](#contributions-communautaires-anonymes-et-facultatives)) sont anonymes et limitées aux faits fabricant.
 - **Marque.** « Optimisateur de filament et de profils d'impression by Maison Drabiec » et le monogramme MD sont la marque de Maison Drabiec.
 
 > Les standards publics (GHS, ISO 11014-1) sont des références publiques ; aucun schéma ou contenu de profil propriétaire n'est reproduit.

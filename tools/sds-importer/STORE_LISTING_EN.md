@@ -1,7 +1,7 @@
 # Product Listing — Filament & Print-Profile Optimiser by Maison Drabiec
 
 > Working document for the owner to review. **Do not publish as-is.**
-> All figures are phrased as "up to" and reflect the software's real state (v0.2.0).
+> All figures are phrased as "up to" and reflect the software's real state (v0.4.0).
 
 ---
 
@@ -35,15 +35,17 @@
 
 ### Pick your filament, the profile is one click away
 
-Every new spool means the same chore: track down the spec sheet, decode a temperature table, run a calibration, ruin a first print… then start over. The **MD Optimiser** removes that step. You **pick your printer** at the top of the window (brand → model → nozzle, or "all nozzles"), **search for your filament in the library** (700+ materials built from manufacturers' own official sheets), and a **single click** generates the tuned **filament profile** *and* its **7 process profiles by project type** together.
+Every new spool means the same chore: track down the spec sheet, decode a temperature table, run a calibration, ruin a first print… then start over. The **MD Optimiser** removes that step. You **pick your slicer** (OrcaSlicer, Bambu Studio, Creality Print, SnapmakerOrca / OptimusOrca, or a custom folder), **pick your printer** at the top of the window (brand → model → nozzle, or "all nozzles"), **search for your filament in the library** (700+ materials built from manufacturers' own official sheets — with a **brand** filter to go straight to it), and a **single click** generates the tuned **filament profile** *and* its **7 process profiles by project type** together. You can even **tick several materials** at once: the app then creates one filament profile per material, plus a single shared set of the 7 process profiles.
 
-You no longer need to be an extrusion expert: nozzle temperature, bed temperature, drying, density and volumetric flow are populated from the **manufacturer's own official data** — not approximate values scraped from somewhere else.
+You no longer need to be an extrusion expert: nozzle temperature, bed temperature, drying, density and volumetric flow are populated from the **manufacturer's own official data** — not approximate values scraped from somewhere else. The generated profiles are written straight into the preset folder of the **slicer you chose**, and that choice is remembered between sessions.
 
 ### Trustworthy data, not forum copy-paste
 
 The heart of the software is its **database of 700+ materials** (709 entries, 122 brands), built from **manufacturers' own official sheets** (TDS / SDS / MSDS / RoHS). The internal rule is strict: whenever manufacturer data exists (Polymaker, Prusament, Bambu Lab, eSUN, SUNLU, Eryone…), it **always takes precedence** over any other source. For each material you get the recommended temperatures, density, drying conditions, colour codes, and **direct links to the official TDS / MSDS / RoHS sheets** hosted by the manufacturer itself.
 
 The database **ships ready to use**: the app bundles a full **offline** snapshot, and the **update checker** keeps it current — on first launch it downloads the current database from the server, and later a "check for updates" pulls a newer one whenever it becomes available.
+
+And the database **keeps growing thanks to the community**. When you import a PDF, you can (it is **checked by default, but optional**) share — **anonymously** — only the **manufacturer facts** from that sheet: brand, material, base type, nozzle / bed window, density, link, revision date, sent to Maison Drabiec's moderation queue. Never the PDF, never your file paths, never any personal or machine data. After review, approved entries join the shared database (manufacturer data always keeping priority). That's how the database fills out over time, for everyone's benefit.
 
 > Important: the software **never** re-hosts manufacturer PDFs. It stores the useful facts (temperatures, density…) and a deep link to the original document.
 
@@ -65,7 +67,7 @@ The same click that creates the filament profile also generates its **7 process 
 - **Toy** — reinforced walls, generous infill
 - **Mechanical part** — multiple walls, dense infill
 
-Each profile is tuned for **cornering** and **resonance / VFA** (via acceleration and jerk limits) and to stay under the machine's flow ceiling. Filament-specific tuning (temperatures, flow, retraction) stays on the filament profile: one shared set of processes plus per-material tuning is all it takes.
+Each profile is tuned for **cornering** and **resonance / VFA** (via acceleration and jerk limits) and to stay under the machine's flow ceiling. The functional, larger-footprint types (Everyday object, Toy, Mechanical part) also get a **modest outer brim** to limit warping and plate detachment; the aesthetic types (Figurine, Vase, Decoration) and the Fast prototype get none. (Because the process set is shared, adhesion keys off the **project type**, not the material.) Filament-specific tuning (temperatures, flow, retraction) stays on the filament profile: one shared set of processes plus per-material tuning is all it takes.
 
 The filament profile targets the **chosen printer** (`compatible_printers`): it inherits the **U1-tuned parent** when that's the machine, and the stock "**Generic &lt;polymer&gt;**" of the OrcaSlicer family otherwise. The shared process set carries the cornering / resonance tuning and the fork features.
 
@@ -90,9 +92,9 @@ The database receives **regular updates**: the app ships an offline-capable snap
 | Product type | Desktop application (utility for FDM 3D printing) |
 | Operating systems | Windows · macOS (Apple Silicon & Intel) · Linux |
 | Distribution format | **A single ZIP** with three folders: Windows (**`.exe`**), macOS (**`.dmg`**), Linux (**`.AppImage`**) |
-| Target slicers | **OrcaSlicer family**: OrcaSlicer · Creality Print · Bambu Studio · SnapmakerOrca / OptimusOrca (profiles written to the slicer's user folder) |
-| Accepted inputs | **Select a material from the bundled database** (primary flow); as a fallback for a filament not yet listed: manufacturer spec-sheet PDF (SDS / TDS), with optional online TDS lookup |
-| Generated outputs | Filament profile `.json` + its 7 process profiles `.json` (by project type, for the chosen printer; × 4 with "all nozzles") |
+| Target slicers | **Slicer selector**: OrcaSlicer · Bambu Studio · Creality Print · SnapmakerOrca / OptimusOrca · custom folder (profiles written to the chosen slicer's preset folder, resolved per OS; choice remembered) |
+| Accepted inputs | **Select one or several materials from the bundled database** (primary flow; brand filter + free-text search); as a fallback for a filament not yet listed: manufacturer spec-sheet PDF (SDS / TDS), with optional online TDS lookup |
+| Generated outputs | Filament profile `.json` named "Brand Material" + its 7 process profiles `.json` (by project type, for the chosen printer; × 4 with "all nozzles"). With multi-select: one filament profile per material + a single shared process set |
 | Database | 700+ materials (709 entries, 122 brands) built from manufacturers' own official sheets (TDS / SDS / MSDS / RoHS); ships bundled, kept current by the update checker |
 | Printers covered | OrcaSlicer family — 57 brands / 326 models (Creality, Bambu, Snapmaker, Anycubic, Prusa…); all their nozzles |
 | Interface languages | French · English (switchable, remembered) |
@@ -109,9 +111,10 @@ The database receives **regular updates**: the app ships an offline-capable snap
 
 - The **MD Optimiser** application for your system (Windows / macOS / Linux).
 - The **database of 700+ materials** shipped ready to use (temperatures, density, drying, colours, links to official sheets), kept current by the update checker.
-- The **one-click flow**: printer selector (brand → model → nozzle), filament library, then joint generation of the **filament profile** + its **7 process profiles** by project type (up to the full Snapmaker U1 set).
+- The **one-click flow**: slicer selector (OrcaSlicer, Bambu Studio, Creality Print, SnapmakerOrca / OptimusOrca, custom folder), printer selector (brand → model → nozzle), filament library with a **brand filter** and **multi-select**, then joint generation of the **filament profile** + its **7 process profiles** by project type (up to the full Snapmaker U1 set).
 - The **PDF fallback import** (SDS/TDS PDF, optional online TDS lookup) to build a filament not yet in the database.
-- The **update checker** (downloads the database on first launch, a newer one thereafter) and material-adaptive **supports / anti-warp** settings.
+- The **optional community contribution** (anonymous, checked by default, can be turned off) that shares only the manufacturer facts of an imported sheet to grow the shared database.
+- The **update checker** (downloads the database on first launch, a newer one thereafter) and **supports / anti-warp** settings (an outer brim on the functional project types, clean support release).
 - **Fork features enabled**: filament economy, scarf seams, colour-mixing readiness.
 - The **bilingual FR / EN** interface.
 - **Regular database updates**.
@@ -133,10 +136,16 @@ The database receives **regular updates**: the app ships an offline-capable snap
 ## 8. FAQ
 
 **Is it compatible with my printer / slicer?**
-Yes, for the whole **OrcaSlicer family**: OrcaSlicer, Creality Print, Bambu Studio, SnapmakerOrca / OptimusOrca. It all starts from the **printer selector at the top of the window**: you pick brand, model and nozzle (or "all nozzles") from **their printers** (57 brands, 326 models), and the profiles appear in the slicer's menus once generated. PrusaSlicer (`.ini` format) is planned next.
+Yes, for the whole **OrcaSlicer family**: OrcaSlicer, Bambu Studio, Creality Print, SnapmakerOrca / OptimusOrca. A **slicer selector** at the top of the window sets where profiles are written (you can also point it at a custom folder), and the choice is remembered. Then comes the **printer selector**: you pick brand, model and nozzle (or "all nozzles") from **their printers** (57 brands, 326 models), and the profiles appear in the slicer's menus once generated. PrusaSlicer (`.ini` format) is planned next.
 
 **Where does the data come from? Is it reliable?**
 The database prioritises **official manufacturer sites and sheets**. Whenever manufacturer data exists, it always takes precedence over any other source. For each material you get **links to the official sheets** (TDS / MSDS / RoHS) hosted by the manufacturer. The software never re-hosts those PDFs.
+
+**What is shared with the "community database", and what about my privacy?**
+When you import a PDF, a checkbox **"Share this sheet (anonymous) with the community database"** is **checked by default**, but stays entirely **optional** (untick it anytime; it never blocks the import). After a successful import, only the **manufacturer facts** are sent to Maison Drabiec's moderation queue: brand, material, base type, nozzle / bed window, density, link and revision date. **Never** the PDF, **never** your file paths, **no** personal or machine data; the server keeps only a hashed-IP identifier to curb abuse. After review, approved entries join the shared database — manufacturer data always keeping priority.
+
+**How do I find my filament quickly in the database?**
+A **"Brand"** dropdown above the search lets you filter by manufacturer, combined with the free-text search (product name or family). You can also **tick several materials** and generate, in one click, one filament profile per material plus a single shared set of the 7 process profiles.
 
 **How is this better than a generic "PLA" profile?**
 A generic profile applies averages. The MD Optimiser starts from **your specific filament**: it draws on a **database of 700+ materials** built from manufacturers' own official sheets (and, failing that, reads the parameter table *and* the "test specimen" note from the PDF — the authoritative test conditions) to dial in nozzle, bed, speed and flow precisely, then adds process profiles designed for your project type.

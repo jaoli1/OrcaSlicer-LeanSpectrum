@@ -173,6 +173,36 @@ const filamentResult     = document.getElementById("filamentResult");
 let selectedFilamentIds = new Set();
 let searchTimer = null;
 
+// v0.5.0 — "Tout sélectionner" master checkbox: import a whole brand (or any
+// filtered result) without ticking each row. It operates on the rows CURRENTLY
+// shown (after the brand filter + free-text search) — exactly the set the
+// one-click generator will then use.
+const filamentSelectAll    = document.getElementById("filamentSelectAll");
+const filamentSelectAllRow = document.getElementById("filamentSelectAllRow");
+let lastFilamentRows = [];
+
+/// Reflect the visible rows' selection on the master checkbox and show/hide it:
+/// checked = all shown are selected, indeterminate = some, unchecked = none.
+function updateSelectAllState() {
+  if (filamentSelectAllRow) filamentSelectAllRow.style.display = lastFilamentRows.length ? "" : "none";
+  if (!filamentSelectAll) return;
+  const shown = lastFilamentRows.length;
+  let sel = 0;
+  for (const r of lastFilamentRows) if (selectedFilamentIds.has(r.id)) sel++;
+  filamentSelectAll.checked = shown > 0 && sel === shown;
+  filamentSelectAll.indeterminate = sel > 0 && sel < shown;
+}
+
+if (filamentSelectAll) {
+  filamentSelectAll.addEventListener("change", () => {
+    const on = filamentSelectAll.checked;
+    for (const r of lastFilamentRows) {
+      if (on) selectedFilamentIds.add(r.id); else selectedFilamentIds.delete(r.id);
+    }
+    renderFilaments(lastFilamentRows); // re-render to sync row checkboxes + count
+  });
+}
+
 /// Update the count line: "<N matches> · <M selected>".
 function updateFilamentCount(matchCount) {
   if (!filamentCount) return;
@@ -203,10 +233,12 @@ async function loadFilaments(query) {
 }
 
 function renderFilaments(rows) {
+  lastFilamentRows = rows;
   // Keep selections that are still visible in the (possibly filtered) list.
   const visibleIds = new Set(rows.map(r => r.id));
   selectedFilamentIds = new Set([...selectedFilamentIds].filter(id => visibleIds.has(id)));
   updateFilamentCount(rows.length);
+  updateSelectAllState();
   refreshGenEnabled();
   filamentList.innerHTML = rows.map(r => {
     const fam    = escapeHtml(r.base_type || "?") + (r.filled_type ? " " + escapeHtml(r.filled_type) : "");
@@ -234,6 +266,7 @@ function renderFilaments(rows) {
       li.classList.toggle("selected", on);
       if (check) check.checked = on;
       updateFilamentCount(rows.length);
+      updateSelectAllState();
       refreshGenEnabled();
     };
     li.addEventListener("click", (e) => {

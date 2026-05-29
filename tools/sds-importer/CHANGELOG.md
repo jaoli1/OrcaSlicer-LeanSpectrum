@@ -30,6 +30,11 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
     visible.
   Ces réglages s'ajoutent (sans les remplacer) à la passe d'économie du fork, qui
   reste active sur OptimusOrca et est simplement ignorée ailleurs.
+- **« Tout sélectionner »** dans la Bibliothèque Filament : une case au-dessus de
+  la liste sélectionne (ou désélectionne) d'un coup **tous les filaments
+  affichés**. Combinée au filtre « Marque », elle permet d'importer toute une
+  marque sans cocher chaque filament. La case reflète l'état courant (cochée =
+  tout sélectionné, partielle = quelques-uns).
 - **Inclut aussi** les nouveautés de la 0.4.1 (jamais publiée en binaire) :
   supports automatiques par seuil (Figurine, Jouet, Pièce mécanique) et brim
   Figurine (3 mm).

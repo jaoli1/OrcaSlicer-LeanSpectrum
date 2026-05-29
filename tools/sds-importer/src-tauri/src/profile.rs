@@ -367,6 +367,30 @@ fn build_profile_json(
                 obj.insert(key.to_string(), json!([fmt_num(bed)]));
             }
         }
+
+        // Per-material cooling / pressure-advance / retraction. The stock
+        // parent we inherit from is PLA-flavoured (fan at 100 %, PLA-tuned PA
+        // and retraction) which is a thermal mismatch for ABS/ASA/PC/PA — the
+        // fan delaminates the part and the retraction strings. These are always
+        // emitted (unlike the data-driven scalars above) because the polymer
+        // family always yields a value, so there is no risk of blanking a
+        // parent key with `[""]`.
+        let (fan_min, fan_max, slow_layer_time) = polymer.default_fan_curve();
+        let pa                                  = polymer.default_pressure_advance();
+        let (retract_len, retract_spd, z_hop)   = polymer.default_retraction();
+        let material_tuning: [(&str, String); 8] = [
+            ("fan_min_speed",            fmt_num(fan_min)),
+            ("fan_max_speed",            fmt_num(fan_max)),
+            ("slow_down_layer_time",     fmt_num(slow_layer_time)),
+            ("enable_pressure_advance",  "1".to_string()),
+            ("pressure_advance",         fmt_num(pa)),
+            ("retraction_length",        fmt_num(retract_len)),
+            ("retraction_speed",         fmt_num(retract_spd)),
+            ("z_hop",                    fmt_num(z_hop)),
+        ];
+        for (key, v) in material_tuning {
+            obj.insert(key.to_string(), json!([v]));
+        }
     }
 
     profile
@@ -527,6 +551,49 @@ mod tests {
         }
         // …but the scarf reference is preserved in metadata.
         assert!(v["_leanspectrum_metadata"]["scarf_settings"].is_object());
+    }
+
+    /// Per-material cooling / pressure-advance / retraction must be written as
+    /// filament arrays of strings, and must differ by family: PLA runs the fan
+    /// flat-out (fan_max 100) while ABS keeps it low (fan_max 30) to avoid
+    /// warping. Both must enable pressure advance. This is the thermal-mismatch
+    /// fix: the keys used to be inherited from a PLA-flavoured parent.
+    #[test]
+    fn per_material_cooling_pa_and_retraction_are_emitted() {
+        let mut log = Vec::new();
+        let v_pla = build_profile_json(
+            &eryone_pla(),
+            Polymer::Pla,
+            inherit_stub_for(Polymer::Pla),
+            &[U1_PRINTER.to_string()],
+            &mut log,
+        );
+        let abs = ExtractedFilament {
+            polymer: Some(Polymer::Abs),
+            ..Default::default()
+        };
+        let v_abs = build_profile_json(
+            &abs,
+            Polymer::Abs,
+            inherit_stub_for(Polymer::Abs),
+            &[U1_PRINTER.to_string()],
+            &mut log,
+        );
+
+        // Fan curve diverges by family.
+        assert_eq!(v_pla["fan_max_speed"][0], "100");
+        assert_eq!(v_abs["fan_max_speed"][0], "30");
+        // Pressure advance is enabled for every material.
+        assert_eq!(v_pla["enable_pressure_advance"][0], "1");
+        assert_eq!(v_abs["enable_pressure_advance"][0], "1");
+        // Spot-check the remaining new keys are present as string arrays.
+        assert_eq!(v_pla["fan_min_speed"][0],        "100");
+        assert_eq!(v_pla["slow_down_layer_time"][0], "8");
+        assert_eq!(v_pla["pressure_advance"][0],     "0.02");
+        assert_eq!(v_pla["retraction_length"][0],    "0.8");
+        assert_eq!(v_pla["retraction_speed"][0],     "30");
+        assert_eq!(v_pla["z_hop"][0],                "0");
+        assert_eq!(v_abs["retraction_length"][0],    "1");
     }
 
     /// When a value is missing we must NOT emit the key at all (emitting

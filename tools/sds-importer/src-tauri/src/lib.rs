@@ -123,18 +123,19 @@ pub struct ImportRequest {
     pub nozzle: Option<f64>,
     #[serde(default)]
     pub all_nozzles: bool,
-    /// v0.4.0 — opt-in, anonymous community contribution. When true (the UI
-    /// default), the manufacturer FACTS of a freshly-imported filament are sent
-    /// to the shared database queue *after* the profiles are written. Defaults
-    /// to true so older callers / the batch path still contribute; sending
-    /// `share: false` opts out. Never blocks or fails the import.
+    /// v0.4.0 — opt-in, anonymous community contribution. When true, the
+    /// manufacturer FACTS of a freshly-imported filament are sent to the shared
+    /// database queue *after* the profiles are written. v0.6.0: defaults to
+    /// FALSE (true opt-in / GDPR) — the UI checkbox is unticked by default and
+    /// callers must set `share: true` on purpose. Never blocks or fails import.
     #[serde(default = "default_share")]
     pub share: bool,
 }
 
-/// `share` defaults to true (opt-in checkbox is checked by default).
+/// `share` defaults to FALSE — true opt-in: a contribution only happens when
+/// the user explicitly ticks the box (or a caller sets `share: true`).
 fn default_share() -> bool {
-    true
+    false
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -788,6 +789,21 @@ fn open_external(url: String) -> std::result::Result<(), Error> {
     })
 }
 
+/// v0.6.0 — open a local folder (the generated-profiles directory we just wrote
+/// to) in the OS file manager, so the user can jump straight to the result.
+/// Local, existing path only — never a URL.
+#[tauri::command]
+fn reveal_in_folder(path: String) -> std::result::Result<(), Error> {
+    run_command(move || {
+        let p = std::path::Path::new(&path);
+        if !p.exists() {
+            return Err(Error::Other("folder does not exist".into()));
+        }
+        open::that(&path).map_err(|e| Error::Other(e.to_string()))?;
+        Ok(())
+    })
+}
+
 /// Build the path to the persistent log file:
 ///   Windows: %LOCALAPPDATA%\Custom Filament Profile Creator\app.log
 ///   macOS:   ~/Library/Application Support/Custom Filament Profile Creator/app.log
@@ -869,7 +885,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             import_pdf, pick_pdf, pick_folder, crawl_catalog, import_from_urls,
             corpus_default_path, scan_corpus, generate_process_library,
-            check_updates, open_external,
+            check_updates, open_external, reveal_in_folder,
             list_printer_vendors, list_printer_models, list_printer_nozzles,
             generate_process_library_for,
             list_filaments, list_filament_brands, get_filament,

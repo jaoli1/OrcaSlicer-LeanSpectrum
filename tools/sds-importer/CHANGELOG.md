@@ -11,6 +11,30 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.6.0] — Durcissement, qualité par matériau, glisser-déposer
+
+Issue d'un audit multi-agents. Quatre axes (le manifeste signé arrive en 0.6.1,
+car il demande une gestion de clé dédiée).
+
+- **Réglages par matériau** (profil filament) : courbe de ventilation,
+  *pressure advance* et rétraction adaptés à la famille (PLA, PETG, ABS/ASA,
+  TPU, PC, PA). Avant, tout était hérité d'un profil parent thermiquement
+  inadapté (ABS refroidi comme du PLA → délaminage ; PLA sous parent ABS →
+  affaissement). Désormais chaque matériau a son refroidissement / PA / rétraction.
+- **Extraction des fiches FR/EU** : prise en charge de la **virgule décimale**
+  (« 1,24 g/cm³ », « 61,5 °C »), **conversion °F → °C** (fini les « 446 °C »
+  erronés), plages « ≤ / max / jusqu'à », et plafond de densité relevé à 3,0
+  (matériaux chargés CF/GF). Données plus justes et plus complètes.
+- **Glisser-déposer réparé** : la zone « Déposez un PDF » fonctionne enfin
+  (l'évènement de drop natif de Tauri est utilisé, l'ancien chemin HTML était
+  inopérant). Nouveau bouton **« Ouvrir le dossier des profils »** après
+  génération.
+- **Sécurité / confidentialité** : partage communautaire désormais en **opt-in**
+  (case décochée par défaut, conforme RGPD) ; **outils de développement
+  désactivés** dans la version publiée ; permission `fs` retirée (non utilisée) ;
+  **protection anti-SSRF** sur la récupération de fiche en ligne (refus des
+  adresses locales / privées / métadonnées, redirections plafonnées).
+
 ## [0.5.0] — Économie de filament universelle (tous les slicers)
 
 - **Économie de filament visible dans l'aperçu, sur TOUS les slicers.** Jusqu'ici

@@ -40,20 +40,60 @@ static DATE_RX: Lazy<Regex> = Lazy::new(|| {
 static TEMP_RANGE_RX: Lazy<Regex> = Lazy::new(|| {
     // Trailing "°C" is optional; the plausibility check in the caller
     // ((50, 500) °C) filters spurious matches. Accepts "180-200",
-    // "180 - 200", "180 to 200", "180 à 220". An optional inline unit
-    // (°C / ℃ / ℉ / °) is also allowed BETWEEN the first number and the
-    // separator to handle the "190℃-220℃" form vendors embed in SDS
-    // section 9 (raw glyph or normalized °C both accepted).
-    Regex::new(r"(?i)(\d{2,3}(?:\.\d+)?)\s*(?:°\s*[cf]|℃|℉|°)?\s*(?:-|to|–|à|au)\s*(\d{2,3}(?:\.\d+)?)\s*(?:°\s*c)?").unwrap()
+    // "180 - 200", "180 to 200", "180 à 220". Decimal commas are tolerated
+    // ("61,5 °C") alongside dot decimals — the caller swaps ',' for '.'
+    // before parsing. An optional inline unit (°C / ℃ / ℉ / °) is also
+    // allowed BETWEEN the first number and the separator to handle the
+    // "190℃-220℃" form vendors embed in SDS section 9 (raw glyph or
+    // normalized °C both accepted). The trailing unit is a CAPTURING group
+    // so the caller can detect Fahrenheit ("446°F") and convert to Celsius.
+    Regex::new(r"(?i)(\d{2,3}(?:[.,]\d+)?)\s*(?:°\s*[cf]|℃|℉|°)?\s*(?:-|to|–|à|au)\s*(\d{2,3}(?:[.,]\d+)?)\s*(°\s*[cf]|℃|℉)?").unwrap()
 });
 
 static SINGLE_TEMP_RX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)(\d{2,3}(?:\.\d+)?)\s*(?:°\s*c)?").unwrap()
+    // Single value with an optional CAPTURING unit group for °F detection.
+    // Decimal commas tolerated; the caller swaps ',' for '.' before parsing.
+    Regex::new(r"(?i)(\d{2,3}(?:[.,]\d+)?)\s*(°\s*[cf]|℃|℉)?").unwrap()
 });
 
+// Comparator / single-value temperature forms: "≤ 220", "max 250",
+// "up to 230", "≥ 60", "Print Temp: 210 °C". When no explicit a-b range is
+// present these collapse to lo == hi. The unit is a CAPTURING group so the
+// caller can convert Fahrenheit. Decimal commas tolerated.
+static TEMP_COMPARATOR_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(?:[≤≥<>]=?|max(?:imum)?|min(?:imum)?|up\s*to|jusqu'?[àa]|au\s*plus)\s*(\d{2,3}(?:[.,]\d+)?)\s*(°\s*[cf]|℃|℉)?").unwrap()
+});
+
+fn parse_temp_num(s: &str) -> Option<f64> {
+    s.replace(',', ".").parse::<f64>().ok()
+}
+
+/// True when the captured unit string denotes Fahrenheit.
+fn unit_is_fahrenheit(unit: Option<regex::Match<'_>>) -> bool {
+    unit.map(|m| {
+        let u = m.as_str();
+        u.contains('f') || u.contains('F') || u.contains('℉')
+    })
+    .unwrap_or(false)
+}
+
+/// Convert a value to Celsius when `is_f` is set, rounding to 1 decimal so
+/// "446°F" → 230.0 rather than 229.99999…; integral results stay integral.
+fn to_celsius(v: f64, is_f: bool) -> f64 {
+    if is_f {
+        ((v - 32.0) * 5.0 / 9.0 * 10.0).round() / 10.0
+    } else {
+        v
+    }
+}
+
 static DENSITY_VALUE_RX: Lazy<Regex> = Lazy::new(|| {
-    // First plausible density (0.5..1.7 g/cm^3) in the scanned window.
-    Regex::new(r"(0\.[5-9]\d?|1\.[0-7]\d?)").unwrap()
+    // First plausible density (0.5..3.0 g/cm^3) in the scanned window.
+    // Comma decimals accepted ("1,24"); the caller swaps ',' for '.'.
+    // Ceiling raised from 1.7 to 3.0 so filled materials (PA-CF, PC-CF,
+    // wood/metal fill at 1.7-2.6) are not rejected; the 0.5 lower bound is
+    // preserved so this bare fallback stays conservative.
+    Regex::new(r"(0[.,][5-9]\d?|[12][.,][0-9]\d?|3[.,]0\d?)").unwrap()
 });
 
 static PRODUCT_NAME_LINE_RX: Lazy<Regex> = Lazy::new(|| {
@@ -102,14 +142,26 @@ fn split_sections(text: &str) -> Sections<'_> {
 
 fn parse_temp_range_with_floor(text: &str, floor: f64, ceiling: f64) -> (Option<f64>, Option<f64>) {
     if let Some(c) = TEMP_RANGE_RX.captures(text) {
-        let lo: f64 = c.get(1).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
-        let hi: f64 = c.get(2).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
+        let is_f = unit_is_fahrenheit(c.get(3));
+        let lo = c.get(1).and_then(|m| parse_temp_num(m.as_str())).map(|v| to_celsius(v, is_f)).unwrap_or(0.0);
+        let hi = c.get(2).and_then(|m| parse_temp_num(m.as_str())).map(|v| to_celsius(v, is_f)).unwrap_or(0.0);
         if hi >= lo && lo >= floor && hi <= ceiling {
             return (Some(lo), Some(hi));
         }
     }
+    // Comparator forms ("≤ 220", "max 250", "up to 230", "≥ 60") collapse to
+    // a single bound used for both lo and hi.
+    if let Some(c) = TEMP_COMPARATOR_RX.captures(text) {
+        let is_f = unit_is_fahrenheit(c.get(2));
+        if let Some(v) = c.get(1).and_then(|m| parse_temp_num(m.as_str())).map(|v| to_celsius(v, is_f)) {
+            if (floor..=ceiling).contains(&v) {
+                return (Some(v), Some(v));
+            }
+        }
+    }
     if let Some(c) = SINGLE_TEMP_RX.captures(text) {
-        if let Some(v) = c.get(1).and_then(|m| m.as_str().parse::<f64>().ok()) {
+        let is_f = unit_is_fahrenheit(c.get(2));
+        if let Some(v) = c.get(1).and_then(|m| parse_temp_num(m.as_str())).map(|v| to_celsius(v, is_f)) {
             if (floor..=ceiling).contains(&v) {
                 return (Some(v), Some(v));
             }
@@ -124,16 +176,19 @@ fn parse_temp_range(text: &str) -> (Option<f64>, Option<f64>) {
     parse_temp_range_with_floor(text, 50.0, 500.0)
 }
 
+// Unit-anchored density: ceiling raised from 1.7 to 3.0 so legitimate filled
+// materials (PA-CF, PC-CF, wood/metal fill, often 1.7-2.6 g/cm³) match. The
+// g/cm³ or kg/m³ anchor keeps false friends out. Comma decimals accepted.
 static DENSITY_VALUE_WITH_UNIT_AFTER_RX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)(0\.[5-9]\d?|1\.[0-7]\d?)\s*(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)").unwrap()
+    Regex::new(r"(?i)(0[.,][5-9]\d?|[12][.,][0-9]\d?|3[.,]0\d?)\s*(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)").unwrap()
 });
 static DENSITY_VALUE_WITH_UNIT_BEFORE_RX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)\s*[^\d\n]{0,40}(0\.[5-9]\d?|1\.[0-7]\d?)").unwrap()
+    Regex::new(r"(?i)(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)\s*[^\d\n]{0,40}(0[.,][5-9]\d?|[12][.,][0-9]\d?|3[.,]0\d?)").unwrap()
 });
 
 fn density_pull(window: &str, rx: &Regex) -> Option<f64> {
     rx.captures(window)
-        .and_then(|c| c.get(1).and_then(|m| m.as_str().parse().ok()))
+        .and_then(|c| c.get(1).and_then(|m| m.as_str().replace(',', ".").parse().ok()))
 }
 
 fn parse_density(text: &str) -> Option<f64> {
@@ -542,5 +597,71 @@ Density(g/cm3)                            1.23
         assert_eq!(r.bed_temp_min_c,    Some(60.0));
         assert_eq!(r.bed_temp_max_c,    Some(80.0));
         assert_eq!(r.density_g_cm3,     Some(1.23));
+    }
+
+    // ---- P0a: decimal-comma temperature ranges --------------------------
+
+    #[test]
+    fn temp_range_accepts_decimal_comma() {
+        // "61,5 - 70,5 °C" must parse like "61.5 - 70.5".
+        let (lo, hi) = parse_temp_range("Melting 61,5 - 70,5 °C");
+        assert_eq!(lo, Some(61.5));
+        assert_eq!(hi, Some(70.5));
+    }
+
+    /// End-to-end French SDS with a decimal-comma density "1,24 g/cm³" and a
+    /// comma melting range "61,5 - 70,5". Both previously failed.
+    #[test]
+    fn parses_french_decimal_comma_sds() {
+        let sds = "SECTION 9: Propriétés physiques et chimiques\n\
+                   Point de fusion: 61,5 - 70,5 °C\n\
+                   Densité: 1,24 g/cm³\n";
+        let r = parse(sds);
+        assert_eq!(r.melt_temp_min_c, Some(61.5));
+        assert_eq!(r.melt_temp_max_c, Some(70.5));
+        assert_eq!(r.density_g_cm3, Some(1.24));
+    }
+
+    // ---- P0b: Fahrenheit → Celsius --------------------------------------
+
+    #[test]
+    fn temp_range_fahrenheit_converts_to_celsius() {
+        // "446-450 °F" → 230-232 °C (446°F == 230°C exactly).
+        let (lo, hi) = parse_temp_range("decomposition 446-450 °F");
+        assert_eq!(lo, Some(230.0));
+        assert_eq!(hi, Some(232.2));
+    }
+
+    #[test]
+    fn single_temp_fahrenheit_converts_to_celsius() {
+        // A lone "446 °F" collapses to lo == hi == 230 °C.
+        let (lo, hi) = parse_temp_range("446 °F");
+        assert_eq!(lo, Some(230.0));
+        assert_eq!(hi, Some(230.0));
+    }
+
+    // ---- P1a: comparator / single-value ranges --------------------------
+
+    #[test]
+    fn temp_range_comparator_and_single_forms() {
+        assert_eq!(parse_temp_range("≤ 220 °C"), (Some(220.0), Some(220.0)));
+        assert_eq!(parse_temp_range("max 250"),  (Some(250.0), Some(250.0)));
+        assert_eq!(parse_temp_range("up to 230 °C"), (Some(230.0), Some(230.0)));
+        assert_eq!(parse_temp_range("≥ 60"),     (Some(60.0),  Some(60.0)));
+        // Single value: "Print Temp: 210 °C" with lo == hi.
+        assert_eq!(parse_temp_range("Print Temp: 210 °C"), (Some(210.0), Some(210.0)));
+    }
+
+    // ---- P1b: density ceiling raised to 3.0 -----------------------------
+
+    #[test]
+    fn density_accepts_filled_material_above_old_ceiling() {
+        // PA-CF at 1.30 still fine; a metal-fill at 2.45 g/cm³ used to be
+        // rejected by the old 1.7 cap.
+        assert_eq!(parse_density("Density: 1,30 g/cm3"), Some(1.30));
+        assert_eq!(parse_density("Density 2.45 g/cm³"), Some(2.45));
+        // Above the new 3.0 ceiling the unit-anchored regex no longer matches,
+        // so the implausible "3.5 g/cm3" next to a Density label is rejected.
+        assert_eq!(parse_density("Density 3.5 g/cm3"), None);
     }
 }

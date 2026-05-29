@@ -16,22 +16,61 @@ static RANGE_RX: Lazy<Regex> = Lazy::new(|| {
     // each number; without skipping it the first number's trailing unit
     // blocks the dash match and the whole range is lost. Both the raw
     // glyph (℃) and the normalized form (°C) are accepted so the regex is
-    // robust whether or not normalize_unicode ran first.
-    Regex::new(r"(?i)(\d{2,3}(?:\.\d+)?)\s*(?:°\s*[cf]|℃|℉|°)?\s*(?:-|to|–|à|au)\s*(\d{2,3}(?:\.\d+)?)").unwrap()
+    // robust whether or not normalize_unicode ran first. Decimal commas
+    // are tolerated ("61,5") — callers swap ',' for '.' before parsing.
+    // The trailing unit is a CAPTURING group so callers can detect
+    // Fahrenheit ("446°F") and convert to Celsius.
+    Regex::new(r"(?i)(\d{2,3}(?:[.,]\d+)?)\s*(?:°\s*[cf]|℃|℉|°)?\s*(?:-|to|–|à|au)\s*(\d{2,3}(?:[.,]\d+)?)\s*(°\s*[cf]|℃|℉)?").unwrap()
 });
+
+// Comparator / single-value temperature forms for TDS parameter tables:
+// "≤ 220", "max 250", "up to 230", "≥ 60", or a lone "210 °C". Unit is a
+// CAPTURING group for Fahrenheit conversion; decimal commas tolerated.
+static COMPARATOR_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(?:[≤≥<>]=?|max(?:imum)?|min(?:imum)?|up\s*to|jusqu'?[àa]|au\s*plus)\s*(\d{2,3}(?:[.,]\d+)?)\s*(°\s*[cf]|℃|℉)?").unwrap()
+});
+static SINGLE_TEMP_RX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(\d{2,3}(?:[.,]\d+)?)\s*(°\s*[cf]|℃|℉)?").unwrap()
+});
+
+fn parse_temp_num(s: &str) -> Option<f64> {
+    s.replace(',', ".").parse::<f64>().ok()
+}
+
+/// True when the captured unit string denotes Fahrenheit.
+fn unit_is_fahrenheit(unit: Option<regex::Match<'_>>) -> bool {
+    unit.map(|m| {
+        let u = m.as_str();
+        u.contains('f') || u.contains('F') || u.contains('℉')
+    })
+    .unwrap_or(false)
+}
+
+/// Convert to Celsius when `is_f`, rounding to 1 decimal ("446°F" → 230.0).
+fn to_celsius(v: f64, is_f: bool) -> f64 {
+    if is_f {
+        ((v - 32.0) * 5.0 / 9.0 * 10.0).round() / 10.0
+    } else {
+        v
+    }
+}
 
 static SPEED_UNIT_RX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"(?i)mm\s*/\s*s").unwrap()
 });
 
+// Density ceiling raised from 1.7 to 3.0 (filled materials: PA-CF, PC-CF,
+// wood/metal fill at 1.7-2.6). The 0.5 lower bound is preserved so the bare
+// fallback stays conservative; the unit anchor on the *_WITH_UNIT_* variants
+// keeps false friends out. Comma decimals accepted throughout.
 static DENSITY_VALUE_RX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(0\.[5-9]\d?|1\.[0-7]\d?)").unwrap()
+    Regex::new(r"(0[.,][5-9]\d?|[12][.,][0-9]\d?|3[.,]0\d?)").unwrap()
 });
 static DENSITY_VALUE_WITH_UNIT_AFTER_RX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)(0\.[5-9]\d?|1\.[0-7]\d?)\s*(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)").unwrap()
+    Regex::new(r"(?i)(0[.,][5-9]\d?|[12][.,][0-9]\d?|3[.,]0\d?)\s*(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)").unwrap()
 });
 static DENSITY_VALUE_WITH_UNIT_BEFORE_RX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)\s*[^\d\n]{0,40}(0\.[5-9]\d?|1\.[0-7]\d?)").unwrap()
+    Regex::new(r"(?i)(?:g\s*/\s*cm\d*|kg\s*/\s*m\d*)\s*[^\d\n]{0,40}(0[.,][5-9]\d?|[12][.,][0-9]\d?|3[.,]0\d?)").unwrap()
 });
 
 static MANUFACTURER_RX: Lazy<Regex> = Lazy::new(|| {
@@ -90,8 +129,12 @@ fn first_range_with_unit_check(window: &str, expect_c: bool) -> Option<(f64, f64
         if let Some(prev) = last { if m.start() <= prev { continue; } }
         last = Some(m.end());
 
-        let lo: f64 = c.get(1).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
-        let hi: f64 = c.get(2).and_then(|m| m.as_str().parse().ok()).unwrap_or(0.0);
+        // Fahrenheit conversion only applies to temperature scans; a captured
+        // °F/℉ unit (group 3) flips both bounds to Celsius before the
+        // plausibility window is checked, so "446-450°F" → 230-232.
+        let is_f = expect_c && unit_is_fahrenheit(c.get(3));
+        let lo = c.get(1).and_then(|m| parse_temp_num(m.as_str())).map(|v| to_celsius(v, is_f)).unwrap_or(0.0);
+        let hi = c.get(2).and_then(|m| parse_temp_num(m.as_str())).map(|v| to_celsius(v, is_f)).unwrap_or(0.0);
         let plausible = if expect_c {
             lo >= 30.0 && hi <= 350.0 && hi >= lo
         } else {
@@ -113,6 +156,43 @@ fn first_range_with_unit_check(window: &str, expect_c: bool) -> Option<(f64, f64
             }
         }
         return Some((lo, hi));
+    }
+    None
+}
+
+/// Find the first plausible comparator ("≤ 220", "max 250", "up to 230",
+/// "≥ 60") or bare single value ("210 °C") in `window`, collapsing it to a
+/// (lo, hi) pair with lo == hi. Comparators are tried before the bare single
+/// value so an explicit "max 250" wins over a stray leading number. Only used
+/// as a last resort by `scan_range_with_hint` when no explicit a-b range is
+/// found, so it never overrides a real range. Honours the same Celsius window
+/// and Fahrenheit conversion as `first_range_with_unit_check`.
+fn first_comparator_or_single(window: &str, expect_c: bool) -> Option<(f64, f64)> {
+    let plausible = |v: f64| {
+        if expect_c { v >= 30.0 && v <= 350.0 } else { v >= 1.0 && v <= 1000.0 }
+    };
+    if let Some(c) = COMPARATOR_RX.captures(window) {
+        let is_f = expect_c && unit_is_fahrenheit(c.get(2));
+        if let Some(v) = c.get(1).and_then(|m| parse_temp_num(m.as_str())).map(|v| to_celsius(v, is_f)) {
+            if plausible(v) {
+                return Some((v, v));
+            }
+        }
+    }
+    if let Some(c) = SINGLE_TEMP_RX.captures(window) {
+        let is_f = expect_c && unit_is_fahrenheit(c.get(2));
+        // A bare single value must carry a temperature unit to count when we
+        // expect Celsius — otherwise a stray dimensionless number (a code, a
+        // percentage figure) would masquerade as a temperature.
+        let has_unit = c.get(2).is_some();
+        if expect_c && !has_unit {
+            return None;
+        }
+        if let Some(v) = c.get(1).and_then(|m| parse_temp_num(m.as_str())).map(|v| to_celsius(v, is_f)) {
+            if plausible(v) {
+                return Some((v, v));
+            }
+        }
     }
     None
 }
@@ -158,6 +238,16 @@ fn scan_range_with_hint(
                     return (Some(lo), Some(hi));
                 }
             }
+
+            // No explicit a-b range was accepted for this label. Fall back to a
+            // comparator / single-value form ("≤ 220", "max 250", "up to 230",
+            // "Print Temp: 210 °C"). Honour expected_min so a single bed-range
+            // value can't masquerade as the nozzle in a reverse-column table.
+            if let Some((lo, hi)) = first_comparator_or_single(forward, expect_c) {
+                if expected_min.map(|m| lo >= m).unwrap_or(true) {
+                    return (Some(lo), Some(hi));
+                }
+            }
         }
     }
     (None, None)
@@ -165,7 +255,7 @@ fn scan_range_with_hint(
 
 fn density_pull(window: &str, rx: &Regex) -> Option<f64> {
     rx.captures(window)
-        .and_then(|c| c.get(1).and_then(|m| m.as_str().parse().ok()))
+        .and_then(|c| c.get(1).and_then(|m| m.as_str().replace(',', ".").parse().ok()))
 }
 
 fn scan_density(text: &str) -> Option<f64> {
@@ -835,5 +925,124 @@ RECOMMENDED PRINTING PARAMETERS                                      VALUE
         assert_eq!(scan_revision_date(tds).as_deref(), Some("08/2024"));
         // No date → None.
         assert_eq!(scan_revision_date("Technical Data Sheet\nPLA+\n"), None);
+    }
+
+    // ---- P0a: decimal-comma ranges + density ----------------------------
+
+    #[test]
+    fn range_accepts_decimal_comma() {
+        let (lo, hi) = scan_range_after(
+            "Nozzle temperature 210,5-235,5 °C\n", &["nozzle temperature"], true);
+        assert_eq!(lo, Some(210.5));
+        assert_eq!(hi, Some(235.5));
+    }
+
+    /// French TDS with comma decimals in BOTH the nozzle range and the
+    /// density. Both previously failed (regexes only accepted '.').
+    #[test]
+    fn parses_french_decimal_comma_tds() {
+        let tds = "Fiche technique\nPLA\n\
+                   Température buse 210,5-235,5 °C\n\
+                   Température plateau 55-65 °C\n\
+                   Densité 1,24 g/cm³\n";
+        let r = parse(tds);
+        assert_eq!(r.nozzle_temp_min_c, Some(210.5));
+        assert_eq!(r.nozzle_temp_max_c, Some(235.5));
+        assert_eq!(r.density_g_cm3, Some(1.24));
+    }
+
+    // ---- P0b: Fahrenheit → Celsius --------------------------------------
+
+    #[test]
+    fn range_fahrenheit_converts_to_celsius() {
+        // "446-482 °F" → 230-250 °C (446°F=230, 482°F=250 exactly).
+        let (lo, hi) = scan_range_after(
+            "Print temperature 446-482 °F\n", &["print temperature"], true);
+        assert_eq!(lo, Some(230.0));
+        assert_eq!(hi, Some(250.0));
+    }
+
+    /// End-to-end: a US-vendor TDS quoting the nozzle range in Fahrenheit must
+    /// surface Celsius values to the rest of the pipeline.
+    #[test]
+    fn parses_fahrenheit_nozzle_tds() {
+        let tds = "Technical Data Sheet\nABS\n\
+                   Nozzle temperature 446-482 °F\n\
+                   Bed temperature 212-230 °F\n";
+        let r = parse(tds);
+        assert_eq!(r.nozzle_temp_min_c, Some(230.0));
+        assert_eq!(r.nozzle_temp_max_c, Some(250.0));
+        // 212°F = 100, 230°F = 110.
+        assert_eq!(r.bed_temp_min_c, Some(100.0));
+        assert_eq!(r.bed_temp_max_c, Some(110.0));
+    }
+
+    // ---- P1a: comparator / single-value ranges --------------------------
+
+    #[test]
+    fn range_comparator_and_single_forms() {
+        // "≤ 250" (no explicit a-b range) collapses to lo == hi.
+        assert_eq!(
+            scan_range_after("Nozzle temperature ≤ 250 °C\n", &["nozzle temperature"], true),
+            (Some(250.0), Some(250.0)),
+        );
+        // "max 230".
+        assert_eq!(
+            scan_range_after("Print temperature max 230 °C\n", &["print temperature"], true),
+            (Some(230.0), Some(230.0)),
+        );
+        // Single value "Print Temp: 210 °C".
+        assert_eq!(
+            scan_range_after("Print temp: 210 °C\n", &["print temp"], true),
+            (Some(210.0), Some(210.0)),
+        );
+    }
+
+    /// A bare dimensionless number after the label is NOT a temperature — the
+    /// single-value fallback requires a °C/°F unit so codes / percentages don't
+    /// leak through.
+    #[test]
+    fn single_value_without_unit_is_ignored() {
+        assert_eq!(
+            scan_range_after("Nozzle temperature 100\n", &["nozzle temperature"], true),
+            (None, None),
+        );
+    }
+
+    // ---- P1b: density ceiling raised to 3.0 -----------------------------
+
+    #[test]
+    fn density_accepts_filled_material_above_old_ceiling() {
+        // Carbon/metal-filled densities (1.7-2.6) used to be rejected by the
+        // old 1.7 cap; now accepted up to 3.0. Unit anchor still required.
+        assert_eq!(scan_density("Density 2,45 g/cm3"), Some(2.45));
+        assert_eq!(scan_density("Density 1.95 g/cm³"), Some(1.95));
+        // Above 3.0 is not a plausible density.
+        assert_eq!(scan_density("Density 3.6 g/cm3"), None);
+    }
+
+    /// Carbon-filled nylon (PA6) TDS end-to-end, reusing the tabular layout and
+    /// the "Drying conditions 65-7512H" fixture style. The filled density 1.95
+    /// g/cm³ would have been rejected by the old 1.7 ceiling. "polyamide 6"
+    /// wording drives detection so the polymer-aware floors apply.
+    #[test]
+    fn parses_filled_material_tds_with_drying_fixture() {
+        let tds = r#"
+Technical Data Sheet (TDS)
+PA6-CF (polyamide 6 + carbon fibre)
+Nozzle temperature                                  260-280
+Bed temperature                                     55-70
+Drying conditions                            65-7512H
+Density 1.95 g/cm³
+"#;
+        let r = parse(tds);
+        assert_eq!(r.polymer, Some(Polymer::NylonPa6));
+        assert_eq!(r.nozzle_temp_min_c, Some(260.0));
+        assert_eq!(r.nozzle_temp_max_c, Some(280.0));
+        assert_eq!(r.bed_temp_min_c, Some(55.0));
+        assert_eq!(r.bed_temp_max_c, Some(70.0));
+        // 1.95 g/cm³ would have been rejected by the old 1.7 ceiling; the
+        // unit-anchored match still keeps false friends out.
+        assert_eq!(r.density_g_cm3, Some(1.95));
     }
 }

@@ -153,6 +153,59 @@ impl Polymer {
         })
     }
 
+    /// Per-family part-cooling fan curve as `(fan_min_speed, fan_max_speed,
+    /// slow_down_layer_time)` — the three filament keys that most affect
+    /// surface quality vs. layer adhesion. Inheriting these from a stock PLA
+    /// parent (which runs the fan at 100 %) cooks the layer bond on ABS/ASA/PC
+    /// and warps the part, so we set them explicitly per material.
+    ///
+    /// PLA wants maximum cooling; PETG/TPU moderate; ABS/ASA/PC/PA run the fan
+    /// low or off to avoid warping and delamination. HIPS≈ABS, PP≈PETG follow
+    /// their thermal siblings (same rule as `inherit_stub_for`); `Other`→PLA.
+    pub fn default_fan_curve(&self) -> (f64, f64, f64) {
+        match self {
+            Polymer::Pla                            => (100.0, 100.0, 8.0),
+            Polymer::Petg | Polymer::Pp             => ( 40.0,  70.0, 6.0),
+            Polymer::Abs | Polymer::Asa | Polymer::Hips => (  0.0,  30.0, 3.0),
+            Polymer::Tpu                            => ( 50.0,  80.0, 8.0),
+            Polymer::Pc                             => (  0.0,  20.0, 5.0),
+            Polymer::NylonPa6 | Polymer::NylonPa12  => (  0.0,  20.0, 5.0),
+            Polymer::Other                          => (100.0, 100.0, 8.0),
+        }
+    }
+
+    /// Per-family pressure advance. `enable_pressure_advance` is always on (we
+    /// return only the coefficient; the caller emits the "1" flag); the value
+    /// rises with melt viscosity / ooze tendency — low for PLA, highest for the
+    /// rubbery TPU. HIPS≈ABS, PP≈PETG follow their thermal siblings; `Other`→PLA.
+    pub fn default_pressure_advance(&self) -> f64 {
+        match self {
+            Polymer::Pla                            => 0.02,
+            Polymer::Petg | Polymer::Pp             => 0.03,
+            Polymer::Abs | Polymer::Asa | Polymer::Hips => 0.035,
+            Polymer::Tpu                            => 0.06,
+            Polymer::Pc                             => 0.04,
+            Polymer::NylonPa6 | Polymer::NylonPa12  => 0.04,
+            Polymer::Other                          => 0.02,
+        }
+    }
+
+    /// Per-family retraction as `(retraction_length, retraction_speed, z_hop)`.
+    /// PETG/PC/PA string the most → longer pull + a small Z-hop to clear the
+    /// print; PLA/ABS/TPU need less and no hop. HIPS≈ABS, PP≈PETG follow their
+    /// thermal siblings; `Other`→PLA.
+    pub fn default_retraction(&self) -> (f64, f64, f64) {
+        match self {
+            Polymer::Pla                            => (0.8, 30.0, 0.0),
+            Polymer::Petg | Polymer::Pp             => (1.5, 35.0, 0.2),
+            Polymer::Abs | Polymer::Asa | Polymer::Hips => (1.0, 35.0, 0.0),
+            Polymer::Tpu                            => (0.8, 25.0, 0.0),
+            Polymer::Pc                             => (1.0, 35.0, 0.1),
+            Polymer::NylonPa6 | Polymer::NylonPa12  => (1.0, 35.0, 0.1),
+            Polymer::Other                          => (0.8, 30.0, 0.0),
+        }
+    }
+
     /// Recommended scarf-joint seam settings per polymer family. These are
     /// the OrcaSlicer fields that hide the Z-seam line; values come from
     /// the OrcaSlicer wiki defaults + community guides

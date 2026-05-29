@@ -329,7 +329,11 @@ if (genFilamentProcess) {
         `<h2 style="margin-top:0;">${escapeHtml(tr("filament_result_for", { printer: printers }))}</h2>`
         + `<div class="field"><span>${escapeHtml(tr("filament_result_filament"))} (${r.filamentCount})</span><span>${names}</span></div>`
         + `<div class="field"><span>${escapeHtml(tr("filament_result_process"))}</span><span><strong>${r.processCount}</strong></span></div>`
-        + `<div class="sub" style="margin-top:8px;"><code>${escapeHtml(r.processDir)}</code></div>`;
+        + `<div class="sub" style="margin-top:8px;"><code>${escapeHtml(r.processDir)}</code></div>`
+        + `<div class="row" style="margin-top:10px;"><button id="revealFolderBtn" class="secondary" type="button">${escapeHtml(tr("reveal_folder"))}</button></div>`;
+      const rb = document.getElementById("revealFolderBtn");
+      if (rb) rb.addEventListener("click", () =>
+        invoke("reveal_in_folder", { path: r.processDir }).catch(e => console.error(e)));
       filamentStatus.textContent = tr("open_slicer");
     } catch (e) {
       filamentResult.style.display = "block";
@@ -410,22 +414,30 @@ if (drop) {
       if (p) setChosen(p);
     } catch (e) { status.textContent = `${tr("err_picker")}: ${e}`; }
   });
-  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => {
-    e.preventDefault(); drop.classList.add("hover");
-  }));
-  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => {
-    e.preventDefault(); drop.classList.remove("hover");
-  }));
-  drop.addEventListener("drop", e => {
-    const path = e.dataTransfer?.files?.[0]?.path;
-    if (path) setChosen(path);
-  });
+  // Native OS drag-and-drop. Tauri intercepts file drops (dragDropEnabled), so
+  // the HTML `drop` event carries no usable file path (e.dataTransfer.files[0]
+  // .path is undefined in the WebView). Listen to Tauri's own drag-drop events
+  // instead. Guarded so any API drift can't break the rest of init.
+  try {
+    const ev = window.__TAURI__ && window.__TAURI__.event;
+    if (ev && typeof ev.listen === "function") {
+      ev.listen("tauri://drag-enter", () => drop.classList.add("hover"));
+      ev.listen("tauri://drag-leave", () => drop.classList.remove("hover"));
+      ev.listen("tauri://drag-drop", (e) => {
+        drop.classList.remove("hover");
+        const paths = e && e.payload && e.payload.paths;
+        if (paths && paths.length) {
+          setChosen(paths.find(p => /\.pdf$/i.test(p)) || paths[0]);
+        }
+      });
+    }
+  } catch (err) { console.error("drag-drop wiring failed", err); }
 }
 
 if (runBtn) {
   runBtn.addEventListener("click", () => importPdfAndShow(
     chosenPath, fetchOnline.checked,
-    shareContribution ? shareContribution.checked : true,
+    shareContribution ? shareContribution.checked : false,
     result, status, logPanel, logEl, runBtn));
 }
 

@@ -267,13 +267,21 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
         "flush_into_infill":          "1",
         "flush_into_support":         "1",
         "wipe_tower_no_sparse_layers":"1",
-        //   • flush_multiplier: the dominant lever on multi-colour waste — it
-        //     scales EVERY colour-change purge volume. 0.2 (down from the 0.3
-        //     default) trims ~⅓ of the purge while staying safely above the
-        //     ~0.15 floor where the next colour can start to bleed.
-        //   • prime_tower_width: cap the tower footprint at the value the stock
-        //     "0.20 Standard" preset uses (30 mm) instead of the wider inherited
-        //     default — less material per tower layer.
+        // Two purge levers, because they govern DIFFERENT printer families:
+        //   • prime_volume — THE lever on tool-changer printers like the
+        //     Snapmaker U1 (4 independent nozzles). There OrcaSlicer discards
+        //     flush_multiplier/flush_volumes and lays exactly `prime_volume`
+        //     per tool, per tool-change layer (Print.cpp ~3125 / ~3347). The
+        //     inherited default (45, from the 0.20 base) made our tower 1.7× the
+        //     stock 0.12 preset (27). Each nozzle keeps its own colour, so the
+        //     prime only clears ooze — 15 mm³ is ample (the U1 also pre-purges
+        //     at the bed edge), shrinking the tower ~3×.
+        //   • flush_multiplier — the lever on single-nozzle AMS printers
+        //     (Bambu, etc.): scales each colour-change purge. 0.2 (vs the 0.3
+        //     default) trims ~⅓, staying above the ~0.15 colour-bleed floor.
+        //     Inert on the U1 but correct for AMS, so we set both.
+        //   • prime_tower_width caps the tower footprint (30 mm).
+        "prime_volume":               "15",
         "flush_multiplier":           "0.2",
         "prime_tower_width":          "30",
 
@@ -539,8 +547,9 @@ mod tests {
             assert_eq!(v["flush_into_infill"], "1", "{name}");
             assert_eq!(v["flush_into_support"], "1", "{name}");
             assert_eq!(v["wipe_tower_no_sparse_layers"], "1", "{name}");
-            // The dominant multi-colour purge lever: trimmed below the 0.3
-            // default but kept safely above the ~0.15 colour-bleed floor.
+            // prime_volume is THE tower lever on tool-changer printers (U1);
+            // flush_multiplier is the AMS lever. We set both.
+            assert_eq!(v["prime_volume"], "15", "{name}");
             assert_eq!(v["flush_multiplier"], "0.2", "{name}");
             assert_eq!(v["prime_tower_width"], "30", "{name}");
             assert!(

@@ -11,8 +11,18 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
-## [0.6.1] — Supports adaptés à l'objet (arbre / normal)
+## [0.6.1] — Tour de purge enfin réduite sur l'U1 + supports adaptés
 
+- **Tour de purge divisée par ~3 sur le Snapmaker U1.** L'U1 est une imprimante
+  **multi-buses** (4 buses indépendantes), pas une AMS mono-buse : le slicer y
+  **ignore** `flush_multiplier` et dépose exactement `prime_volume` par buse à
+  chaque couche de changement. Notre profil héritait d'un `prime_volume` de 45
+  (base 0.20) alors que le préréglage 0.12 d'origine est à 27 — d'où une tour
+  **plus grosse** que le profil de base (81 g vs 50 g). Comme chaque buse garde
+  sa couleur, l'amorçage ne sert qu'à purger l'oozing : on le fixe à **15 mm³**
+  (l'U1 pré-purge aussi en bord de plateau), ce qui ramène la tour de ~81 g à
+  ~25-28 g, **sous** le profil de base. (`flush_multiplier`/`prime_tower_width`
+  sont conservés car ils restent les bons leviers pour les imprimantes AMS.)
 - **Type de support adapté à la géométrie** : les **figurines** et **jouets**
   (formes organiques, courbes) utilisent désormais des **supports arbre
   organiques** — beaucoup moins de matière, moins de marques sur la surface,

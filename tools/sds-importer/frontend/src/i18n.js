@@ -23,6 +23,7 @@ const messages = {
     printer_hint:        "Pick brand → model → nozzle (or all nozzles). Shared by both libraries.",
 
     filament_intro:      "Search the filament database (built from manufacturers' own TDS / SDS sheets), select one OR MORE materials, choose your printer above, then generate one filament profile per material PLUS the shared 7 process profiles in one click.",
+    filament_all_brands: "All brands",
     filament_search_ph:  "Search a filament (brand, name, PLA / PETG…)",
     filament_generate:   "Generate filament + process",
     filament_working:    "Generating filament + process…",
@@ -57,6 +58,8 @@ const messages = {
 
     drop_hint:           "Drop a .pdf here, or click to pick a file.",
     fetch_online:        "Also look for the manufacturer's TDS online (recommended)",
+    share_contribution:  "Share this sheet (anonymous) with the community database",
+    share_contribution_hint: "Only the manufacturer facts are sent — never the PDF, your files, or any personal data.",
     create_profile:      "Create filament profile",
 
     catalog_intro:       "Paste a vendor's certificates or downloads page URL. The app fetches the page, lists every SDS / TDS PDF it can identify, and lets you batch-import them in a single click.",
@@ -121,6 +124,7 @@ const messages = {
     printer_hint:        "Choisissez marque → modèle → buse (ou toutes les buses). Utilisé par les deux bibliothèques.",
 
     filament_intro:      "Recherchez dans la base de filaments (construite depuis les fiches TDS / SDS officielles des fabricants), sélectionnez un OU PLUSIEURS matériaux, choisissez votre imprimante ci-dessus, puis générez un profil filament par matériau ET les 7 profils process partagés en un clic.",
+    filament_all_brands: "Toutes les marques",
     filament_search_ph:  "Rechercher un filament (marque, nom, PLA / PETG…)",
     filament_generate:   "Générer filament + process",
     filament_working:    "Génération filament + process…",
@@ -155,6 +159,8 @@ const messages = {
 
     drop_hint:           "Glisser un .pdf ici, ou cliquer pour choisir un fichier.",
     fetch_online:        "Chercher aussi la TDS du fabricant en ligne (recommandé)",
+    share_contribution:  "Partager cette fiche (anonyme) avec la base communautaire",
+    share_contribution_hint: "Seuls les faits du fabricant sont envoyés — jamais le PDF, vos fichiers, ni aucune donnée personnelle.",
     create_profile:      "Créer le profil filament",
 
     catalog_intro:       "Coller l'URL de la page « certificats » ou « téléchargements » d'un fabricant. L'application récupère la page, liste toutes les FDS / TDS détectées, et permet de les importer en lot.",

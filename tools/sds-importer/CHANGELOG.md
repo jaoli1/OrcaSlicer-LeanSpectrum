@@ -11,6 +11,22 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.4.0] — Contributions communautaires + filtre par marque
+
+- **Contributions communautaires** (opt-in, **anonyme**, **faits seulement**) :
+  une case « Partager cette fiche (anonyme) avec la base communautaire »,
+  **cochée par défaut**, est ajoutée à l'onglet « PDF unique ». Après la création
+  réussie des profils, seuls les **faits du fabricant** (marque, libellé, type de
+  base, densité, plages buse/plateau, séchage, URL, date de révision) sont
+  envoyés à la file de modération du serveur Maison Drabiec afin d'enrichir la
+  base partagée. **Jamais** le PDF, les chemins de fichiers, ni aucune donnée
+  personnelle ou machine. L'envoi est strictement non bloquant : toute erreur
+  (hors ligne, refus serveur, etc.) est journalisée sans jamais faire échouer
+  l'import.
+- **Filtre par marque** : un sélecteur « Marque » est ajouté au-dessus de la
+  recherche dans la Bibliothèque Filament. « Toutes les marques » = aucun filtre ;
+  le filtre par marque se combine avec la recherche texte libre.
+
 ## [0.3.2] — Noms de profils corrigés
 
 - **Noms de profils** : les caractères légaux dans un nom de fichier (`+`, `(`,

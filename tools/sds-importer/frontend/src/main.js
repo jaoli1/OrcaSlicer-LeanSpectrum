@@ -163,6 +163,7 @@ if (gVendor && invoke) {
 // printer chosen in the global selector.
 // ============================================================
 const filamentSearch     = document.getElementById("filamentSearch");
+const filamentBrand      = document.getElementById("filamentBrand");
 const filamentList       = document.getElementById("filamentList");
 const filamentCount      = document.getElementById("filamentCount");
 const genFilamentProcess = document.getElementById("genFilamentProcess");
@@ -183,10 +184,15 @@ function updateFilamentCount(matchCount) {
   filamentCount.textContent = parts.join(" · ");
 }
 
+/// Currently-selected brand in the "Marque" filter, or null for "all brands".
+function currentBrand() {
+  return (filamentBrand && filamentBrand.value) ? filamentBrand.value : null;
+}
+
 async function loadFilaments(query) {
   if (!invoke || !filamentList) return;
   try {
-    const rows = await invoke("list_filaments", { query: query || null });
+    const rows = await invoke("list_filaments", { query: query || null, brand: currentBrand() });
     renderFilaments(rows);
   } catch (e) {
     filamentList.innerHTML = "";
@@ -243,6 +249,24 @@ if (filamentSearch) {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => loadFilaments(filamentSearch.value.trim()), 200);
   });
+}
+
+// "Marque" filter — populated once on load; re-queries (keeping the free-text
+// search) whenever the brand changes. First option ("All brands") = no filter.
+if (filamentBrand && invoke) {
+  filamentBrand.addEventListener("change", () => {
+    loadFilaments(filamentSearch ? filamentSearch.value.trim() : "");
+  });
+  invoke("list_filament_brands")
+    .then(brands => {
+      for (const b of brands || []) {
+        const o = document.createElement("option");
+        o.value = b;
+        o.textContent = b;
+        filamentBrand.appendChild(o);
+      }
+    })
+    .catch(() => {});
 }
 
 if (genFilamentProcess) {
@@ -337,6 +361,7 @@ const result    = document.getElementById("result");
 const logPanel  = document.getElementById("logPanel");
 const logEl     = document.getElementById("log");
 const fetchOnline = document.getElementById("fetchOnline");
+const shareContribution = document.getElementById("shareContribution");
 
 let chosenPath = null;
 function setChosen(path) {
@@ -365,10 +390,13 @@ if (drop) {
 }
 
 if (runBtn) {
-  runBtn.addEventListener("click", () => importPdfAndShow(chosenPath, fetchOnline.checked, result, status, logPanel, logEl, runBtn));
+  runBtn.addEventListener("click", () => importPdfAndShow(
+    chosenPath, fetchOnline.checked,
+    shareContribution ? shareContribution.checked : true,
+    result, status, logPanel, logEl, runBtn));
 }
 
-async function importPdfAndShow(path, online, resultEl, statusEl, logPanelEl, logElEl, runButton) {
+async function importPdfAndShow(path, online, share, resultEl, statusEl, logPanelEl, logElEl, runButton) {
   if (!path) return;
   const sl = slicerArgs();
   if (sl.slicer === "custom" && !sl.customDir) { statusEl.textContent = tr("slicer_pick_folder"); return; }
@@ -390,6 +418,7 @@ async function importPdfAndShow(path, online, resultEl, statusEl, logPanelEl, lo
       model: p ? p.model : null,
       nozzle: p ? p.nozzle : null,
       allNozzles: p ? p.all : false,
+      share: share,
     } });
     renderResult(r, resultEl, statusEl, logPanelEl, logElEl);
   } catch (e) {

@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
 mod catalog;
+mod contribute;
 mod crawler;
 mod fetcher;
 mod library;
@@ -122,6 +123,18 @@ pub struct ImportRequest {
     pub nozzle: Option<f64>,
     #[serde(default)]
     pub all_nozzles: bool,
+    /// v0.4.0 — opt-in, anonymous community contribution. When true (the UI
+    /// default), the manufacturer FACTS of a freshly-imported filament are sent
+    /// to the shared database queue *after* the profiles are written. Defaults
+    /// to true so older callers / the batch path still contribute; sending
+    /// `share: false` opts out. Never blocks or fails the import.
+    #[serde(default = "default_share")]
+    pub share: bool,
+}
+
+/// `share` defaults to true (opt-in checkbox is checked by default).
+fn default_share() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -314,6 +327,21 @@ fn import_pdf_impl(req: ImportRequest) -> std::result::Result<ImportResult, Erro
         specs.len()
     ));
 
+    // v0.4.0 — opt-in, anonymous community contribution. Runs only after the
+    // profiles are safely written, and is fully non-propagating: any failure
+    // (offline, server 4xx, untrusted URL, panic) is caught and logged, never
+    // turned into an import error. The import has already succeeded.
+    if req.share {
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            contribute::submit(&extracted)
+        }));
+        match outcome {
+            Ok(Ok(())) => log.push("Shared with the community database.".to_string()),
+            Ok(Err(e)) => log.push(format!("Community share skipped: {e}")),
+            Err(_) => log.push("Community share skipped: internal error.".to_string()),
+        }
+    }
+
     Ok(ImportResult {
         extracted,
         profile_path: Some(fpath.display().to_string()),
@@ -470,6 +498,9 @@ fn import_from_urls_impl(req: BatchImportRequest) -> std::result::Result<BatchIm
                     model: None,
                     nozzle: None,
                     all_nozzles: false,
+                    // Batch path is headless / not wired to the opt-in checkbox;
+                    // don't auto-contribute from it.
+                    share: false,
                 };
                 // Call the panic-safe wrapper so one bad PDF in the batch
                 // doesn't take down the whole batch.
@@ -624,8 +655,15 @@ fn generate_process_library_for(
 #[tauri::command]
 fn list_filaments(
     query: Option<String>,
+    brand: Option<String>,
 ) -> std::result::Result<Vec<library::FilamentSummary>, Error> {
-    run_command(move || library::list(query, 500))
+    run_command(move || library::list(query, brand, 500))
+}
+
+/// v0.4.0 — distinct brand names for the Bibliothèque Filament "Marque" filter.
+#[tauri::command]
+fn list_filament_brands() -> std::result::Result<Vec<String>, Error> {
+    run_command(library::list_brands)
 }
 
 #[tauri::command]
@@ -834,7 +872,8 @@ pub fn run() {
             check_updates, open_external,
             list_printer_vendors, list_printer_models, list_printer_nozzles,
             generate_process_library_for,
-            list_filaments, get_filament, generate_filament_and_process
+            list_filaments, list_filament_brands, get_filament,
+            generate_filament_and_process
         ])
         .setup(|app| {
             // First run: seed the bundled filament database into the app-data

@@ -84,29 +84,66 @@ fn db_err<E: std::fmt::Display>(e: E) -> Error {
     Error::Other(format!("filament database: {e}"))
 }
 
-/// List materials (optionally filtered by a free-text query against brand /
-/// label / family), newest-brand-first, capped at `limit`.
-pub fn list(query: Option<String>, limit: i64) -> Result<Vec<FilamentSummary>> {
-    list_conn(&open()?, query, limit)
+/// Distinct list of brand names that have at least one material — feeds the
+/// "Marque" selector in the Bibliothèque Filament tab.
+pub fn list_brands() -> Result<Vec<String>> {
+    list_brands_conn(&open()?)
 }
 
-fn list_conn(con: &Connection, query: Option<String>, limit: i64) -> Result<Vec<FilamentSummary>> {
-    // NULL `like` => no filter; otherwise a single %term% matched against the
-    // three text columns. The whole query is parameterised (no injection).
+fn list_brands_conn(con: &Connection) -> Result<Vec<String>> {
+    let mut stmt = con
+        .prepare(
+            "SELECT DISTINCT b.name FROM brands b \
+             JOIN materials m ON m.brand_id = b.id \
+             ORDER BY b.name COLLATE NOCASE",
+        )
+        .map_err(db_err)?;
+    let rows = stmt
+        .query_map([], |r| r.get::<_, String>(0))
+        .map_err(db_err)?;
+    let mut out = Vec::new();
+    for row in rows {
+        out.push(row.map_err(db_err)?);
+    }
+    Ok(out)
+}
+
+/// List materials, optionally filtered by a free-text `query` (brand / label /
+/// family) AND/OR an exact `brand` (the selector), newest-brand-first, capped
+/// at `limit`. The two filters combine (AND) so the free-text search still
+/// works within a chosen brand.
+pub fn list(query: Option<String>, brand: Option<String>, limit: i64) -> Result<Vec<FilamentSummary>> {
+    list_conn(&open()?, query, brand, limit)
+}
+
+fn list_conn(
+    con: &Connection,
+    query: Option<String>,
+    brand: Option<String>,
+    limit: i64,
+) -> Result<Vec<FilamentSummary>> {
+    // NULL `like` => no free-text filter; otherwise a single %term% matched
+    // against the three text columns. NULL `brand` => no brand filter; otherwise
+    // an exact (parameterised) brand-name equality. Everything is parameterised
+    // (no injection).
     let like = query
         .map(|q| q.trim().to_string())
         .filter(|q| !q.is_empty())
         .map(|q| format!("%{q}%"));
+    let brand = brand
+        .map(|b| b.trim().to_string())
+        .filter(|b| !b.is_empty());
     let sql = "SELECT m.id, b.name AS brand, m.label, m.base_type, m.filled_type, m.density, \
                EXISTS(SELECT 1 FROM printing_params pp WHERE pp.material_id = m.id) AS has_params, \
                (SELECT COUNT(*) FROM color_variants cv WHERE cv.material_id = m.id) AS colors \
                FROM materials m JOIN brands b ON b.id = m.brand_id \
                WHERE (?1 IS NULL OR b.name LIKE ?1 OR m.label LIKE ?1 OR m.base_type LIKE ?1) \
+               AND (?2 IS NULL OR b.name = ?2) \
                ORDER BY b.name COLLATE NOCASE, m.label COLLATE NOCASE \
-               LIMIT ?2";
+               LIMIT ?3";
     let mut stmt = con.prepare(sql).map_err(db_err)?;
     let rows = stmt
-        .query_map(params![like, limit], |r| {
+        .query_map(params![like, brand, limit], |r| {
             Ok(FilamentSummary {
                 id: r.get("id")?,
                 brand: r.get("brand")?,
@@ -297,7 +334,7 @@ mod tests {
     #[test]
     fn list_filters_and_orders() {
         let con = seed();
-        let all = list_conn(&con, None, 100).unwrap();
+        let all = list_conn(&con, None, None, 100).unwrap();
         assert_eq!(all.len(), 2);
         // Ordered by brand: eSUN before Polymaker.
         assert_eq!(all[0].brand, "eSUN");
@@ -307,9 +344,38 @@ mod tests {
         assert_eq!(all[1].colors, 1);
 
         // Free-text filter matches brand or label or family.
-        let petg = list_conn(&con, Some("petg".into()), 100).unwrap();
+        let petg = list_conn(&con, Some("petg".into()), None, 100).unwrap();
         assert_eq!(petg.len(), 1);
         assert_eq!(petg[0].label, "eSUN PETG");
+    }
+
+    #[test]
+    fn list_brands_distinct_and_sorted() {
+        let con = seed();
+        let brands = list_brands_conn(&con).unwrap();
+        // Only brands that own at least one material, sorted NOCASE.
+        assert_eq!(brands, vec!["eSUN".to_string(), "Polymaker".to_string()]);
+    }
+
+    #[test]
+    fn list_filters_by_brand_and_combines_with_text() {
+        let con = seed();
+        // Exact brand filter narrows to that brand only.
+        let poly = list_conn(&con, None, Some("Polymaker".into()), 100).unwrap();
+        assert_eq!(poly.len(), 1);
+        assert_eq!(poly[0].label, "PolyTerra PLA");
+
+        // Brand + free-text that doesn't match within the brand → empty.
+        let none = list_conn(&con, Some("PETG".into()), Some("Polymaker".into()), 100).unwrap();
+        assert!(none.is_empty());
+
+        // Brand + matching free-text within the brand → the row.
+        let some = list_conn(&con, Some("PLA".into()), Some("Polymaker".into()), 100).unwrap();
+        assert_eq!(some.len(), 1);
+
+        // Empty-string brand behaves like "no brand filter".
+        let all = list_conn(&con, None, Some("".into()), 100).unwrap();
+        assert_eq!(all.len(), 2);
     }
 
     #[test]

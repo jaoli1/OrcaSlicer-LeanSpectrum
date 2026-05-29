@@ -188,6 +188,7 @@
     <div id="tab-filament" class="tab-panel active">
       <p class="sub" data-i18n="filament_intro">Search the filament database, pick a material, choose your printer above, then generate the filament + its process profiles in one click.</p>
       <div class="row">
+        <select id="filamentBrand"><option value="" data-i18n="filament_all_brands">All brands</option></select>
         <input id="filamentSearch" type="text" data-i18n-placeholder="filament_search_ph" placeholder="Search a filament (brand, name, PLA / PETG…)" />
         <span id="filamentCount" class="sub"></span>
       </div>
@@ -220,6 +221,12 @@
         <label><input id="fetchOnline" type="checkbox" checked />
                <span data-i18n="fetch_online">Also look for the manufacturer's TDS online (recommended)</span></label>
       </div>
+
+      <div class="row" style="margin-bottom:0;">
+        <label><input id="shareContribution" type="checkbox" checked />
+               <span data-i18n="share_contribution">Share this sheet (anonymous) with the community database</span></label>
+      </div>
+      <div class="sub" data-i18n="share_contribution_hint" style="margin:2px 0 0 24px;">Only the manufacturer facts are sent — never the PDF, your files, or any personal data.</div>
 
       <div class="row">
         <button id="run" disabled data-i18n="create_profile">Create filament profile</button>

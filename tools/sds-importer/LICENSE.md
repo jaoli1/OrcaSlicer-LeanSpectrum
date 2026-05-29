@@ -64,8 +64,21 @@ Tout manquement aux présentes met **automatiquement fin** à la licence :
 l'Utilisateur doit alors cesser toute utilisation et supprimer le logiciel.
 
 ## 9. Droit applicable et juridiction
-*[À compléter par Maison Drabiec — p. ex. droit français ; tribunaux compétents
-du ressort du siège de Maison Drabiec.]*
+La présente licence est régie par le **droit français**. Tout litige relève des
+**tribunaux français compétents du ressort du siège de Maison Drabiec**
+*(siège social exact à confirmer par Maison Drabiec).*
+
+## 10. Droits impératifs du consommateur
+Rien dans la présente licence ne prive le consommateur des **droits impératifs**
+que lui accorde la loi (notamment, en droit français, la garantie légale de
+conformité et la garantie des vices cachés). Les limitations des articles 7 et 8
+ne s'appliquent que **dans la mesure permise par la loi impérative applicable**.
+
+## 11. Divisibilité, intégralité, non-renonciation
+Si une stipulation est jugée invalide, les autres demeurent en vigueur. La
+présente licence — avec `THIRD-PARTY-LICENSES.md` (avis des composants tiers) —
+constitue l'**intégralité** de l'accord relatif à l'Optimisateur. Le fait de ne
+pas exercer un droit ne vaut pas renonciation à ce droit.
 
 ---
 
@@ -128,5 +141,18 @@ Any breach **automatically terminates** the license; the User must then stop all
 use and delete the software.
 
 ## 9. Governing law and jurisdiction
-*[To be completed by Maison Drabiec — e.g. French law; courts having
-jurisdiction at Maison Drabiec's registered seat.]*
+This license is governed by **French law**. Disputes fall under the **competent
+French courts at Maison Drabiec's registered seat** *(exact seat to be confirmed
+by Maison Drabiec).*
+
+## 10. Mandatory consumer rights
+Nothing in this license deprives a consumer of the **mandatory rights** granted
+by law (notably, under French law, the legal guarantee of conformity and the
+warranty against hidden defects). The limitations in §7 and §8 apply **only to
+the extent permitted by applicable mandatory law**.
+
+## 11. Severability, entire agreement, no waiver
+If any provision is held invalid, the rest remain in effect. This license —
+together with `THIRD-PARTY-LICENSES.md` (third-party component notices) — is the
+**entire** agreement regarding the Optimiser. Failure to enforce a right is not
+a waiver of it.

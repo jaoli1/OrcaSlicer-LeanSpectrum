@@ -80,6 +80,32 @@ présente licence — avec `THIRD-PARTY-LICENSES.md` (avis des composants tiers)
 constitue l'**intégralité** de l'accord relatif à l'Optimisateur. Le fait de ne
 pas exercer un droit ne vaut pas renonciation à ce droit.
 
+## 12. Achat, activation et mises à jour
+La licence est accordée à l'Utilisateur lors de l'**achat** de l'Optimisateur
+auprès de Maison Drabiec ou d'un revendeur autorisé. Les conditions de vente, de
+paiement et de **remboursement / rétractation** sont celles de la boutique au
+moment de l'achat. Maison Drabiec peut publier des **mises à jour** (application
+et base de données) ; sauf mention contraire, elles sont régies par la présente
+licence.
+
+## 13. Protection des données (RGPD)
+L'Optimisateur fonctionne **localement**. Deux échanges réseau seulement : (a) le
+**vérificateur de mise à jour** contacte le serveur de Maison Drabiec pour
+comparer les versions et, si besoin, télécharger la base (votre adresse IP est
+traitée par le serveur web, comme pour tout téléchargement) ; (b) la
+**contribution communautaire**, **opt-in** et **anonyme**, n'envoie que des
+**faits fabricant** — jamais le PDF, les chemins de fichiers, ni aucune donnée
+personnelle ou machine ; le serveur n'enregistre qu'un **identifiant d'adresse IP
+haché** à des fins anti-abus, jamais l'IP en clair. Aucune donnée personnelle
+n'est vendue ni cédée à des tiers. La contribution est désactivable avant chaque
+génération.
+
+## 14. Cession et contact
+Maison Drabiec peut céder la présente licence dans le cadre d'une opération sur
+son activité ; l'Utilisateur ne peut céder ni transférer ses droits. Contact :
+Maison Drabiec — *[coordonnées à compléter : e-mail / adresse]*
+(site : slicer.maisondrabiec.fr).
+
 ---
 
 # License — Filament & Print-Profile Optimiser by Maison Drabiec (English)
@@ -156,3 +182,25 @@ If any provision is held invalid, the rest remain in effect. This license —
 together with `THIRD-PARTY-LICENSES.md` (third-party component notices) — is the
 **entire** agreement regarding the Optimiser. Failure to enforce a right is not
 a waiver of it.
+
+## 12. Purchase, activation and updates
+The license is granted upon **purchase** of the Optimiser from Maison Drabiec or
+an authorized reseller. Sale, payment and **refund / withdrawal** terms are those
+of the store at the time of purchase. Maison Drabiec may publish **updates**
+(application and database); unless stated otherwise, they are governed by this
+license.
+
+## 13. Data protection (GDPR)
+The Optimiser runs **locally**. Only two network exchanges occur: (a) the
+**update checker** contacts Maison Drabiec's server to compare versions and, if
+needed, download the database (your IP is processed by the web server, as for any
+download); (b) the **community contribution**, **opt-in** and **anonymous**,
+sends only **manufacturer facts** — never the PDF, file paths, or any
+personal/machine data; the server stores only a **hashed IP identifier** for
+anti-abuse, never the raw IP. No personal data is sold or shared with third
+parties. Contribution can be disabled before each generation.
+
+## 14. Assignment and contact
+Maison Drabiec may assign this license as part of a business transfer; the User
+may not assign or transfer their rights. Contact: Maison Drabiec —
+*[details to complete: email / address]* (site: slicer.maisondrabiec.fr).

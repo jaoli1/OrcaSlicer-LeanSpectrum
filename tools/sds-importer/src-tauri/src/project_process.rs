@@ -252,7 +252,25 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
         "top_surface_jerk":           fmt((p.jerk * 0.7).round().max(1.0)),
         "travel_jerk":                fmt((p.jerk * 1.5).round()),
 
-        // --- fork features (PROCESS-domain; same set the per-import companion emits) ---
+        // --- UNIVERSAL filament economy (works on EVERY OrcaSlicer/Bambu-family
+        //     slicer, not just our fork — and, unlike the fork's post-export pass,
+        //     these are slicing-time decisions so the gain shows up in the PREVIEW
+        //     and in the sliced filament/time estimate).
+        //   • flush_into_infill: recycle the colour-change purge into the model's
+        //     infill instead of dumping it on the wipe tower.
+        //   • flush_into_support: recycle purge into support (already default-on
+        //     upstream; set explicitly so a stale base profile can't disable it).
+        //   • wipe_tower_no_sparse_layers: drop the wipe tower's sparse filler
+        //     layers — shrinks the tower itself, the single biggest waste source.
+        //   NOTE: flush_into_objects is deliberately left OFF — routing purge into
+        //   the object body bleeds the previous colour onto the visible surface.
+        "flush_into_infill":          "1",
+        "flush_into_support":         "1",
+        "wipe_tower_no_sparse_layers":"1",
+
+        // --- fork features (PROCESS-domain; same set the per-import companion emits).
+        //     These add a further post-export pass on our fork only; harmless
+        //     (ignored) keys on stock slicers.
         "filament_economy_enable":            "1",
         "filament_economy_remove_noop_swaps": "1",
         "filament_economy_shrink_purge":      "1",
@@ -479,6 +497,22 @@ mod tests {
         for (name, v) in build_library() {
             assert_eq!(v["filament_economy_enable"], "1", "{name}");
             assert_eq!(v["mixed_filament_region_collapse"], "1", "{name}");
+        }
+    }
+
+    #[test]
+    fn universal_economy_on_every_profile() {
+        // The cross-slicer, preview-visible economy (v0.5.0). These must be set
+        // on every generated profile and must NOT route purge into the object
+        // body (flush_into_objects) — that would bleed colour onto the surface.
+        for (name, v) in build_library() {
+            assert_eq!(v["flush_into_infill"], "1", "{name}");
+            assert_eq!(v["flush_into_support"], "1", "{name}");
+            assert_eq!(v["wipe_tower_no_sparse_layers"], "1", "{name}");
+            assert!(
+                v.get("flush_into_objects").is_none(),
+                "{name}: flush_into_objects must stay unset (colour-bleed risk)"
+            );
         }
     }
 }

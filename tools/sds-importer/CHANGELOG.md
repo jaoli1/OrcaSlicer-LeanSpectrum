@@ -11,6 +11,32 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.5.0] — Économie de filament universelle (tous les slicers)
+
+- **Économie de filament visible dans l'aperçu, sur TOUS les slicers.** Jusqu'ici
+  l'économie reposait sur la passe post-export du fork OptimusOrca : invisible
+  dans l'aperçu et inopérante sur OrcaSlicer / Bambu Studio / Creality Print
+  standard. Les profils de process activent désormais aussi les réglages
+  **standards** de la famille OrcaSlicer/Bambu, appliqués **au moment du
+  tranchage** — le gain apparaît donc directement dans l'aperçu et dans
+  l'estimation de filament/temps :
+  - `flush_into_infill` — la purge de changement de couleur est réinjectée dans
+    le **remplissage** du modèle au lieu d'être jetée sur la tour de purge ;
+  - `flush_into_support` — la purge est aussi réutilisée dans les **supports** ;
+  - `wipe_tower_no_sparse_layers` — suppression des couches « creuses » de la tour
+    de purge, ce qui **réduit la tour elle-même** (la principale source de gâchis).
+  - `flush_into_objects` est **volontairement laissé désactivé** : router la purge
+    dans le corps de l'objet ferait baver la couleur précédente sur la surface
+    visible.
+  Ces réglages s'ajoutent (sans les remplacer) à la passe d'économie du fork, qui
+  reste active sur OptimusOrca et est simplement ignorée ailleurs.
+- **Inclut aussi** les nouveautés de la 0.4.1 (jamais publiée en binaire) :
+  supports automatiques par seuil (Figurine, Jouet, Pièce mécanique) et brim
+  Figurine (3 mm).
+- **Interne** : `Cargo.lock` est désormais versionné afin de figer les
+  dépendances de compilation (correctif d'un échec de build macOS provoqué par la
+  dérive d'une dépendance transitive).
+
 ## [0.4.1] — Supports auto + brim Figurine
 
 - **Supports automatiques (par seuil)** sur les types sujets aux porte-à-faux

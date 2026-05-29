@@ -1,6 +1,6 @@
 {
   "name": "optimisateur-filament-profils-md",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Optimisateur de filament et de profils d'impression by Maison Drabiec — profils filament + process Snapmaker_Orca optimisés depuis une fiche SDS/TDS",
   "private": true,
   "license": "UNLICENSED",

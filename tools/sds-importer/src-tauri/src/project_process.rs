@@ -345,19 +345,24 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
         //     encase the model the way a normal grid does.
         //   • Pièce mécanique (flat, planar overhangs) → NORMAL (snug): tighter
         //     and more predictable on large flat overhangs than tree.
-        // Threshold raised 30° → 45° (the practical PLA value): 30° over-
-        // supported and wrapped the whole model; 45° supports only the real
-        // overhangs. Sources: OrcaSlicer wiki + community guides.
+        // support_threshold_angle is INVERTED from intuition in OrcaSlicer: the
+        // self-support angle = 90° − (threshold+1) (Support/TreeSupportCommon.hpp),
+        // so a HIGHER threshold supports MILDER overhangs → MORE support. Figurine
+        // therefore uses a LOW 30° (self-support ≈59° → only pronounced overhangs
+        // get support — far lighter; a display piece tolerates a little underside
+        // droop). Jouet / Pièce mécanique keep 45° for reliable support on real
+        // overhangs (kids' toys, dimensional parts).
         if pt.wants_support() {
             let (s_type, s_style) = if matches!(pt, ProjectType::PieceMecanique) {
                 ("normal(auto)", "snug")
             } else {
                 ("tree(auto)", "organic")
             };
+            let s_threshold = if matches!(pt, ProjectType::Figurine) { "30" } else { "45" };
             obj.insert("enable_support".into(), json!("1"));
             obj.insert("support_type".into(), json!(s_type));
             obj.insert("support_style".into(), json!(s_style));
-            obj.insert("support_threshold_angle".into(), json!("45"));
+            obj.insert("support_threshold_angle".into(), json!(s_threshold));
         }
 
         // --- PURGE / wipe-tower economy — multi-material ONLY. These keys only
@@ -548,12 +553,15 @@ mod tests {
         }
         // Auto-support on overhang-prone intents only, with the TYPE matched to
         // the geometry: organic tree for the curvy intents, normal(snug) for the
-        // flat mechanical one, and a 45° threshold for all.
+        // flat mechanical one. Figurine uses a LOW 30° threshold (fewer supports,
+        // only pronounced overhangs); Jouet / Pièce mécanique keep 45°.
         for pt in [Figurine, Jouet, PieceMecanique] {
             let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["enable_support"], "1", "{pt:?} should auto-support");
-            assert_eq!(v["support_threshold_angle"], "45", "{pt:?} threshold");
         }
+        assert_eq!(build_one(Figurine, 0.4, true).1["support_threshold_angle"], "30");
+        assert_eq!(build_one(Jouet, 0.4, true).1["support_threshold_angle"], "45");
+        assert_eq!(build_one(PieceMecanique, 0.4, true).1["support_threshold_angle"], "45");
         for pt in [Figurine, Jouet] {
             let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["support_type"], "tree(auto)", "{pt:?} organic tree");

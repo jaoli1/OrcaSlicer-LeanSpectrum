@@ -29,6 +29,12 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
   porte donc plus de réglages de tour inutiles, et un utilisateur AMS obtient
   l'économie de purge adaptée à sa machine.
 
+- **Supports Figurine allégés** : seuil abaissé à **30°** (au lieu de 45°). Dans
+  OrcaSlicer le réglage est inversé — un seuil plus BAS = MOINS de supports
+  (auto-portance ≈59°, seuls les surplombs prononcés sont soutenus). Une figurine
+  sans gros surplomb passe ainsi SOUS le profil générique en matière. Jouet /
+  Pièce mécanique gardent 45° (fiabilité sur de vrais surplombs).
+
 ## [0.6.2] — Amorçage adapté à la buse + profil Figurine rééquilibré
 
 - **Profil « Figurine » rééquilibré (qualité ↔ efficacité)** : accélération

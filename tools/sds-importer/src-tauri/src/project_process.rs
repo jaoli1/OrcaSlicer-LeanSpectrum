@@ -62,15 +62,23 @@ impl ProjectType {
         }
     }
 
-    /// v0.3.1 — bed adhesion / anti-warp by intent. A shared process can't be
-    /// per-material, so a modest outer brim is added to the FUNCTIONAL, larger-
-    /// footprint intents (Objet du quotidien, Jouet, Pièce mécanique) to limit
-    /// warping and plate detachment, and explicitly suppressed on the aesthetic
-    /// intents (Figurine / Vase / Décoration) and the quick Prototype, where a
-    /// brim would mar the base for no benefit.
+    /// v0.3.1/v0.4.1 — bed adhesion. A modest outer brim on the functional,
+    /// larger-footprint intents (Objet du quotidien, Jouet, Pièce mécanique) and
+    /// a smaller one on Figurine (small feet need it); none on Vase / Décoration
+    /// / the quick Prototype. A shared process can't be per-material, so adhesion
+    /// keys off the project type.
     fn wants_brim(self) -> bool {
         use ProjectType::*;
-        matches!(self, ObjetDuQuotidien | Jouet | PieceMecanique)
+        matches!(self, ObjetDuQuotidien | Jouet | PieceMecanique | Figurine)
+    }
+
+    /// v0.4.1 — auto-support (by overhang threshold) on the intents that commonly
+    /// have steep overhangs. Never on Vase (spiral mode forbids `enable_support`)
+    /// or the quick Prototype. Threshold-based: support is generated only where
+    /// the model actually overhangs, not everywhere.
+    fn wants_support(self) -> bool {
+        use ProjectType::*;
+        matches!(self, Figurine | Jouet | PieceMecanique)
     }
 
     /// Reference parameters at the 0.4 mm nozzle. Per-nozzle values are derived
@@ -299,17 +307,25 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
             obj.insert("seam_slope_min_length".into(), json!("10"));
             obj.insert("seam_slope_steps".into(), json!("10"));
         }
-        // v0.3.1 — project-type bed adhesion / anti-warp. A modest outer brim on
-        // the functional, larger-footprint intents limits warping and plate
-        // detachment; explicitly no brim on the aesthetic intents and the quick
-        // Prototype. draft_shield is left to the slicer default (off): it costs
-        // material/time and only niche ABS-in-a-draught cases need it.
+        // v0.3.1/v0.4.1 — project-type bed adhesion. Outer brim on functional,
+        // larger-footprint intents (5 mm) and a smaller one on Figurine (3 mm,
+        // for small feet); explicit no_brim on Vase / Décoration / Prototype.
         if pt.wants_brim() {
+            let brim_w = if matches!(pt, ProjectType::Figurine) { "3" } else { "5" };
             obj.insert("brim_type".into(), json!("outer_only"));
-            obj.insert("brim_width".into(), json!("5"));
+            obj.insert("brim_width".into(), json!(brim_w));
             obj.insert("brim_object_gap".into(), json!("0.1"));
         } else {
             obj.insert("brim_type".into(), json!("no_brim"));
+        }
+        // v0.4.1 — auto-support (threshold) on overhang-prone intents only. Normal
+        // (auto): the slicer adds support solely where the model overhangs past
+        // the threshold — not on flat prints. The support-release distances above
+        // keep it peeling cleanly off the model.
+        if pt.wants_support() {
+            obj.insert("enable_support".into(), json!("1"));
+            obj.insert("support_type".into(), json!("normal(auto)"));
+            obj.insert("support_threshold_angle".into(), json!("30"));
         }
     }
     (name, v)
@@ -368,23 +384,35 @@ mod tests {
     }
 
     #[test]
-    fn brim_keys_follow_project_type() {
-        // Functional, larger-footprint intents get a modest outer brim…
-        for pt in [ProjectType::ObjetDuQuotidien, ProjectType::Jouet, ProjectType::PieceMecanique] {
+    fn brim_and_support_keys_follow_project_type() {
+        use ProjectType::*;
+        // Functional, larger-footprint intents get a 5 mm outer brim…
+        for pt in [ObjetDuQuotidien, Jouet, PieceMecanique] {
             let (_, v) = build_one(pt, 0.4);
             assert_eq!(v["brim_type"], "outer_only", "{pt:?} should brim");
             assert_eq!(v["brim_width"], "5", "{pt:?} brim width");
         }
-        // …aesthetic intents + the quick Prototype get none.
-        for pt in [
-            ProjectType::Figurine,
-            ProjectType::Vase,
-            ProjectType::Decoration,
-            ProjectType::PrototypeRapide,
-        ] {
+        // …Figurine a smaller 3 mm brim (small feet)…
+        let (_, fig) = build_one(Figurine, 0.4);
+        assert_eq!(fig["brim_type"], "outer_only");
+        assert_eq!(fig["brim_width"], "3");
+        // …Vase / Décoration / quick Prototype: none.
+        for pt in [Vase, Decoration, PrototypeRapide] {
             let (_, v) = build_one(pt, 0.4);
             assert_eq!(v["brim_type"], "no_brim", "{pt:?} should NOT brim");
             assert!(v.get("brim_width").is_none(), "{pt:?} has no brim_width");
+        }
+        // Auto-support (threshold) on overhang-prone intents only…
+        for pt in [Figurine, Jouet, PieceMecanique] {
+            let (_, v) = build_one(pt, 0.4);
+            assert_eq!(v["enable_support"], "1", "{pt:?} should auto-support");
+            assert_eq!(v["support_type"], "normal(auto)");
+            assert_eq!(v["support_threshold_angle"], "30");
+        }
+        // …never on Vase (spiral forbids it), Prototype, or flat intents.
+        for pt in [Vase, PrototypeRapide, ObjetDuQuotidien, Decoration] {
+            let (_, v) = build_one(pt, 0.4);
+            assert!(v.get("enable_support").is_none(), "{pt:?} no auto-support");
         }
     }
 

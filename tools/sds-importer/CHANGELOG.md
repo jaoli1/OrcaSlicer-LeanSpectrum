@@ -11,6 +11,16 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.4.1] — Supports auto + brim Figurine
+
+- **Supports automatiques (par seuil)** sur les types sujets aux porte-à-faux
+  (Figurine, Jouet, Pièce mécanique) : génération en mode « Normal (auto) » — le
+  slicer ne pose des supports que là où le modèle surplombe réellement, avec un
+  détachement propre. Vase (mode spirale) et Prototype rapide restent sans
+  support.
+- **Brim sur Figurine** : petit brim externe (3 mm) ajouté aux figurines (petits
+  pieds), en plus du brim des types fonctionnels (5 mm).
+
 ## [0.4.0] — Contributions communautaires + filtre par marque
 
 - **Contributions communautaires** (opt-in, **anonyme**, **faits seulement**) :

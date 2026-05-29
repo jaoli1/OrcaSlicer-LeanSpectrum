@@ -141,8 +141,11 @@ tools/sds-importer/
 
 ## License & attribution
 
-This subdirectory is licensed under AGPL-3.0, identical to the parent
-slicer. It uses:
+The **Optimiser** (this `tools/sds-importer/` subdirectory) is **proprietary** —
+personal & private use only; see [LICENSE.md](LICENSE.md). It is NOT under the
+parent slicer's AGPL; the slicer itself (OptimusOrca / Snapmaker_Orca) remains
+AGPL-3.0-or-later. The Optimiser uses these open-source components under their
+own licenses:
 
 - [Tauri 2](https://tauri.app/) — Apache-2.0 / MIT
 - [pdfium-render](https://crates.io/crates/pdfium-render) — Apache-2.0 / MIT

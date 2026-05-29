@@ -99,7 +99,7 @@ La base de données reçoit des **mises à jour régulières** : l'application e
 | Technologie | Tauri (binaire léger, ≈ 10 Mo par OS) |
 | OCR (PDF scannés) | Pris en charge via Tesseract installé sur le système (les PDF « texte » fonctionnent sans) |
 | Connexion Internet | Optionnelle (recherche de TDS en ligne et mises à jour de la base) ; le cœur fonctionne hors-ligne |
-| Licence du logiciel | AGPL-3.0-or-later |
+| Licence du logiciel | Propriétaire — usage strictement personnel et privé (voir LICENSE.md) |
 
 > Configuration requise : un PC Windows 10/11, macOS récent ou Linux capable de faire tourner le slicer Snapmaker_Orca. Aucune dépendance lourde ; l'OCR n'est nécessaire que pour les fiches scannées (PDF image).
 

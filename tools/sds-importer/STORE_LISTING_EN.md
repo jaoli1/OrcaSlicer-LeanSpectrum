@@ -99,7 +99,7 @@ The database receives **regular updates**: the app ships an offline-capable snap
 | Technology | Tauri (lightweight binary, ≈ 10 MB per OS) |
 | OCR (scanned PDFs) | Supported via system-installed Tesseract (text PDFs work without it) |
 | Internet connection | Optional (online TDS lookup and database updates); the core works offline |
-| Software licence | AGPL-3.0-or-later |
+| Software licence | Proprietary — strictly personal & private use (see LICENSE.md) |
 
 > Requirements: a Windows 10/11 PC, recent macOS, or Linux machine capable of running the Snapmaker_Orca slicer. No heavy dependencies; OCR is only needed for scanned (image) sheets.
 

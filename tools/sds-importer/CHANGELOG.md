@@ -618,7 +618,8 @@ cargo tauri build --features ocr
 
 ### License
 
-AGPL-3.0-or-later. Built on:
+Proprietary — strictly personal & private use only (see LICENSE.md). The parent
+slicer (OptimusOrca / Snapmaker_Orca) stays AGPL-3.0-or-later. Built on:
 - [Tauri 2](https://tauri.app/) — Apache-2.0 / MIT
 - [pdf-extract](https://crates.io/crates/pdf-extract) — MIT / Apache-2.0
 - [pdfium-render](https://crates.io/crates/pdfium-render) — Apache-2.0 / MIT

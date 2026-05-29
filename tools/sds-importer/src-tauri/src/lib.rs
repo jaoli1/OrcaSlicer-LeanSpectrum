@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
+mod architecture;
 mod catalog;
 mod contribute;
 mod crawler;
@@ -130,6 +131,13 @@ pub struct ImportRequest {
     /// callers must set `share: true` on purpose. Never blocks or fails import.
     #[serde(default = "default_share")]
     pub share: bool,
+    /// v0.7.0 — the UI "I use an AMS / CFS / MMU" checkbox. Only meaningful for
+    /// `AmsCapable` printers: it flips them to multi-material so the generated
+    /// process carries the purge-tower keys. `MultiNozzle` printers are always
+    /// multi-material; `Single` printers ignore it. Defaults FALSE so older
+    /// callers / the batch path produce plain single-material processes.
+    #[serde(default)]
+    pub ams_enabled: bool,
 }
 
 /// `share` defaults to FALSE — true opt-in: a contribution only happens when
@@ -272,6 +280,8 @@ fn import_pdf_impl(req: ImportRequest) -> std::result::Result<ImportResult, Erro
                 base_process: "0.20 Standard @Snapmaker U1 (0.4 nozzle)".to_string(),
                 nozzle: 0.4,
                 max_layer_height: 0.30,
+                // The U1 is a 4-nozzle tool-changer → always multi-material.
+                architecture: architecture::Architecture::MultiNozzle,
             },
         )],
     };
@@ -319,7 +329,7 @@ fn import_pdf_impl(req: ImportRequest) -> std::result::Result<ImportResult, Erro
     //    old per-filament "Scarf" companion is gone (v0.3.0).
     std::fs::create_dir_all(&process_dir)?;
     let mut proc_count = 0usize;
-    for (name, value) in project_process::build_library_for(&specs) {
+    for (name, value) in project_process::build_library_for(&specs, req.ams_enabled) {
         profile::write_unique_json(&process_dir, &name, &value)?;
         proc_count += 1;
     }
@@ -502,6 +512,8 @@ fn import_from_urls_impl(req: BatchImportRequest) -> std::result::Result<BatchIm
                     // Batch path is headless / not wired to the opt-in checkbox;
                     // don't auto-contribute from it.
                     share: false,
+                    // Headless batch → single-material process (no AMS checkbox).
+                    ams_enabled: false,
                 };
                 // Call the panic-safe wrapper so one bad PDF in the batch
                 // doesn't take down the whole batch.
@@ -565,7 +577,9 @@ fn generate_process_library(
         let dir = user.join("process");
         std::fs::create_dir_all(&dir)?;
         let mut names = Vec::new();
-        for (name, value) in project_process::build_library() {
+        // This is the U1-only set; the U1 is a tool-changer (MultiNozzle) so it
+        // is always multi-material → pass `true`.
+        for (name, value) in project_process::build_library(true) {
             profile::write_unique_json(&dir, &name, &value)?;
             names.push(name);
         }
@@ -593,6 +607,30 @@ fn list_printer_models(vendor: String) -> std::result::Result<Vec<String>, Error
 #[tauri::command]
 fn list_printer_nozzles(vendor: String, model: String) -> std::result::Result<Vec<f64>, Error> {
     run_command(move || Ok(catalog::nozzles(&vendor, &model)))
+}
+
+/// v0.7.0 — the chosen model's multi-material architecture, so the UI can show
+/// the "I use an AMS / CFS / MMU" checkbox only for `ams_capable` printers and
+/// label it with the system name. `architecture` ∈ single|multi_nozzle|ams_capable.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PrinterArchitectureInfo {
+    pub architecture: String,
+    pub mm_system: Option<String>,
+}
+
+#[tauri::command]
+fn get_printer_architecture(model: String) -> std::result::Result<PrinterArchitectureInfo, Error> {
+    run_command(move || {
+        let (arch, system) = architecture::classify(&model);
+        let architecture = match arch {
+            architecture::Architecture::Single => "single",
+            architecture::Architecture::MultiNozzle => "multi_nozzle",
+            architecture::Architecture::AmsCapable => "ams_capable",
+        }
+        .to_string();
+        Ok(PrinterArchitectureInfo { architecture, mm_system: system.map(str::to_string) })
+    })
 }
 
 /// Generate the 7 project-type process profiles for a chosen catalogue printer
@@ -633,6 +671,7 @@ fn generate_process_library_for(
     all_nozzles: bool,
     slicer: Option<String>,
     custom_dir: Option<String>,
+    ams_enabled: Option<bool>,
 ) -> std::result::Result<ProcessLibraryResult, Error> {
     run_command(move || {
         let specs = resolve_specs(&vendor, &model, nozzle, all_nozzles)?;
@@ -641,7 +680,7 @@ fn generate_process_library_for(
         let dir = user.join("process");
         std::fs::create_dir_all(&dir)?;
         let mut names = Vec::new();
-        for (name, value) in project_process::build_library_for(&specs) {
+        for (name, value) in project_process::build_library_for(&specs, ams_enabled.unwrap_or(false)) {
             profile::write_unique_json(&dir, &name, &value)?;
             names.push(name);
         }
@@ -702,6 +741,7 @@ fn generate_filament_and_process(
     all_nozzles: bool,
     slicer: Option<String>,
     custom_dir: Option<String>,
+    ams_enabled: Option<bool>,
 ) -> std::result::Result<CombinedResult, Error> {
     run_command(move || {
         if material_ids.is_empty() {
@@ -741,7 +781,7 @@ fn generate_filament_and_process(
         let pdir = user.join("process");
         std::fs::create_dir_all(&pdir)?;
         let mut names = Vec::new();
-        for (name, value) in project_process::build_library_for(&specs) {
+        for (name, value) in project_process::build_library_for(&specs, ams_enabled.unwrap_or(false)) {
             profile::write_unique_json(&pdir, &name, &value)?;
             names.push(name);
         }
@@ -887,6 +927,7 @@ pub fn run() {
             corpus_default_path, scan_corpus, generate_process_library,
             check_updates, open_external, reveal_in_folder,
             list_printer_vendors, list_printer_models, list_printer_nozzles,
+            get_printer_architecture,
             generate_process_library_for,
             list_filaments, list_filament_brands, get_filament,
             generate_filament_and_process

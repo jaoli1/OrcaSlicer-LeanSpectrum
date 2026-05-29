@@ -24,6 +24,8 @@
 
 use serde_json::{json, Value};
 
+use crate::architecture::Architecture;
+
 /// Must be a 4-part Semver <= the running slicer's SLIC3R_VERSION or the preset
 /// loader silently drops the profile. Kept in sync with version.inc.
 const PRESET_VERSION: &str = "01.10.01.70";
@@ -170,11 +172,21 @@ pub struct PrinterSpec {
     pub base_process: String,
     pub nozzle: f64,
     pub max_layer_height: f64,
+    /// Multi-material architecture (drives the purge-tower keys). The U1 is a
+    /// 4-nozzle tool-changer → `MultiNozzle`; catalogue printers are classified
+    /// in `catalog::resolve` via `architecture::classify`.
+    pub architecture: Architecture,
 }
 
 fn u1_spec(nozzle: f64) -> PrinterSpec {
     let (printer_name, base_process) = nozzle_targets(nozzle);
-    PrinterSpec { printer_name, base_process, nozzle, max_layer_height: 0.75 * nozzle }
+    PrinterSpec {
+        printer_name,
+        base_process,
+        nozzle,
+        max_layer_height: 0.75 * nozzle,
+        architecture: Architecture::MultiNozzle,
+    }
 }
 
 /// The printer preset + stock base process to inherit, per nozzle. These names
@@ -194,15 +206,21 @@ fn nozzle_targets(nozzle: f64) -> (String, String) {
 }
 
 /// Build a single project-type process profile for the Snapmaker U1 at `nozzle`.
-pub fn build_one(pt: ProjectType, nozzle: f64) -> (String, Value) {
-    build_one_for(pt, &u1_spec(nozzle))
+pub fn build_one(pt: ProjectType, nozzle: f64, ams_enabled: bool) -> (String, Value) {
+    build_one_for(pt, &u1_spec(nozzle), ams_enabled)
 }
 
 /// Build a single project-type process profile for ANY OrcaSlicer-family printer
 /// described by `spec` (printer preset + stock base process to inherit). The
 /// reference parameters are scaled to the nozzle and clamped to the printer's
 /// max layer height.
-pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
+///
+/// `ams_enabled` is the UI "I use an AMS / CFS / MMU" checkbox. The print is
+/// effectively multi-material when the printer is a tool-changer (`MultiNozzle`)
+/// OR it is an `AmsCapable` printer and the user enabled the add-on. Only then
+/// do we emit the PURGE / wipe-tower economy keys — a plain single-material
+/// print never builds a tower, so carrying those keys would be misleading.
+pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> (String, Value) {
     let mut p = pt.params_at(spec.nozzle);
     if spec.max_layer_height > 0.0 {
         if p.layer_height > spec.max_layer_height {
@@ -216,12 +234,11 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
     let base_process = spec.base_process.clone();
     let name = format!("{} @{}", pt.label(), spec.printer_name);
 
-    // prime_volume scales with nozzle bore: a coarser nozzle holds more ooze to
-    // clear at each tool change, so a flat value either over-primes fine nozzles
-    // or UNDER-primes coarse ones (colour bleed on the first segment after a
-    // change). ≈38×nozzle anchors the validated 0.4 mm → 15 mm³ (0.2→8, 0.6→23,
-    // 0.8→30); floor 4 mm³. See the json note below for which printers use it.
-    let prime_volume = ((spec.nozzle * 38.0).round().max(4.0) as i64).to_string();
+    // Effective multi-material: a tool-changer is ALWAYS multi-material; an
+    // AMS/CFS/MMU-capable printer only when the user ticked the box. A plain
+    // single-nozzle printer (most of the catalogue) is never multi-material.
+    let is_mm = matches!(spec.architecture, Architecture::MultiNozzle)
+        || (matches!(spec.architecture, Architecture::AmsCapable) && ams_enabled);
 
     let mut v = json!({
         "name": name,
@@ -259,55 +276,10 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
         "top_surface_jerk":           fmt((p.jerk * 0.7).round().max(1.0)),
         "travel_jerk":                fmt((p.jerk * 1.5).round()),
 
-        // --- UNIVERSAL filament economy (works on EVERY OrcaSlicer/Bambu-family
-        //     slicer, not just our fork — and, unlike the fork's post-export pass,
-        //     these are slicing-time decisions so the gain shows up in the PREVIEW
-        //     and in the sliced filament/time estimate).
-        //   • flush_into_infill: recycle the colour-change purge into the model's
-        //     infill instead of dumping it on the wipe tower.
-        //   • flush_into_support: recycle purge into support (already default-on
-        //     upstream; set explicitly so a stale base profile can't disable it).
-        //   • wipe_tower_no_sparse_layers: drop the wipe tower's sparse filler
-        //     layers — shrinks the tower itself, the single biggest waste source.
-        //   NOTE: flush_into_objects is deliberately left OFF — routing purge into
-        //   the object body bleeds the previous colour onto the visible surface.
-        "flush_into_infill":          "1",
-        "flush_into_support":         "1",
-        "wipe_tower_no_sparse_layers":"1",
-        // Two purge levers, because they govern DIFFERENT printer families:
-        //   • prime_volume — THE lever on tool-changer printers like the
-        //     Snapmaker U1 (4 independent nozzles). There OrcaSlicer discards
-        //     flush_multiplier/flush_volumes and lays exactly `prime_volume`
-        //     per tool, per tool-change layer (Print.cpp ~3125 / ~3347). The
-        //     inherited default (45, from the 0.20 base) made our tower 1.7× the
-        //     stock 0.12 preset (27). Each nozzle keeps its own colour, so the
-        //     prime only clears ooze — scaled ≈38×nozzle (0.4→15, 0.8→30) so
-        //     coarse nozzles aren't under-primed; the U1 also pre-purges at the
-        //     bed edge. Shrinks the tower ~3×. ALSO fires on single-nozzle MM
-        //     printers whose tower isn't a purge tower — Creality K2, Flashforge
-        //     AD5X, Prusa MMU3 (single_extruder_multi_material + purge_in_prime
-        //     _tower=0): the slicer replaces flush with prime_volume there too.
-        //   • flush_multiplier — the lever on single-nozzle AMS / purge-in-tower
-        //     printers (Bambu — hard-gated to this path — Qidi, etc.): scales
-        //     each colour-change purge. 0.2 (vs 0.3 default) trims ~⅓, above the
-        //     ~0.15 colour-bleed floor. Inert on tool-changers, so we set both.
-        //   • prime_tower_width caps the tower footprint (30 mm).
-        //   On single-material printers (~90% of the catalogue) there is no
-        //   tower at all, so all three keys are harmless no-ops.
-        "prime_volume":               prime_volume,
-        "flush_multiplier":           "0.2",
-        "prime_tower_width":          "30",
+        // NB: the PURGE / wipe-tower economy keys are emitted further down, but
+        // ONLY when the print is effectively multi-material (`is_mm`). A plain
+        // single-material print never builds a tower, so those keys are dropped.
 
-        // --- fork features (PROCESS-domain; same set the per-import companion emits).
-        //     These add a further post-export pass on our fork only; harmless
-        //     (ignored) keys on stock slicers.
-        "filament_economy_enable":            "1",
-        "filament_economy_remove_noop_swaps": "1",
-        "filament_economy_shrink_purge":      "1",
-        "filament_economy_shrink_purge_pct":  "30",
-        "filament_economy_curvature_lh":      "1",
-        "filament_economy_force_m83":         "1",
-        "mixed_filament_region_collapse":     "1",
         // supports: grip the plate, peel cleanly off the MODEL (geometric)
         "support_top_z_distance":       "0.2",
         "support_bottom_z_distance":    "0.2",
@@ -387,17 +359,79 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
             obj.insert("support_style".into(), json!(s_style));
             obj.insert("support_threshold_angle".into(), json!("45"));
         }
+
+        // --- PURGE / wipe-tower economy — multi-material ONLY. These keys only
+        //     mean anything when the slicer actually builds a purge/wipe tower,
+        //     i.e. a tool-changer (`MultiNozzle`) or an AMS/CFS/MMU print the
+        //     user enabled (`AmsCapable` + checkbox). On a plain single-material
+        //     print there is no tower, so we leave them off entirely instead of
+        //     carrying misleading no-ops.
+        if is_mm {
+            // --- UNIVERSAL filament economy (works on EVERY OrcaSlicer/Bambu-
+            //     family slicer, not just our fork — and, unlike the fork's post-
+            //     export pass, these are slicing-time decisions so the gain shows
+            //     up in the PREVIEW and the sliced filament/time estimate).
+            //   • flush_into_infill: recycle the colour-change purge into the
+            //     model's infill instead of dumping it on the wipe tower.
+            //   • flush_into_support: recycle purge into support (already default-
+            //     on upstream; set explicitly so a stale base can't disable it).
+            //   • wipe_tower_no_sparse_layers: drop the wipe tower's sparse filler
+            //     layers — shrinks the tower itself, the biggest waste source.
+            //   NOTE: flush_into_objects is deliberately left OFF — routing purge
+            //   into the object body bleeds the previous colour onto the surface.
+            obj.insert("flush_into_infill".into(), json!("1"));
+            obj.insert("flush_into_support".into(), json!("1"));
+            obj.insert("wipe_tower_no_sparse_layers".into(), json!("1"));
+
+            // prime_volume scales with nozzle bore: a coarser nozzle holds more
+            // ooze to clear at each tool change, so a flat value either over-
+            // primes fine nozzles or UNDER-primes coarse ones (colour bleed on
+            // the first segment after a change). ≈38×nozzle anchors the validated
+            // 0.4 mm → 15 mm³ (0.2→8, 0.6→23, 0.8→30); floor 4 mm³.
+            let prime_volume = ((spec.nozzle * 38.0).round().max(4.0) as i64).to_string();
+            // Two purge levers, because they govern DIFFERENT printer families:
+            //   • prime_volume — THE lever on tool-changer printers like the
+            //     Snapmaker U1 (4 independent nozzles). There OrcaSlicer discards
+            //     flush_multiplier/flush_volumes and lays exactly `prime_volume`
+            //     per tool, per tool-change layer (Print.cpp ~3125 / ~3347). Each
+            //     nozzle keeps its own colour, so the prime only clears ooze.
+            //     ALSO fires on single-nozzle MM printers whose tower isn't a
+            //     purge tower (Creality CFS, Flashforge AD5X, Prusa MMU3 with
+            //     single_extruder_multi_material + purge_in_prime_tower=0).
+            //   • flush_multiplier — the lever on single-nozzle AMS / purge-in-
+            //     tower printers (Bambu — hard-gated to this path — Qidi, etc.):
+            //     scales each colour-change purge. 0.2 (vs 0.3 default) trims ~⅓,
+            //     above the ~0.15 colour-bleed floor. Inert on tool-changers, so
+            //     we set both.
+            //   • prime_tower_width caps the tower footprint (30 mm).
+            obj.insert("prime_volume".into(), json!(prime_volume));
+            obj.insert("flush_multiplier".into(), json!("0.2"));
+            obj.insert("prime_tower_width".into(), json!("30"));
+
+            // --- fork features (PROCESS-domain; same set the per-import companion
+            //     emits). These add a further post-export pass on our fork only;
+            //     harmless (ignored) keys on stock slicers.
+            obj.insert("filament_economy_enable".into(), json!("1"));
+            obj.insert("filament_economy_remove_noop_swaps".into(), json!("1"));
+            obj.insert("filament_economy_shrink_purge".into(), json!("1"));
+            obj.insert("filament_economy_shrink_purge_pct".into(), json!("30"));
+            obj.insert("filament_economy_curvature_lh".into(), json!("1"));
+            obj.insert("filament_economy_force_m83".into(), json!("1"));
+            obj.insert("mixed_filament_region_collapse".into(), json!("1"));
+        }
     }
     (name, v)
 }
 
 /// The full shared library for the Snapmaker U1: every project type × every
-/// nozzle (7 × 4 = 28).
-pub fn build_library() -> Vec<(String, Value)> {
+/// nozzle (7 × 4 = 28). The U1 is a tool-changer (`MultiNozzle`) so it is always
+/// multi-material regardless of `ams_enabled`; the param is threaded for a
+/// uniform signature.
+pub fn build_library(ams_enabled: bool) -> Vec<(String, Value)> {
     let mut out = Vec::with_capacity(ProjectType::all().len() * NOZZLES.len());
     for pt in ProjectType::all() {
         for n in NOZZLES {
-            out.push(build_one(pt, n));
+            out.push(build_one(pt, n, ams_enabled));
         }
     }
     out
@@ -407,11 +441,11 @@ pub fn build_library() -> Vec<(String, Value)> {
 /// set of printer specs (one per chosen printer/nozzle variant resolved from the
 /// machine catalogue). Same engine as the U1 library — this is what makes the
 /// optimiser cover every OrcaSlicer-family printer, not just the U1.
-pub fn build_library_for(specs: &[PrinterSpec]) -> Vec<(String, Value)> {
+pub fn build_library_for(specs: &[PrinterSpec], ams_enabled: bool) -> Vec<(String, Value)> {
     let mut out = Vec::with_capacity(ProjectType::all().len() * specs.len());
     for s in specs {
         for pt in ProjectType::all() {
-            out.push(build_one_for(pt, s));
+            out.push(build_one_for(pt, s, ams_enabled));
         }
     }
     out
@@ -423,24 +457,74 @@ mod tests {
 
     #[test]
     fn generates_for_any_orca_family_printer() {
-        // The same engine targets any catalogue printer, not just the U1.
+        // The same engine targets any catalogue printer, not just the U1. The
+        // K1 has a CFS → AmsCapable; we generate with ams_enabled=true so the
+        // economy keys are present for the assertions below.
         let k1 = PrinterSpec {
             printer_name: "Creality K1 (0.4 nozzle)".into(),
             base_process: "0.20mm Standard @Creality K1".into(),
             nozzle: 0.4,
             max_layer_height: 0.30,
+            architecture: Architecture::AmsCapable,
         };
-        let (name, v) = build_one_for(ProjectType::PieceMecanique, &k1);
+        let (name, v) = build_one_for(ProjectType::PieceMecanique, &k1, true);
         assert_eq!(name, "Pièce mécanique @Creality K1 (0.4 nozzle)");
         assert_eq!(v["inherits"], "0.20mm Standard @Creality K1");
         assert_eq!(v["compatible_printers"][0], "Creality K1 (0.4 nozzle)");
         assert_eq!(v["filament_economy_enable"], "1");
         // One spec yields the 7 project types.
-        assert_eq!(build_library_for(&[k1.clone()]).len(), 7);
+        assert_eq!(build_library_for(&[k1.clone()], true).len(), 7);
         // A printer whose max layer height is 0.20 caps the thick draft layer.
         let capped = PrinterSpec { max_layer_height: 0.20, ..k1 };
-        let (_, vp) = build_one_for(ProjectType::PrototypeRapide, &capped);
+        let (_, vp) = build_one_for(ProjectType::PrototypeRapide, &capped, true);
         assert_eq!(vp["layer_height"], "0.2");
+    }
+
+    #[test]
+    fn purge_tower_keys_are_multi_material_only() {
+        use ProjectType::*;
+        const ECONOMY_KEYS: &[&str] = &[
+            "prime_volume", "flush_multiplier", "prime_tower_width",
+            "flush_into_infill", "flush_into_support", "wipe_tower_no_sparse_layers",
+            "filament_economy_enable", "filament_economy_remove_noop_swaps",
+            "filament_economy_shrink_purge", "filament_economy_shrink_purge_pct",
+            "filament_economy_curvature_lh", "filament_economy_force_m83",
+            "mixed_filament_region_collapse",
+        ];
+        let mk = |arch| PrinterSpec {
+            printer_name: "Test (0.4 nozzle)".into(),
+            base_process: "0.20mm Standard @Test".into(),
+            nozzle: 0.4,
+            max_layer_height: 0.30,
+            architecture: arch,
+        };
+        // Single-nozzle: NEVER carries the tower keys (no checkbox can change it).
+        let single = mk(Architecture::Single);
+        for ae in [false, true] {
+            let (_, v) = build_one_for(ObjetDuQuotidien, &single, ae);
+            for k in ECONOMY_KEYS {
+                assert!(v.get(*k).is_none(), "Single (ams={ae}) must NOT carry {k}");
+            }
+        }
+        // AmsCapable + ams_enabled=false: also no tower keys (add-on not in use).
+        let ams = mk(Architecture::AmsCapable);
+        let (_, off) = build_one_for(ObjetDuQuotidien, &ams, false);
+        for k in ECONOMY_KEYS {
+            assert!(off.get(*k).is_none(), "AmsCapable+false must NOT carry {k}");
+        }
+        // MultiNozzle (any ams flag) and AmsCapable+true MUST carry them.
+        let multi = mk(Architecture::MultiNozzle);
+        for (label, v) in [
+            ("MultiNozzle+false", build_one_for(ObjetDuQuotidien, &multi, false).1),
+            ("MultiNozzle+true", build_one_for(ObjetDuQuotidien, &multi, true).1),
+            ("AmsCapable+true", build_one_for(ObjetDuQuotidien, &ams, true).1),
+        ] {
+            for k in ECONOMY_KEYS {
+                assert!(v.get(*k).is_some(), "{label} MUST carry {k}");
+            }
+            // prime_volume scaled ≈38×nozzle (0.4 → 15).
+            assert_eq!(v["prime_volume"], "15", "{label} prime_volume");
+        }
     }
 
     #[test]
@@ -448,17 +532,17 @@ mod tests {
         use ProjectType::*;
         // Functional, larger-footprint intents get a 5 mm outer brim…
         for pt in [ObjetDuQuotidien, Jouet, PieceMecanique] {
-            let (_, v) = build_one(pt, 0.4);
+            let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["brim_type"], "outer_only", "{pt:?} should brim");
             assert_eq!(v["brim_width"], "5", "{pt:?} brim width");
         }
         // …Figurine a smaller 3 mm brim (small feet)…
-        let (_, fig) = build_one(Figurine, 0.4);
+        let (_, fig) = build_one(Figurine, 0.4, true);
         assert_eq!(fig["brim_type"], "outer_only");
         assert_eq!(fig["brim_width"], "3");
         // …Vase / Décoration / quick Prototype: none.
         for pt in [Vase, Decoration, PrototypeRapide] {
-            let (_, v) = build_one(pt, 0.4);
+            let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["brim_type"], "no_brim", "{pt:?} should NOT brim");
             assert!(v.get("brim_width").is_none(), "{pt:?} has no brim_width");
         }
@@ -466,28 +550,28 @@ mod tests {
         // the geometry: organic tree for the curvy intents, normal(snug) for the
         // flat mechanical one, and a 45° threshold for all.
         for pt in [Figurine, Jouet, PieceMecanique] {
-            let (_, v) = build_one(pt, 0.4);
+            let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["enable_support"], "1", "{pt:?} should auto-support");
             assert_eq!(v["support_threshold_angle"], "45", "{pt:?} threshold");
         }
         for pt in [Figurine, Jouet] {
-            let (_, v) = build_one(pt, 0.4);
+            let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["support_type"], "tree(auto)", "{pt:?} organic tree");
             assert_eq!(v["support_style"], "organic", "{pt:?} organic style");
         }
-        let (_, mech) = build_one(PieceMecanique, 0.4);
+        let (_, mech) = build_one(PieceMecanique, 0.4, true);
         assert_eq!(mech["support_type"], "normal(auto)");
         assert_eq!(mech["support_style"], "snug");
         // …never on Vase (spiral forbids it), Prototype, or flat intents.
         for pt in [Vase, PrototypeRapide, ObjetDuQuotidien, Decoration] {
-            let (_, v) = build_one(pt, 0.4);
+            let (_, v) = build_one(pt, 0.4, true);
             assert!(v.get("enable_support").is_none(), "{pt:?} no auto-support");
         }
     }
 
     #[test]
     fn library_has_28_unique_named_profiles() {
-        let lib = build_library();
+        let lib = build_library(true);
         assert_eq!(lib.len(), 28);
         let mut names: Vec<&str> = lib.iter().map(|(n, _)| n.as_str()).collect();
         names.sort();
@@ -497,7 +581,7 @@ mod tests {
 
     #[test]
     fn every_profile_is_registrable_and_targets_its_nozzle() {
-        for (name, v) in build_library() {
+        for (name, v) in build_library(true) {
             assert_eq!(v["version"], PRESET_VERSION);
             assert_eq!(v["type"], "process");
             assert_eq!(v["is_custom_defined"], "1");
@@ -526,7 +610,7 @@ mod tests {
 
     #[test]
     fn vase_is_spiral_and_figurine_is_low_resonance() {
-        let (_, vase) = build_one(ProjectType::Vase, 0.4);
+        let (_, vase) = build_one(ProjectType::Vase, 0.4, true);
         assert_eq!(vase["spiral_mode"], "1");
         assert_eq!(vase["wall_loops"], "1");
         assert_eq!(vase["sparse_infill_density"], "0%");
@@ -538,14 +622,14 @@ mod tests {
         assert!(fig.jerk < proto.jerk);
 
         // Décoration enables ironing; Pièce mécanique stacks walls.
-        let (_, deco) = build_one(ProjectType::Decoration, 0.4);
+        let (_, deco) = build_one(ProjectType::Decoration, 0.4, true);
         assert_eq!(deco["ironing_type"], "topmost");
         assert_eq!(ProjectType::PieceMecanique.params_at(0.4).wall_loops, 5);
     }
 
     #[test]
     fn fork_features_on_every_profile() {
-        for (name, v) in build_library() {
+        for (name, v) in build_library(true) {
             assert_eq!(v["filament_economy_enable"], "1", "{name}");
             assert_eq!(v["mixed_filament_region_collapse"], "1", "{name}");
         }
@@ -556,7 +640,7 @@ mod tests {
         // The cross-slicer, preview-visible economy (v0.5.0). These must be set
         // on every generated profile and must NOT route purge into the object
         // body (flush_into_objects) — that would bleed colour onto the surface.
-        for (name, v) in build_library() {
+        for (name, v) in build_library(true) {
             assert_eq!(v["flush_into_infill"], "1", "{name}");
             assert_eq!(v["flush_into_support"], "1", "{name}");
             assert_eq!(v["wipe_tower_no_sparse_layers"], "1", "{name}");

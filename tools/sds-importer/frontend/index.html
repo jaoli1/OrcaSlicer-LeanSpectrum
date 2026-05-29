@@ -175,6 +175,13 @@
         <select id="gModel" disabled><option value="" data-i18n="library_model">— model —</option></select>
         <select id="gNozzle" disabled><option value="" data-i18n="library_nozzle">— nozzle —</option></select>
       </div>
+      <div class="row printer-bar" id="amsRow" style="margin:8px 0 0; display:none;">
+        <label id="amsCheckLabel" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input id="amsEnabled" type="checkbox" />
+          <span data-i18n="ams_label">I use an AMS / CFS / MMU (multi-colour)</span>
+        </label>
+        <span id="amsHint" class="sub"></span>
+      </div>
       <div class="sub" id="printerHint" data-i18n="printer_hint" style="margin-top:8px;">Pick brand → model → nozzle (or all nozzles).</div>
     </div>
 

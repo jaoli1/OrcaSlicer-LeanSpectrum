@@ -134,6 +134,10 @@ pub fn resolve(vendor: &str, model: &str, nozzle: Option<f64>) -> Option<Printer
         base_process,
         nozzle: v.nozzle_diameter,
         max_layer_height: max_lh,
+        // Multi-material architecture is keyed off the MODEL name (not the per-
+        // nozzle preset), so the process generator knows whether to emit the
+        // purge-tower keys and the UI knows whether to show the AMS checkbox.
+        architecture: crate::architecture::classify(model).0,
     })
 }
 

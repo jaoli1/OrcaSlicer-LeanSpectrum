@@ -21,6 +21,8 @@ const messages = {
     printer_label:       "Printer",
     printer_all:         "All nozzles",
     printer_hint:        "Pick brand → model → nozzle (or all nozzles). Shared by both libraries.",
+    ams_label:           "I use an AMS / CFS / MMU (multi-colour)",
+    ams_native_mm:       "Multi-nozzle printer (multi-colour native)",
 
     filament_intro:      "Search the filament database (built from manufacturers' own TDS / SDS sheets), select one OR MORE materials, choose your printer above, then generate one filament profile per material PLUS the shared 7 process profiles in one click.",
     filament_all_brands: "All brands",
@@ -124,6 +126,8 @@ const messages = {
     printer_label:       "Imprimante",
     printer_all:         "Toutes les buses",
     printer_hint:        "Choisissez marque → modèle → buse (ou toutes les buses). Utilisé par les deux bibliothèques.",
+    ams_label:           "J'utilise un AMS / CFS / MMU (multi-couleur)",
+    ams_native_mm:       "Imprimante multi-buses (multi-couleur natif)",
 
     filament_intro:      "Recherchez dans la base de filaments (construite depuis les fiches TDS / SDS officielles des fabricants), sélectionnez un OU PLUSIEURS matériaux, choisissez votre imprimante ci-dessus, puis générez un profil filament par matériau ET les 7 profils process partagés en un clic.",
     filament_all_brands: "Toutes les marques",

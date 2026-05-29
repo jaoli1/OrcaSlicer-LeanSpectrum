@@ -109,6 +109,54 @@ const gVendor = document.getElementById("gVendor");
 const gModel  = document.getElementById("gModel");
 const gNozzle = document.getElementById("gNozzle");
 
+// v0.7.0 — AMS / CFS / MMU. The checkbox is shown ONLY for `ams_capable`
+// printers (single nozzle + optional multi-material add-on); tool-changers are
+// multi-material natively (no checkbox), single-material printers hide it. The
+// effective flag (`amsArg`) is sent to every generate call so the process only
+// carries the purge-tower keys when the print is really multi-material.
+const amsRow        = document.getElementById("amsRow");
+const amsCheckLabel = document.getElementById("amsCheckLabel");
+const amsEnabledEl  = document.getElementById("amsEnabled");
+const amsHint       = document.getElementById("amsHint");
+const AMS_KEY = "leanspectrum_ams";
+let currentArch = "single";
+
+if (amsEnabledEl) {
+  if (localStorage.getItem(AMS_KEY) === "1") amsEnabledEl.checked = true;
+  amsEnabledEl.addEventListener("change", () =>
+    localStorage.setItem(AMS_KEY, amsEnabledEl.checked ? "1" : "0"));
+}
+
+/// Tool-changers are always multi-material; AMS-capable printers follow the
+/// checkbox; single-material printers are never multi-material.
+function amsArg() {
+  if (currentArch === "multi_nozzle") return true;
+  if (currentArch === "ams_capable") return !!(amsEnabledEl && amsEnabledEl.checked);
+  return false;
+}
+
+/// Look up the selected model's architecture and show/label the checkbox.
+async function refreshArchitecture() {
+  currentArch = "single";
+  if (amsRow) amsRow.style.display = "none";
+  if (amsHint) amsHint.textContent = "";
+  const model = gModel && gModel.value;
+  if (!model || !invoke) return;
+  try {
+    const info = await invoke("get_printer_architecture", { model });
+    currentArch = (info && info.architecture) || "single";
+    if (currentArch === "ams_capable") {
+      if (amsRow) amsRow.style.display = "";
+      if (amsCheckLabel) amsCheckLabel.style.display = "";
+      if (amsHint) amsHint.textContent = info.mmSystem ? `(${info.mmSystem})` : "";
+    } else if (currentArch === "multi_nozzle") {
+      if (amsRow) amsRow.style.display = "";
+      if (amsCheckLabel) amsCheckLabel.style.display = "none";
+      if (amsHint) amsHint.textContent = tr("ams_native_mm");
+    }
+  } catch (e) { console.error("architecture lookup failed", e); }
+}
+
 /// {vendor, model, nozzle:number|null, all:bool} or null when incomplete.
 function currentPrinter() {
   if (!gVendor || !gVendor.value || !gModel.value) return null;
@@ -131,6 +179,7 @@ if (gVendor && invoke) {
     fillSelect(gModel, [], tr("library_model"));
     fillSelect(gNozzle, [], tr("library_nozzle"));
     refreshGenEnabled();
+    refreshArchitecture();
     if (!gVendor.value) return;
     try {
       fillSelect(gModel, await invoke("list_printer_models", { vendor: gVendor.value }), tr("library_model"));
@@ -141,6 +190,7 @@ if (gVendor && invoke) {
     gNozzle.disabled = true;
     fillSelect(gNozzle, [], tr("library_nozzle"));
     refreshGenEnabled();
+    refreshArchitecture();
     if (!gModel.value) return;
     try {
       const nz = await invoke("list_printer_nozzles", { vendor: gVendor.value, model: gModel.value });
@@ -321,6 +371,7 @@ if (genFilamentProcess) {
         allNozzles: p.all,
         slicer: sl.slicer,
         customDir: sl.customDir,
+        amsEnabled: amsArg(),
       });
       const printers = (r.printers || []).join(", ");
       const names = (r.filamentNames || []).map(n => `<code>${escapeHtml(n)}</code>`).join("<br/>");
@@ -372,7 +423,7 @@ if (genForPrinter) {
     try {
       const r = await invoke("generate_process_library_for", {
         vendor: p.vendor, model: p.model, nozzle: p.nozzle, allNozzles: p.all,
-        slicer: sl.slicer, customDir: sl.customDir,
+        slicer: sl.slicer, customDir: sl.customDir, amsEnabled: amsArg(),
       });
       renderLibraryResult(r);
     } catch (e) {
@@ -464,6 +515,7 @@ async function importPdfAndShow(path, online, share, resultEl, statusEl, logPane
       nozzle: p ? p.nozzle : null,
       allNozzles: p ? p.all : false,
       share: share,
+      amsEnabled: amsArg(),
     } });
     renderResult(r, resultEl, statusEl, logPanelEl, logElEl);
   } catch (e) {

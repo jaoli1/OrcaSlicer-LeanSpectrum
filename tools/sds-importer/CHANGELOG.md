@@ -11,6 +11,24 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.7.0] — Case « AMS / CFS / MMU » + architecture des imprimantes
+
+- **Process adapté à l'architecture de l'imprimante.** L'app classe désormais
+  chaque imprimante du catalogue (classification sourcée sur les sites
+  fabricants) et adapte la tour de purge en conséquence :
+  - **Multi-buses / tool-changer** (Snapmaker U1 / J1 / Dual, Prusa XL, IDEX…) →
+    multi-matériau natif, levier `prime_volume`.
+  - **Mono-buse compatible AMS / CFS / MMU** (Bambu + AMS, Creality K2 / K1 +
+    CFS, Anycubic Kobra + ACE, Flashforge AD5X, Qidi Q2, Prusa MK + MMU3…) → une
+    nouvelle **case « J'utilise un AMS / CFS / MMU »** apparaît dans le sélecteur
+    d'imprimante (avec le nom du système). Cochée, le process passe en
+    multi-couleur (levier `flush_multiplier` + tour) ; décochée, mono-matériau.
+  - **Mono-matériau** (~90 % du catalogue) → aucune tour de purge : les clés
+    correspondantes ne sont plus émises, pour un profil plus propre.
+  La case est **décochée par défaut** et mémorisée. Un profil mono-couleur ne
+  porte donc plus de réglages de tour inutiles, et un utilisateur AMS obtient
+  l'économie de purge adaptée à sa machine.
+
 ## [0.6.2] — Amorçage adapté à la buse + profil Figurine rééquilibré
 
 - **Profil « Figurine » rééquilibré (qualité ↔ efficacité)** : accélération

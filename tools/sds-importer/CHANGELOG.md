@@ -11,6 +11,17 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.3.2] — Noms de profils corrigés
+
+- **Noms de profils** : les caractères légaux dans un nom de fichier (`+`, `(`,
+  `)`, `,`…) sont désormais conservés — « Eryone PLA+ » ne devient plus « Eryone
+  PLA_ ». Seuls les caractères réellement interdits (`\\ / : * ? " < > |`) sont
+  remplacés.
+- **Re-génération** : régénérer un filament **remplace** son profil au lieu
+  d'empiler des copies « (1) », « (2) » dans le slicer.
+- **Base** : correction d'une coquille de libellé (« Silk Raibow PLA » → « Silk
+  Rainbow PLA »).
+
 ## [0.3.1] — Anti-warping par type de projet
 
 - **Adhérence / anti-warping** : brim externe modéré (≈ 5 mm) ajouté aux profils

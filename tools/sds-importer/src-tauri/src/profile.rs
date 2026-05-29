@@ -376,21 +376,35 @@ fn build_profile_json(
 /// Write `value` to `dir/<sanitized name>.json`, appending " (N)" if a file
 /// with that name already exists. Shared by the filament and process writers.
 pub(crate) fn write_unique_json(dir: &Path, display: &str, value: &Value) -> Result<PathBuf> {
-    let mut path = dir.join(format!("{}.json", sanitize(display)));
-    let mut counter = 1;
-    while path.exists() {
-        path = dir.join(format!("{} ({}).json", sanitize(display), counter));
-        counter += 1;
-    }
+    // Overwrite an existing profile of the same name: re-generating a material
+    // refreshes its profile instead of piling up "(1)", "(2)" copies in the
+    // slicer's preset list. (The slicer shows the file-name stem, so the stem
+    // must equal the intended display name — see `sanitize`.)
+    let path = dir.join(format!("{}.json", sanitize(display)));
     fs::write(&path, serde_json::to_string_pretty(value).unwrap())
         .map_err(|e| Error::Profile(e.to_string()))?;
     Ok(path)
 }
 
+/// Make `s` safe as a file-name stem WITHOUT mangling legitimate material names.
+/// The slicer displays the file-name stem, so we keep characters that are legal
+/// in a file name — `+`, `(`, `)`, `,`, `&`… — and replace ONLY the ones that are
+/// actually illegal on the common OSes (Windows is strictest: `\ / : * ? " < > |`
+/// plus control chars). Trailing dots/spaces are trimmed (illegal on Windows).
+/// This is what makes "Eryone PLA+" show as "Eryone PLA+" and not "Eryone PLA_".
 fn sanitize(s: &str) -> String {
-    s.chars()
-        .map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' || c == '.' { c } else { '_' })
-        .collect()
+    let cleaned: String = s
+        .chars()
+        .map(|c| {
+            if c.is_control() || matches!(c, '\\' | '/' | ':' | '*' | '?' | '"' | '<' | '>' | '|') {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
+    let cleaned = cleaned.trim().trim_end_matches(|c: char| c == '.' || c == ' ').trim();
+    if cleaned.is_empty() { "profile".to_string() } else { cleaned.to_string() }
 }
 
 fn build_scarf_value(s: &ScarfSettings) -> Value {
@@ -608,5 +622,18 @@ mod tests {
         // Never the old format markers.
         let n = filament_display_name("Eryone", "Eryone PLA", Polymer::Pla);
         assert!(!n.contains('—') && !n.contains('('), "name was {n}");
+    }
+
+    #[test]
+    fn sanitize_keeps_legal_filename_chars() {
+        // "+", "(", ")" are legal in a file name and must survive (the slicer
+        // shows the stem): "Eryone PLA+" must NOT become "Eryone PLA_".
+        assert_eq!(sanitize("Eryone PLA+"), "Eryone PLA+");
+        assert_eq!(sanitize("Eryone PLA+ HP"), "Eryone PLA+ HP");
+        assert_eq!(sanitize("Silk PLA (Dual Color)"), "Silk PLA (Dual Color)");
+        // Only genuinely-illegal characters are replaced.
+        assert_eq!(sanitize("a/b:c*d?"), "a_b_c_d_");
+        // Trailing dot/space (illegal on Windows) is trimmed.
+        assert_eq!(sanitize("Name. "), "Name");
     }
 }

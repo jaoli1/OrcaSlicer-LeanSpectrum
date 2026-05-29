@@ -282,6 +282,8 @@ fn import_pdf_impl(req: ImportRequest) -> std::result::Result<ImportResult, Erro
                 max_layer_height: 0.30,
                 // The U1 is a 4-nozzle tool-changer → always multi-material.
                 architecture: architecture::Architecture::MultiNozzle,
+                // U1 caps X/Y jerk at 9 mm/s (fdm_toolchanger.json).
+                max_jerk: 9.0,
             },
         )],
     };

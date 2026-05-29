@@ -11,6 +11,22 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.7.1] — Jerk plafonné au maximum de l'imprimante (fin de l'avertissement)
+
+- **Plus d'avertissement « le réglage du jerk dépasse le jerk maximum de
+  l'imprimante ».** Les profils émettaient un `travel_jerk` (1,5× le jerk
+  d'impression) — et, pour le profil *Prototype rapide*, un `default_jerk` —
+  supérieurs au `machine_max_jerk_x/y` de la Snapmaker U1 (9 mm/s). Le slicer
+  affichait alors un avertissement et plafonnait silencieusement la vitesse :
+  inesthétique pour un produit fini. Chaque valeur de jerk émise est désormais
+  bornée au plafond de l'imprimante (`PrinterSpec.max_jerk`).
+- **Le plafond, pas une réécriture.** La table de référence conserve ses
+  valeurs (intention de virage : *Prototype* souple → *Figurine* serré) ; on ne
+  fait que les abaisser pour respecter la machine réelle. Une imprimante sans
+  limite de jerk garde donc les valeurs riches. Plafond U1 = 9 mm/s ; valeur de
+  repli prudente pour le catalogue = 9 mm/s (le jerk gouverne le virage, pas le
+  débit en ligne droite — l'accélération s'en charge, et reste inchangée).
+
 ## [0.7.0] — Case « AMS / CFS / MMU » + architecture des imprimantes
 
 - **Process adapté à l'architecture de l'imprimante.** L'app classe désormais

@@ -182,7 +182,21 @@ pub struct PrinterSpec {
     /// 4-nozzle tool-changer → `MultiNozzle`; catalogue printers are classified
     /// in `catalog::resolve` via `architecture::classify`.
     pub architecture: Architecture,
+    /// Printer `machine_max_jerk` for X/Y, in mm/s. Emitted process jerk is
+    /// clamped to this so the slicer never warns "jerk exceeds machine maximum"
+    /// and silently auto-caps — which looks broken in a finished product. The
+    /// Snapmaker U1 caps X/Y at 9 mm/s (resources/.../fdm_toolchanger.json);
+    /// `DEFAULT_MAX_JERK` is the conservative catalogue fallback. A value of 0
+    /// (or negative) disables clamping.
+    pub max_jerk: f64,
 }
+
+/// Conservative `machine_max_jerk` (X/Y, mm/s) used when we have no per-machine
+/// value. 9 mm/s matches the Snapmaker U1 and the common Bambu/Prusa default,
+/// and is high enough that clamping to it never degrades print quality (jerk
+/// governs cornering, not straight-line throughput — the acceleration limits
+/// drive that).
+pub const DEFAULT_MAX_JERK: f64 = 9.0;
 
 fn u1_spec(nozzle: f64) -> PrinterSpec {
     let (printer_name, base_process) = nozzle_targets(nozzle);
@@ -192,6 +206,9 @@ fn u1_spec(nozzle: f64) -> PrinterSpec {
         nozzle,
         max_layer_height: 0.75 * nozzle,
         architecture: Architecture::MultiNozzle,
+        // The U1 caps X/Y jerk at 9 mm/s (fdm_toolchanger.json, inherited by
+        // every nozzle variant).
+        max_jerk: 9.0,
     }
 }
 
@@ -246,6 +263,18 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
     let is_mm = matches!(spec.architecture, Architecture::MultiNozzle)
         || (matches!(spec.architecture, Architecture::AmsCapable) && ams_enabled);
 
+    // The slicer warns ("le réglage du jerk dépasse le jerk maximum de
+    // l'imprimante") and silently auto-caps when a process jerk exceeds the
+    // target printer's machine_max_jerk — ugly in a finished product. We clamp
+    // every emitted jerk to the machine ceiling here. The reference table keeps
+    // its higher values as relative *cornering intent* (Prototype loose →
+    // Figurine tight); we only ever lower them to fit the real machine. Travel
+    // jerk (normally 1.5× print jerk) is clamped to the same ceiling too —
+    // non-extruding moves gain nothing from extra jerk but ring more. A
+    // max_jerk of 0 disables clamping (treat the machine as unbounded).
+    let jmax = if spec.max_jerk > 0.0 { spec.max_jerk } else { f64::INFINITY };
+    let jclamp = |x: f64| fmt(x.min(jmax).max(1.0));
+
     let mut v = json!({
         "name": name,
         "version": PRESET_VERSION,
@@ -276,11 +305,11 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
         "inner_wall_acceleration":    fmt(p.acceleration),
         "top_surface_acceleration":   fmt((p.acceleration * 0.5).round()),
         "travel_acceleration":        fmt((p.acceleration * 1.25).round()),
-        "default_jerk":               fmt(p.jerk),
-        "outer_wall_jerk":            fmt(p.jerk),
-        "inner_wall_jerk":            fmt(p.jerk),
-        "top_surface_jerk":           fmt((p.jerk * 0.7).round().max(1.0)),
-        "travel_jerk":                fmt((p.jerk * 1.5).round()),
+        "default_jerk":               jclamp(p.jerk),
+        "outer_wall_jerk":            jclamp(p.jerk),
+        "inner_wall_jerk":            jclamp(p.jerk),
+        "top_surface_jerk":           jclamp((p.jerk * 0.7).round()),
+        "travel_jerk":                jclamp((p.jerk * 1.5).round()),
 
         // NB: the PURGE / wipe-tower economy keys are emitted further down, but
         // ONLY when the print is effectively multi-material (`is_mm`). A plain
@@ -482,6 +511,7 @@ mod tests {
             nozzle: 0.4,
             max_layer_height: 0.30,
             architecture: Architecture::AmsCapable,
+            max_jerk: DEFAULT_MAX_JERK,
         };
         let (name, v) = build_one_for(ProjectType::PieceMecanique, &k1, true);
         assert_eq!(name, "Pièce mécanique @Creality K1 (0.4 nozzle)");
@@ -513,6 +543,7 @@ mod tests {
             nozzle: 0.4,
             max_layer_height: 0.30,
             architecture: arch,
+            max_jerk: DEFAULT_MAX_JERK,
         };
         // Single-nozzle: NEVER carries the tower keys (no checkbox can change it).
         let single = mk(Architecture::Single);
@@ -648,6 +679,45 @@ mod tests {
         let (_, deco) = build_one(ProjectType::Decoration, 0.4, true);
         assert_eq!(deco["ironing_type"], "topmost");
         assert_eq!(ProjectType::PieceMecanique.params_at(0.4).wall_loops, 5);
+    }
+
+    #[test]
+    fn jerk_never_exceeds_machine_max() {
+        use ProjectType::*;
+        // The U1 caps X/Y jerk at 9 mm/s. PrototypeRapide's reference jerk (12)
+        // and EVERY profile's travel jerk (1.5× print jerk) would otherwise
+        // exceed it and make the slicer warn + silently auto-cap. All emitted
+        // jerk keys must be clamped to the ceiling (and never below the 1 floor).
+        const JERK_KEYS: &[&str] = &[
+            "default_jerk", "outer_wall_jerk", "inner_wall_jerk",
+            "top_surface_jerk", "travel_jerk",
+        ];
+        for pt in ProjectType::all() {
+            let (name, v) = build_one(pt, 0.4, true);
+            for k in JERK_KEYS {
+                let j: f64 = v[*k].as_str().unwrap().parse().unwrap();
+                assert!(j <= 9.0, "{name}: {k} = {j} exceeds U1 machine_max_jerk 9");
+                assert!(j >= 1.0, "{name}: {k} = {j} below the 1 floor");
+            }
+        }
+        // PrototypeRapide is the binding case (ref jerk 12, travel 18): both must
+        // be pulled down to the 9 ceiling, not left at 12/18.
+        let (_, proto) = build_one(PrototypeRapide, 0.4, true);
+        assert_eq!(proto["default_jerk"], "9");
+        assert_eq!(proto["travel_jerk"], "9");
+        // The clamp is a CEILING, not a rewrite: a printer with no jerk limit
+        // (max_jerk == 0) keeps the richer reference-derived values.
+        let unbounded = PrinterSpec {
+            printer_name: "Unbounded (0.4 nozzle)".into(),
+            base_process: "base".into(),
+            nozzle: 0.4,
+            max_layer_height: 0.30,
+            architecture: Architecture::Single,
+            max_jerk: 0.0,
+        };
+        let (_, vp) = build_one_for(PrototypeRapide, &unbounded, false);
+        assert_eq!(vp["default_jerk"], "12");
+        assert_eq!(vp["travel_jerk"], "18");
     }
 
     #[test]

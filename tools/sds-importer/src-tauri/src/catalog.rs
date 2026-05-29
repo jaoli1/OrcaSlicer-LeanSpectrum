@@ -138,6 +138,10 @@ pub fn resolve(vendor: &str, model: &str, nozzle: Option<f64>) -> Option<Printer
         // nozzle preset), so the process generator knows whether to emit the
         // purge-tower keys and the UI knows whether to show the AMS checkbox.
         architecture: crate::architecture::classify(model).0,
+        // The catalogue carries no per-machine jerk data, so use the
+        // conservative default (9 mm/s) to clamp emitted jerk. It never warns
+        // and never hurts quality (jerk drives cornering, not throughput).
+        max_jerk: crate::project_process::DEFAULT_MAX_JERK,
     })
 }
 

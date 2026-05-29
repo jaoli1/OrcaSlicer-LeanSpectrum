@@ -153,9 +153,23 @@
     </div>
     <div id="updateBanner" class="panel" style="display:none;"></div>
 
-    <!-- ============ Global printer selector (shared by both libraries) ============ -->
+    <!-- ============ Global printer + slicer selector (shared by both libraries) ============ -->
     <div class="panel" id="printerBar" style="margin-top:0;">
       <div class="row printer-bar" style="margin:0;">
+        <strong data-i18n="slicer_label">Slicer</strong>
+        <select id="gSlicer">
+          <option value="snapmaker">SnapmakerOrca-OptimusOrca</option>
+          <option value="orca">OrcaSlicer</option>
+          <option value="bambu">Bambu Studio</option>
+          <option value="creality">Creality Print</option>
+          <option value="custom" data-i18n="slicer_custom">Autre…</option>
+        </select>
+      </div>
+      <div class="row printer-bar" id="customDirRow" style="margin:8px 0 0; display:none;">
+        <input id="gCustomDir" type="text" data-i18n-placeholder="slicer_custom_ph" placeholder="Destination folder (absolute path)" />
+        <button id="pickFolderBtn" type="button" class="secondary" data-i18n="slicer_browse">Browse…</button>
+      </div>
+      <div class="row printer-bar" style="margin:10px 0 0;">
         <strong data-i18n="printer_label">Printer</strong>
         <select id="gVendor"><option value="" data-i18n="library_vendor">— brand —</option></select>
         <select id="gModel" disabled><option value="" data-i18n="library_model">— model —</option></select>
@@ -191,10 +205,6 @@
       <div class="row">
         <button id="genForPrinter" data-i18n="process_generate_printer">Generate process for the selected printer</button>
         <span id="libraryStatus" class="sub"></span>
-      </div>
-      <p class="sub" data-i18n="library_or_u1">— or generate the full Snapmaker U1 set (all 4 nozzles) —</p>
-      <div class="row">
-        <button id="genLibraryBtn" class="secondary" data-i18n="library_generate">Generate the Snapmaker U1 set</button>
       </div>
       <div id="libraryResult" class="panel" style="display:none;"></div>
     </div>

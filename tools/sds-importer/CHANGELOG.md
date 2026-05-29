@@ -11,6 +11,24 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.3.0] — Multi-sélection, choix du slicer, nommage propre
+
+- **Choix du slicer** : sélecteur en haut (OrcaSlicer · Bambu Studio · Creality
+  Print · SnapmakerOrca/OptimusOrca · dossier personnalisé). Les profils sont
+  écrits dans le dossier utilisateur du slicer choisi (chemin résolu par OS), et
+  le choix est mémorisé.
+- **Multi-sélection de filaments** : la Bibliothèque Filament permet de cocher
+  plusieurs matériaux ; un clic génère un profil filament par matériau + un seul
+  jeu de 7 profils process partagé.
+- **Nommage propre** : le profil filament s'appelle « Marque Matériau » (ex.
+  « Eryone ABS CF ») — fini le préfixe polymère redondant et le suffixe
+  « (fabricant) ».
+- **Cohérence des process** : suppression de l'ancien process « … Scarf @U1 » par
+  filament ; l'import PDF (onglet PDF unique) génère désormais filament + les 7
+  profils process par type de projet, comme le flux un-clic.
+- Bouton « Générer le jeu Snapmaker U1 » retiré (couvert par l'option « toutes les
+  buses » du sélecteur de buse).
+
 ## [0.2.0] — Bibliothèque Filament + génération filament & process en un clic
 
 - **Bibliothèque Filament** : nouvel onglet relié à la base de données de

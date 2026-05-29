@@ -53,6 +53,55 @@ function fillSelect(sel, items, placeholder) {
 }
 
 // ============================================================
+// Global slicer selector (v0.3.0) — chooses which OrcaSlicer-family slicer the
+// generated presets are written into. "Autre…" reveals a custom folder input
+// (with a native folder picker). Persisted in localStorage like the language.
+// ============================================================
+const gSlicer      = document.getElementById("gSlicer");
+const gCustomDir   = document.getElementById("gCustomDir");
+const customDirRow = document.getElementById("customDirRow");
+const pickFolderBtn = document.getElementById("pickFolderBtn");
+const SLICER_KEY = "leanspectrum_slicer";
+const CUSTOM_DIR_KEY = "leanspectrum_custom_dir";
+
+function refreshCustomDirVisibility() {
+  if (customDirRow) customDirRow.style.display = (gSlicer && gSlicer.value === "custom") ? "" : "none";
+}
+
+/// { slicer: string, customDir: string|null } passed into every generate/import.
+function slicerArgs() {
+  const slicer = (gSlicer && gSlicer.value) || "snapmaker";
+  const customDir = (gCustomDir && gCustomDir.value.trim()) || null;
+  return { slicer, customDir };
+}
+
+if (gSlicer) {
+  // Restore the persisted choice.
+  const savedSlicer = localStorage.getItem(SLICER_KEY);
+  if (savedSlicer) gSlicer.value = savedSlicer;
+  if (gCustomDir) gCustomDir.value = localStorage.getItem(CUSTOM_DIR_KEY) || "";
+  refreshCustomDirVisibility();
+  gSlicer.addEventListener("change", () => {
+    localStorage.setItem(SLICER_KEY, gSlicer.value);
+    refreshCustomDirVisibility();
+  });
+}
+if (gCustomDir) {
+  gCustomDir.addEventListener("input", () => localStorage.setItem(CUSTOM_DIR_KEY, gCustomDir.value.trim()));
+}
+if (pickFolderBtn && invoke) {
+  pickFolderBtn.addEventListener("click", async () => {
+    try {
+      const p = await invoke("pick_folder");
+      if (p && gCustomDir) {
+        gCustomDir.value = p;
+        localStorage.setItem(CUSTOM_DIR_KEY, p);
+      }
+    } catch (e) { console.error(e); }
+  });
+}
+
+// ============================================================
 // Global printer selector (v0.2.0) — brand → model → nozzle (or "all nozzles").
 // Shared by the Filament library (one-click) and the Process library tab.
 // ============================================================
@@ -73,7 +122,7 @@ function currentPrinter() {
 function refreshGenEnabled() {
   const p = currentPrinter();
   if (genForPrinter)       genForPrinter.disabled = !p;
-  if (genFilamentProcess)  genFilamentProcess.disabled = !(p && selectedFilamentId != null);
+  if (genFilamentProcess)  genFilamentProcess.disabled = !(p && selectedFilamentIds.size > 0);
 }
 
 if (gVendor && invoke) {
@@ -119,8 +168,20 @@ const filamentCount      = document.getElementById("filamentCount");
 const genFilamentProcess = document.getElementById("genFilamentProcess");
 const filamentStatus     = document.getElementById("filamentStatus");
 const filamentResult     = document.getElementById("filamentResult");
-let selectedFilamentId = null;
+// v0.3.0 — multi-select: a Set of selected material ids (click-to-toggle).
+let selectedFilamentIds = new Set();
 let searchTimer = null;
+
+/// Update the count line: "<N matches> · <M selected>".
+function updateFilamentCount(matchCount) {
+  if (!filamentCount) return;
+  const parts = [];
+  parts.push(matchCount ? String(matchCount) : tr("filament_none"));
+  if (selectedFilamentIds.size > 0) {
+    parts.push(tr("filament_selected", { n: selectedFilamentIds.size }));
+  }
+  filamentCount.textContent = parts.join(" · ");
+}
 
 async function loadFilaments(query) {
   if (!invoke || !filamentList) return;
@@ -136,15 +197,20 @@ async function loadFilaments(query) {
 }
 
 function renderFilaments(rows) {
-  filamentCount.textContent = rows.length ? String(rows.length) : tr("filament_none");
-  selectedFilamentId = null;
+  // Keep selections that are still visible in the (possibly filtered) list.
+  const visibleIds = new Set(rows.map(r => r.id));
+  selectedFilamentIds = new Set([...selectedFilamentIds].filter(id => visibleIds.has(id)));
+  updateFilamentCount(rows.length);
   refreshGenEnabled();
   filamentList.innerHTML = rows.map(r => {
     const fam    = escapeHtml(r.base_type || "?") + (r.filled_type ? " " + escapeHtml(r.filled_type) : "");
     const params = r.has_params ? `<span class="badge params" title="manufacturer temps">°C</span>` : "";
     const colors = r.colors ? `<span class="sub">${r.colors} ◐</span>` : "";
     const dens   = r.density ? `<span class="sub">${r.density} g/cm³</span>` : "";
-    return `<li data-id="${r.id}">
+    const checked = selectedFilamentIds.has(r.id) ? " checked" : "";
+    const sel     = selectedFilamentIds.has(r.id) ? " selected" : "";
+    return `<li data-id="${r.id}" class="${sel.trim()}">
+      <input type="checkbox" class="filament-check"${checked} aria-label="select" />
       <div style="flex:1;">
         <div class="meta">
           <span class="badge fam">${fam}</span>
@@ -155,10 +221,19 @@ function renderFilaments(rows) {
     </li>`;
   }).join("");
   for (const li of filamentList.querySelectorAll("li[data-id]")) {
-    li.addEventListener("click", () => {
-      selectedFilamentId = parseInt(li.dataset.id, 10);
-      for (const x of filamentList.querySelectorAll("li")) x.classList.toggle("selected", x === li);
+    const id = parseInt(li.dataset.id, 10);
+    const check = li.querySelector(".filament-check");
+    const toggle = (on) => {
+      if (on) selectedFilamentIds.add(id); else selectedFilamentIds.delete(id);
+      li.classList.toggle("selected", on);
+      if (check) check.checked = on;
+      updateFilamentCount(rows.length);
       refreshGenEnabled();
+    };
+    li.addEventListener("click", (e) => {
+      // A direct checkbox click already flips it; honour its new state.
+      if (e.target === check) { toggle(check.checked); return; }
+      toggle(!selectedFilamentIds.has(id));
     });
   }
 }
@@ -173,27 +248,32 @@ if (filamentSearch) {
 if (genFilamentProcess) {
   genFilamentProcess.addEventListener("click", async () => {
     const p = currentPrinter();
-    if (!p)                       { filamentStatus.textContent = tr("filament_pick_printer"); return; }
-    if (selectedFilamentId == null) { filamentStatus.textContent = tr("filament_pick_one"); return; }
+    if (!p)                         { filamentStatus.textContent = tr("filament_pick_printer"); return; }
+    if (selectedFilamentIds.size === 0) { filamentStatus.textContent = tr("filament_pick_one"); return; }
+    const sl = slicerArgs();
+    if (sl.slicer === "custom" && !sl.customDir) { filamentStatus.textContent = tr("slicer_pick_folder"); return; }
     genFilamentProcess.disabled = true;
     filamentStatus.textContent = tr("filament_working");
     filamentResult.style.display = "none";
     try {
       const r = await invoke("generate_filament_and_process", {
-        materialId: selectedFilamentId,
+        materialIds: [...selectedFilamentIds],
         vendor: p.vendor,
         model: p.model,
         nozzle: p.nozzle,
         allNozzles: p.all,
+        slicer: sl.slicer,
+        customDir: sl.customDir,
       });
       const printers = (r.printers || []).join(", ");
+      const names = (r.filamentNames || []).map(n => `<code>${escapeHtml(n)}</code>`).join("<br/>");
       filamentResult.style.display = "block";
       filamentResult.innerHTML =
         `<h2 style="margin-top:0;">${escapeHtml(tr("filament_result_for", { printer: printers }))}</h2>`
-        + `<div class="field"><span>${escapeHtml(tr("filament_result_filament"))}</span><span><code>${escapeHtml(r.filamentName)}</code></span></div>`
+        + `<div class="field"><span>${escapeHtml(tr("filament_result_filament"))} (${r.filamentCount})</span><span>${names}</span></div>`
         + `<div class="field"><span>${escapeHtml(tr("filament_result_process"))}</span><span><strong>${r.processCount}</strong></span></div>`
         + `<div class="sub" style="margin-top:8px;"><code>${escapeHtml(r.processDir)}</code></div>`;
-      filamentStatus.textContent = tr("open_orca");
+      filamentStatus.textContent = tr("open_slicer");
     } catch (e) {
       filamentResult.style.display = "block";
       filamentResult.textContent = String(e);
@@ -207,10 +287,10 @@ if (genFilamentProcess) {
 
 // ============================================================
 // Process library tab — the 7 project-type process profiles for the printer
-// chosen in the global selector, or the full Snapmaker U1 set (28 profiles).
+// chosen in the global selector (the nozzle selector's "all nozzles" option
+// covers generating the full set). Written into the chosen slicer.
 // ============================================================
 const genForPrinter = document.getElementById("genForPrinter");
-const genLibraryBtn = document.getElementById("genLibraryBtn");
 const libraryStatus = document.getElementById("libraryStatus");
 const libraryResult = document.getElementById("libraryResult");
 
@@ -223,12 +303,15 @@ if (genForPrinter) {
   genForPrinter.addEventListener("click", async () => {
     const p = currentPrinter();
     if (!p) { libraryStatus.textContent = tr("filament_pick_printer"); return; }
+    const sl = slicerArgs();
+    if (sl.slicer === "custom" && !sl.customDir) { libraryStatus.textContent = tr("slicer_pick_folder"); return; }
     genForPrinter.disabled = true;
     libraryStatus.textContent = tr("library_working");
     libraryResult.style.display = "none";
     try {
       const r = await invoke("generate_process_library_for", {
         vendor: p.vendor, model: p.model, nozzle: p.nozzle, allNozzles: p.all,
+        slicer: sl.slicer, customDir: sl.customDir,
       });
       renderLibraryResult(r);
     } catch (e) {
@@ -238,23 +321,6 @@ if (genForPrinter) {
       libraryStatus.textContent = "";
       genForPrinter.disabled = false;
       refreshGenEnabled();
-    }
-  });
-}
-
-if (genLibraryBtn) {
-  genLibraryBtn.addEventListener("click", async () => {
-    genLibraryBtn.disabled = true;
-    libraryStatus.textContent = tr("library_working");
-    libraryResult.style.display = "none";
-    try {
-      renderLibraryResult(await invoke("generate_process_library"));
-    } catch (e) {
-      libraryResult.style.display = "block";
-      libraryResult.textContent = `${tr("library_fail")}: ${e}`;
-    } finally {
-      libraryStatus.textContent = "";
-      genLibraryBtn.disabled = false;
     }
   });
 }
@@ -304,12 +370,27 @@ if (runBtn) {
 
 async function importPdfAndShow(path, online, resultEl, statusEl, logPanelEl, logElEl, runButton) {
   if (!path) return;
+  const sl = slicerArgs();
+  if (sl.slicer === "custom" && !sl.customDir) { statusEl.textContent = tr("slicer_pick_folder"); return; }
+  // The single-PDF flow targets the printer chosen in the global selector when
+  // one is set (so it generates the same 7 process); otherwise the backend
+  // falls back to the Snapmaker U1.
+  const p = currentPrinter();
   if (runButton) runButton.disabled = true;
   statusEl.textContent = tr("status_working");
   resultEl.style.display = "none";
   if (logPanelEl) logPanelEl.style.display = "none";
   try {
-    const r = await invoke("import_pdf", { req: { pdfPath: path, fetchOnline: online } });
+    const r = await invoke("import_pdf", { req: {
+      pdfPath: path,
+      fetchOnline: online,
+      slicer: sl.slicer,
+      customDir: sl.customDir,
+      vendor: p ? p.vendor : null,
+      model: p ? p.model : null,
+      nozzle: p ? p.nozzle : null,
+      allNozzles: p ? p.all : false,
+    } });
     renderResult(r, resultEl, statusEl, logPanelEl, logElEl);
   } catch (e) {
     statusEl.textContent = `${tr("err_picker")}: ${e}`;
@@ -345,7 +426,7 @@ function renderResult(r, resultEl, statusEl, logPanelEl, logElEl) {
     logElEl.innerHTML = r.log.map(l => `<div>${escapeHtml(l)}</div>`).join("");
     logPanelEl.style.display = "block";
   }
-  statusEl.textContent = r.profile_path ? tr("open_orca") : tr("status_done");
+  statusEl.textContent = r.profile_path ? tr("open_slicer") : tr("status_done");
 }
 
 // ============================================================

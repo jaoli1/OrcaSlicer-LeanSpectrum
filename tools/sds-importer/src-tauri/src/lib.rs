@@ -19,6 +19,7 @@ mod polymer;
 mod profile;
 mod project_process;
 mod sds;
+mod slicer;
 mod tds;
 mod text_utils;
 mod update;
@@ -26,6 +27,7 @@ mod update;
 pub use crawler::{CatalogEntry, CrawlResult, DocType};
 pub use polymer::Polymer;
 pub use profile::{FilamentProfile, RecommendedProcess};
+pub use slicer::Slicer;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -103,13 +105,37 @@ pub struct ExtractedFilament {
 pub struct ImportRequest {
     pub pdf_path: String,
     pub fetch_online: bool,
+    /// v0.3.0 — destination slicer (orca|bambu|creality|snapmaker|custom) and,
+    /// for `custom`, the absolute output folder. The selected printer (vendor /
+    /// model / nozzle) drives both the filament parent and the 7 project-type
+    /// process profiles, so the single-PDF flow is consistent with the one-click
+    /// flow. All optional so older callers / the batch path still deserialize.
+    #[serde(default)]
+    pub slicer: Option<String>,
+    #[serde(default)]
+    pub custom_dir: Option<String>,
+    #[serde(default)]
+    pub vendor: Option<String>,
+    #[serde(default)]
+    pub model: Option<String>,
+    #[serde(default)]
+    pub nozzle: Option<f64>,
+    #[serde(default)]
+    pub all_nozzles: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportResult {
     pub extracted: ExtractedFilament,
     pub profile_path: Option<String>,
     pub recommended_process: Option<RecommendedProcess>,
+    /// v0.3.0 — the single-PDF flow now also writes the shared 7 project-type
+    /// process profiles (like the one-click flow); these surface the count + dir.
+    #[serde(default)]
+    pub process_count: usize,
+    #[serde(default)]
+    pub process_dir: Option<String>,
     pub log: Vec<String>,
 }
 
@@ -209,11 +235,91 @@ fn import_pdf_impl(req: ImportRequest) -> std::result::Result<ImportResult, Erro
         profile::estimate_missing_temperatures(&mut extracted, &mut log);
     }
 
-    let (profile_path, recommended) = profile::build_and_save(&extracted, &mut log)?;
+    let polymer = extracted.polymer.unwrap_or(Polymer::Other);
+
+    // Resolve the destination slicer. Default to Snapmaker_Orca when the caller
+    // sent nothing (older frontends / the batch path), preserving the previous
+    // behaviour of targeting the U1.
+    let slicer = Slicer::parse(
+        req.slicer.as_deref().unwrap_or("snapmaker"),
+        req.custom_dir.as_deref(),
+    )?;
+
+    // Resolve the chosen printer target(s). When the caller named a printer we
+    // generate the filament parent + the 7 project-type process for it; without
+    // one we fall back to the Snapmaker U1 (the historical single-PDF target).
+    let specs: Vec<project_process::PrinterSpec> = match (&req.vendor, &req.model) {
+        (Some(v), Some(m)) if !v.is_empty() && !m.is_empty() => {
+            resolve_specs(v, m, req.nozzle, req.all_nozzles)?
+        }
+        _ => vec![catalog::resolve("Snapmaker", "Snapmaker U1", Some(0.4)).unwrap_or(
+            project_process::PrinterSpec {
+                printer_name: "Snapmaker U1 (0.4 nozzle)".to_string(),
+                base_process: "0.20 Standard @Snapmaker U1 (0.4 nozzle)".to_string(),
+                nozzle: 0.4,
+                max_layer_height: 0.30,
+            },
+        )],
+    };
+    let mut printers: Vec<String> = Vec::new();
+    for s in &specs {
+        if !printers.contains(&s.printer_name) {
+            printers.push(s.printer_name.clone());
+        }
+    }
+    let is_u1 = printers.iter().any(|p| p.contains("Snapmaker U1"));
+
+    // Try to resolve the slicer output dir; on failure (slicer never opened) we
+    // fall back to writing next to the source PDF so the user still gets files.
+    let (filament_dir, process_dir, dir_note): (PathBuf, PathBuf, Option<String>) =
+        match slicer::resolve_output_dir(&slicer) {
+            Some(base) => (base.join("filament"), base.join("process"), None),
+            None => {
+                let fallback = path
+                    .parent()
+                    .map(|p| p.to_path_buf())
+                    .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+                (
+                    fallback.clone(),
+                    fallback,
+                    Some(format!(
+                        "{} profile folder not found; saving the profiles next to the source PDF instead.",
+                        slicer.display_name()
+                    )),
+                )
+            }
+        };
+    if let Some(note) = dir_note {
+        log.push(note);
+    }
+
+    // 1) Filament profile (same builder as the one-click flow → consistent name
+    //    and parent selection).
+    let (fname, fval) =
+        profile::build_filament_json_for(&extracted, polymer, &printers, is_u1, &mut log);
+    std::fs::create_dir_all(&filament_dir)?;
+    let fpath = profile::write_unique_json(&filament_dir, &fname, &fval)?;
+    log.push(format!("Saved filament profile to {}", fpath.display()));
+
+    // 2) The shared 7 project-type process profiles for the chosen printer — the
+    //    old per-filament "Scarf" companion is gone (v0.3.0).
+    std::fs::create_dir_all(&process_dir)?;
+    let mut proc_count = 0usize;
+    for (name, value) in project_process::build_library_for(&specs) {
+        profile::write_unique_json(&process_dir, &name, &value)?;
+        proc_count += 1;
+    }
+    log.push(format!(
+        "Saved {proc_count} project-type process profiles across {} printer variant(s).",
+        specs.len()
+    ));
+
     Ok(ImportResult {
         extracted,
-        profile_path: profile_path.map(|p| p.display().to_string()),
-        recommended_process: recommended,
+        profile_path: Some(fpath.display().to_string()),
+        recommended_process: None,
+        process_count: proc_count,
+        process_dir: Some(process_dir.display().to_string()),
         log,
     })
 }
@@ -355,6 +461,15 @@ fn import_from_urls_impl(req: BatchImportRequest) -> std::result::Result<BatchIm
                 let sub = ImportRequest {
                     pdf_path: path.display().to_string(),
                     fetch_online: req.fetch_online,
+                    // Batch path is no longer wired to the UI (the Catalogue tab
+                    // is removed). Default to the Snapmaker_Orca / U1 target so it
+                    // still compiles and produces a filament + the 7 process.
+                    slicer: None,
+                    custom_dir: None,
+                    vendor: None,
+                    model: None,
+                    nozzle: None,
+                    all_nozzles: false,
                 };
                 // Call the panic-safe wrapper so one bad PDF in the batch
                 // doesn't take down the whole batch.
@@ -383,6 +498,18 @@ fn pick_pdf(app: tauri::AppHandle) -> std::result::Result<Option<String>, Error>
     Ok(path.map(|p| p.display().to_string()))
 }
 
+/// v0.3.0 — pick a destination folder for the "custom" slicer option.
+#[tauri::command]
+fn pick_folder(app: tauri::AppHandle) -> std::result::Result<Option<String>, Error> {
+    use tauri_plugin_dialog::DialogExt;
+    let (tx, rx) = std::sync::mpsc::channel();
+    app.dialog().file().pick_folder(move |f| {
+        let _ = tx.send(f.and_then(|p| p.into_path().ok()));
+    });
+    let path = rx.recv().map_err(|e| Error::Other(e.to_string()))?;
+    Ok(path.map(|p| p.display().to_string()))
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ProcessLibraryResult {
@@ -396,13 +523,13 @@ struct ProcessLibraryResult {
 /// folder so they appear in the slicer's Process dropdown. One shared set; the
 /// per-filament tuning stays on the filament profile.
 #[tauri::command]
-fn generate_process_library() -> std::result::Result<ProcessLibraryResult, Error> {
-    run_command(|| {
-        let user = profile::snapmaker_orca_user_dir().ok_or_else(|| {
-            Error::Profile(
-                "Snapmaker_Orca user directory not found — open OptimusOrca once so it creates your profile folder, then retry.".into(),
-            )
-        })?;
+fn generate_process_library(
+    slicer: Option<String>,
+    custom_dir: Option<String>,
+) -> std::result::Result<ProcessLibraryResult, Error> {
+    run_command(move || {
+        let sl = slicer::Slicer::parse(slicer.as_deref().unwrap_or("snapmaker"), custom_dir.as_deref())?;
+        let user = slicer::resolve_output_dir_or_err(&sl)?;
         let dir = user.join("process");
         std::fs::create_dir_all(&dir)?;
         let mut names = Vec::new();
@@ -472,14 +599,13 @@ fn generate_process_library_for(
     model: String,
     nozzle: Option<f64>,
     all_nozzles: bool,
+    slicer: Option<String>,
+    custom_dir: Option<String>,
 ) -> std::result::Result<ProcessLibraryResult, Error> {
     run_command(move || {
         let specs = resolve_specs(&vendor, &model, nozzle, all_nozzles)?;
-        let user = profile::snapmaker_orca_user_dir().ok_or_else(|| {
-            Error::Profile(
-                "Snapmaker_Orca user directory not found — open the slicer once so it creates your profile folder, then retry.".into(),
-            )
-        })?;
+        let sl = slicer::Slicer::parse(slicer.as_deref().unwrap_or("snapmaker"), custom_dir.as_deref())?;
+        let user = slicer::resolve_output_dir_or_err(&sl)?;
         let dir = user.join("process");
         std::fs::create_dir_all(&dir)?;
         let mut names = Vec::new();
@@ -510,8 +636,9 @@ fn get_filament(id: i64) -> std::result::Result<library::FilamentDetail, Error> 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CombinedResult {
-    filament_name: String,
-    filament_path: String,
+    /// v0.3.0 — one filament profile per selected material (multi-select).
+    filament_names: Vec<String>,
+    filament_count: usize,
     process_count: usize,
     process_dir: String,
     process_names: Vec<String>,
@@ -519,20 +646,28 @@ struct CombinedResult {
     log: Vec<String>,
 }
 
-/// The one-click flow: from a chosen DATABASE material + a chosen printer
-/// (vendor/model + one nozzle, or every nozzle of the machine via `all_nozzles`),
-/// generate the filament profile AND the 7 project-type process profiles in a
-/// single action. The filament-specific tuning stays on the filament profile;
-/// the shared process set carries the fork features + cornering/resonance.
+/// The one-click flow: from one OR MORE chosen DATABASE materials + a chosen
+/// printer (vendor/model + one nozzle, or every nozzle of the machine via
+/// `all_nozzles`), generate ONE filament profile per material AND the shared 7
+/// project-type process profiles ONCE (they depend only on the printer/nozzle,
+/// not the filament). Multi-brand selection is allowed. The destination is the
+/// chosen slicer's user directory (v0.3.0). The filament-specific tuning stays
+/// on the filament profile; the shared process set carries the fork features +
+/// cornering/resonance.
 #[tauri::command]
 fn generate_filament_and_process(
-    material_id: i64,
+    material_ids: Vec<i64>,
     vendor: String,
     model: String,
     nozzle: Option<f64>,
     all_nozzles: bool,
+    slicer: Option<String>,
+    custom_dir: Option<String>,
 ) -> std::result::Result<CombinedResult, Error> {
     run_command(move || {
+        if material_ids.is_empty() {
+            return Err(Error::Profile("Select at least one filament.".into()));
+        }
         // 1. Resolve the print target(s) from the machine catalogue.
         let specs = resolve_specs(&vendor, &model, nozzle, all_nozzles)?;
         // Distinct printer preset names → the filament's compatible_printers.
@@ -544,24 +679,26 @@ fn generate_filament_and_process(
         }
         let is_u1 = printers.iter().any(|p| p.contains("Snapmaker U1"));
 
-        // 2. Build the filament profile from the database material.
-        let mut log = Vec::new();
-        let ef = library::material_to_extracted(material_id)?;
-        let polymer = ef.polymer.unwrap_or(Polymer::Other);
-        let (fname, fval) =
-            profile::build_filament_json_for(&ef, polymer, &printers, is_u1, &mut log);
-
-        // 3. Write into the slicer's user dir: 1 filament + the 7×N process.
-        let user = profile::snapmaker_orca_user_dir().ok_or_else(|| {
-            Error::Profile(
-                "Snapmaker_Orca / OptimusOrca user directory not found — open the slicer once so it creates your profile folder, then retry.".into(),
-            )
-        })?;
+        // 2. Resolve the destination slicer user dir.
+        let sl = slicer::Slicer::parse(slicer.as_deref().unwrap_or("snapmaker"), custom_dir.as_deref())?;
+        let user = slicer::resolve_output_dir_or_err(&sl)?;
         let fdir = user.join("filament");
         std::fs::create_dir_all(&fdir)?;
-        let fpath = profile::write_unique_json(&fdir, &fname, &fval)?;
-        log.push(format!("Saved filament profile to {}", fpath.display()));
 
+        // 3. One filament profile per selected material (multi-brand allowed).
+        let mut log = Vec::new();
+        let mut filament_names: Vec<String> = Vec::new();
+        for id in &material_ids {
+            let ef = library::material_to_extracted(*id)?;
+            let polymer = ef.polymer.unwrap_or(Polymer::Other);
+            let (fname, fval) =
+                profile::build_filament_json_for(&ef, polymer, &printers, is_u1, &mut log);
+            let fpath = profile::write_unique_json(&fdir, &fname, &fval)?;
+            log.push(format!("Saved filament profile to {}", fpath.display()));
+            filament_names.push(fname);
+        }
+
+        // 4. The shared 7×N project-type process set — built ONCE (printer-only).
         let pdir = user.join("process");
         std::fs::create_dir_all(&pdir)?;
         let mut names = Vec::new();
@@ -570,14 +707,15 @@ fn generate_filament_and_process(
             names.push(name);
         }
         log.push(format!(
-            "Saved {} process profiles across {} printer variant(s).",
+            "Saved {} filament profile(s) + {} process profiles across {} printer variant(s).",
+            filament_names.len(),
             names.len(),
             specs.len()
         ));
 
         Ok(CombinedResult {
-            filament_name: fname,
-            filament_path: fpath.display().to_string(),
+            filament_count: filament_names.len(),
+            filament_names,
             process_count: names.len(),
             process_dir: pdir.display().to_string(),
             process_names: names,
@@ -691,7 +829,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
-            import_pdf, pick_pdf, crawl_catalog, import_from_urls,
+            import_pdf, pick_pdf, pick_folder, crawl_catalog, import_from_urls,
             corpus_default_path, scan_corpus, generate_process_library,
             check_updates, open_external,
             list_printer_vendors, list_printer_models, list_printer_nozzles,

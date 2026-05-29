@@ -1,6 +1,6 @@
 [package]
 name        = "custom-filament-profile-creator"
-version     = "0.7.2"
+version     = "0.8.0"
 edition     = "2021"
 description = "Optimisateur de filament et de profils d'impression by Maison Drabiec — profils filament + process Snapmaker_Orca optimisés depuis une fiche SDS/TDS"
 license     = "LicenseRef-Proprietary"   # personal & private use only — see ../LICENSE.md (the slicer stays AGPL-3.0)
@@ -52,6 +52,13 @@ pdfium-render = { version = "0.8", features = ["sync"], optional = true }
 # Optional HTTP for manufacturer URL fetch.
 reqwest      = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 scraper      = "0.20"
+
+# Manifest signing (v0.8.0): the client verifies every update manifest with an
+# embedded ed25519 public key — a server compromise alone can no longer push a
+# rogue download_url to clients. `base64` decodes the signature carried in the
+# manifest's `signature` field.
+ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
+base64        = "0.22"
 
 [features]
 default = ["pdfium"]

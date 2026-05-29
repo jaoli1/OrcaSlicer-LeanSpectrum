@@ -81,18 +81,29 @@ jobs:
           - os: macos-14
             artifact-name: custom-filament-profile-creator_macos-arm64
             bundle-glob: tools/sds-importer/src-tauri/target/release/bundle/dmg/*.dmg
-          # macos-13 (Intel) intentionally dropped — GitHub macos-13 runners
-          # are persistently saturated and queue 2h+, blocking release
-          # publication. arm64 covers all Apple Silicon (M1/M2/M3/M4), the
-          # vast majority of macOS users since 2020. Intel users can either
-          # use Rosetta to run the arm64 DMG (Tauri 2 is universal-binary
-          # friendly under Rosetta) or rebuild from source.
+          # macos-13 (Intel) is BEST-EFFORT — GitHub macos-13 runners have a
+          # history of saturation (2h+ queues that blocked publication and cost
+          # us v0.6.0). We still ship a native Intel DMG when the runner is
+          # available; `continue-on-error: true` + a tight `timeout-minutes`
+          # mean an unavailable runner is dropped silently, so the release
+          # still publishes for Linux / Windows / Apple Silicon on time.
+          # Intel users who don't see a DMG can fall back to Rosetta on the
+          # arm64 DMG (Tauri 2 runs fine under Rosetta).
+          - os: macos-13
+            artifact-name: custom-filament-profile-creator_macos-x86_64
+            bundle-glob: tools/sds-importer/src-tauri/target/release/bundle/dmg/*.dmg
+            continue-on-error: true
+            timeout-minutes: 60
           - os: windows-latest
             artifact-name: custom-filament-profile-creator_windows-amd64
             bundle-glob: |
               tools/sds-importer/src-tauri/target/release/bundle/msi/*.msi
               tools/sds-importer/src-tauri/target/release/bundle/nsis/*.exe
     runs-on: ${{ matrix.os }}
+    # Per-matrix best-effort flags (currently set only for macos-13). Default
+    # to false so other entries keep their normal pass/fail semantics.
+    continue-on-error: ${{ matrix.continue-on-error || false }}
+    timeout-minutes: ${{ matrix.timeout-minutes || 360 }}
     steps:
       - uses: actions/checkout@v4
 

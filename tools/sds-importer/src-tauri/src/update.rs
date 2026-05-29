@@ -11,16 +11,37 @@
 //!
 //! Manifest shape (served at MANIFEST_URL):
 //! {
-//!   "app_version": "0.1.17",
-//!   "db_version":  "2026-05-28",        // ISO date — lexical compare is correct
+//!   "app_version": "0.8.0",
+//!   "db_version":  "2026-05-29",        // ISO date — lexical compare is correct
 //!   "db_url":      "https://.../filaments.sqlite",
 //!   "download_url":"https://.../optimisateur-md-latest.zip",
-//!   "notes":       "optional changelog blurb"
+//!   "db_sha256":   "hex sha-256 of the DB file (informational in v0.8.0)",
+//!   "notes":       "optional changelog blurb",
+//!   "signature":   "base64(ed25519 sig of SIGNED_PAYLOAD_v1)"
 //! }
+//!
+//! Signed-payload bytes (v0.8.0) — must match `sign_manifest.py` exactly:
+//!
+//!   SIGNED_PAYLOAD_v1 =
+//!       b"v1"
+//!       \x00 utf8(app_version)
+//!       \x00 utf8(db_version)
+//!       \x00 utf8(db_url)
+//!       \x00 utf8(download_url)
+//!       \x00 utf8(db_sha256)
+//!       \x00 utf8(notes)
+//!
+//! Strict policy: from v0.8.0, an absent or invalid signature is treated as a
+//! check failure (the update channel surfaces the error and does NOT fall back
+//! to the unsigned data). Older clients (0.7.x) ignore the signature field
+//! entirely — the schema is backward-compatible.
 
 use std::path::PathBuf;
 use std::time::Duration;
 
+use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
+use base64::Engine as _;
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
@@ -34,6 +55,27 @@ const TRUSTED_PREFIX: &str = "https://slicer.maisondrabiec.fr/";
 pub fn is_trusted(url: &str) -> bool {
     url.starts_with(TRUSTED_PREFIX)
 }
+
+/// Maison Drabiec's manifest-signing ed25519 public key (32 bytes, raw).
+///
+/// Generated locally by `scripts/generate_signing_keypair.py` — the matching
+/// private key lives ONLY on the release machine at
+/// `%USERPROFILE%\.maison_drabiec\manifest_signing.ed25519` and is NEVER
+/// committed, NEVER copied to the IONOS server, NEVER printed in logs.
+///
+/// Rotating this key requires shipping a new app version with the new bytes
+/// embedded — older clients keep verifying against the previous key. Don't
+/// rotate casually.
+const SIGNING_PUBLIC_KEY: [u8; 32] = [
+    0x54, 0x7b, 0xb8, 0xc4, 0x6c, 0x33, 0x7f, 0xa7,
+    0x5c, 0x87, 0xf0, 0xfc, 0x66, 0x8c, 0x31, 0x84,
+    0xea, 0x67, 0x6b, 0x58, 0x91, 0x38, 0xc3, 0xaa,
+    0x4b, 0xeb, 0xf0, 0xf3, 0x9d, 0x85, 0x7b, 0x8a,
+];
+
+/// Format tag for the signed-payload bytes. Bump if the field set / order ever
+/// changes, and ship a client that accepts both old and new during the cut-over.
+const SIGNED_PAYLOAD_VERSION: &[u8] = b"v1";
 
 /// True only for a strict "YYYY-MM-DD" string (the db_version format). A
 /// malformed local marker must NOT win a lexical compare and silently block
@@ -56,6 +98,69 @@ struct Manifest {
     download_url: String,
     #[serde(default)]
     notes: String,
+    /// SHA-256 of the served filaments.sqlite (hex). Signed but not yet verified
+    /// against the downloaded bytes in v0.8.0 — a future client can add that
+    /// check without changing the manifest format.
+    #[serde(default)]
+    db_sha256: String,
+    /// base64(ed25519 signature over SIGNED_PAYLOAD_v1). Absent on legacy
+    /// manifests; required from v0.8.0 onward.
+    #[serde(default)]
+    signature: String,
+}
+
+/// Build the deterministic byte string the signer signed. Must match
+/// `build_signed_payload` in `scripts/sign_manifest.py` exactly — concat with
+/// NUL separators avoids every canonical-JSON edge case (whitespace, key order,
+/// unicode escapes).
+fn build_signed_payload(m: &Manifest) -> Vec<u8> {
+    let fields: [&str; 6] = [
+        &m.app_version,
+        &m.db_version,
+        &m.db_url,
+        &m.download_url,
+        &m.db_sha256,
+        &m.notes,
+    ];
+    // Pre-size: tag + (1 NUL + field bytes) × N
+    let cap = SIGNED_PAYLOAD_VERSION.len()
+        + fields.iter().map(|f| 1 + f.len()).sum::<usize>();
+    let mut out = Vec::with_capacity(cap);
+    out.extend_from_slice(SIGNED_PAYLOAD_VERSION);
+    for f in fields {
+        out.push(0);
+        out.extend_from_slice(f.as_bytes());
+    }
+    out
+}
+
+/// Strict verification: refuse the manifest unless its `signature` field is a
+/// valid ed25519 signature over the canonical SIGNED_PAYLOAD_v1 bytes, made by
+/// the holder of the matching private key (embedded `SIGNING_PUBLIC_KEY`).
+fn verify_signature(m: &Manifest) -> Result<()> {
+    if m.signature.is_empty() {
+        return Err(Error::Fetch(
+            "manifest is not signed (signature field missing)".into(),
+        ));
+    }
+    let sig_bytes = BASE64_STANDARD
+        .decode(m.signature.as_bytes())
+        .map_err(|e| Error::Fetch(format!("manifest signature is not valid base64: {e}")))?;
+    let sig_arr: [u8; 64] = sig_bytes
+        .as_slice()
+        .try_into()
+        .map_err(|_| Error::Fetch(format!(
+            "manifest signature must be 64 bytes (got {})", sig_bytes.len()
+        )))?;
+    let sig = Signature::from_bytes(&sig_arr);
+    // SIGNING_PUBLIC_KEY is hard-coded — only fails if the bytes are not a
+    // valid ed25519 point, which is a compile-time bug, not a runtime one.
+    let pk = VerifyingKey::from_bytes(&SIGNING_PUBLIC_KEY).map_err(|e| {
+        Error::Fetch(format!("embedded public key is not a valid ed25519 point: {e}"))
+    })?;
+    let payload = build_signed_payload(m);
+    pk.verify(&payload, &sig)
+        .map_err(|_| Error::Fetch("manifest signature does NOT verify against the embedded public key".into()))
 }
 
 #[derive(Debug, Serialize, Default)]
@@ -114,8 +219,13 @@ fn fetch_manifest() -> Result<Manifest> {
         return Err(Error::Fetch(format!("manifest HTTP {}", resp.status())));
     }
     let body = resp.text().map_err(|e| Error::Fetch(e.to_string()))?;
-    serde_json::from_str::<Manifest>(&body)
-        .map_err(|e| Error::Fetch(format!("manifest parse: {e}")))
+    let m: Manifest = serde_json::from_str(&body)
+        .map_err(|e| Error::Fetch(format!("manifest parse: {e}")))?;
+    // Strict: an absent or invalid signature is a hard failure. The check
+    // surfaces it to the caller (which puts it on UpdateStatus.error) — we
+    // never silently fall through to the unsigned data.
+    verify_signature(&m)?;
+    Ok(m)
 }
 
 /// True if dotted-numeric `candidate` is strictly newer than `current`
@@ -213,7 +323,8 @@ pub fn check(download_db_if_newer: bool) -> Result<UpdateStatus> {
 
 #[cfg(test)]
 mod tests {
-    use super::semver_newer;
+    use super::*;
+
     #[test]
     fn semver_ordering() {
         assert!(semver_newer("0.1.16", "0.1.17"));
@@ -222,5 +333,84 @@ mod tests {
         assert!(!semver_newer("0.1.17", "0.1.17"));
         assert!(!semver_newer("0.1.17", "0.1.16"));
         assert!(!semver_newer("1.0.0", "0.9.9"));
+    }
+
+    /// Build the exact fixture that scripts/sign_manifest.py signed (the test
+    /// fixture lives in this test module — there is no on-disk artefact).
+    fn fixture() -> Manifest {
+        Manifest {
+            app_version: "0.8.0-test".into(),
+            db_version: "2026-05-29".into(),
+            db_url: "https://slicer.maisondrabiec.fr/o-8e1ff3fc4498/filaments.sqlite".into(),
+            download_url: "https://slicer.maisondrabiec.fr/o-8e1ff3fc4498/optimisateur-md-latest.zip".into(),
+            notes: "test fixture — vérifie que la chaîne signature ↔ vérification est end-to-end (é, €, em-dash)".into(),
+            db_sha256: String::new(),
+            signature: String::new(),
+        }
+    }
+
+    #[test]
+    fn signed_payload_is_deterministic_and_byte_for_byte() {
+        // The byte-string format MUST match scripts/sign_manifest.py exactly,
+        // or signatures produced by the deploy script won't verify here. Lock
+        // it down with a literal byte expectation (NULs included).
+        let m = fixture();
+        let got = build_signed_payload(&m);
+        let mut want = Vec::new();
+        want.extend_from_slice(b"v1");
+        want.push(0); want.extend_from_slice(b"0.8.0-test");
+        want.push(0); want.extend_from_slice(b"2026-05-29");
+        want.push(0); want.extend_from_slice(b"https://slicer.maisondrabiec.fr/o-8e1ff3fc4498/filaments.sqlite");
+        want.push(0); want.extend_from_slice(b"https://slicer.maisondrabiec.fr/o-8e1ff3fc4498/optimisateur-md-latest.zip");
+        want.push(0); // db_sha256 empty
+        want.push(0); want.extend_from_slice(
+            "test fixture — vérifie que la chaîne signature ↔ vérification est end-to-end (é, €, em-dash)"
+                .as_bytes(),
+        );
+        assert_eq!(got, want);
+    }
+
+    /// Signature produced offline by `python scripts/sign_manifest.py` against
+    /// the fixture above, using the production private key whose matching
+    /// public key is hard-coded as `SIGNING_PUBLIC_KEY`. The test proves:
+    ///   1. The embedded public key is the right pair for the deploy private key.
+    ///   2. The Python signer and Rust verifier agree on every byte of the
+    ///      signed payload (UTF-8 of unicode chars, NUL separators, "v1" tag).
+    /// If you ever rotate the signing keypair, regenerate this string.
+    const FIXTURE_SIGNATURE: &str =
+        "GL5LgUHinNhBfjMlfTVJfZCy9+6xFJVeWQlOwkqQD2wmVDUb/R9vyTGTnJaOISYJr+BnpbImsJ6b0kLOStT8Aw==";
+
+    #[test]
+    fn verify_accepts_a_real_signature_from_the_deploy_script() {
+        let mut m = fixture();
+        m.signature = FIXTURE_SIGNATURE.into();
+        verify_signature(&m).expect("signature must verify against the embedded public key");
+    }
+
+    #[test]
+    fn verify_refuses_an_unsigned_manifest() {
+        // Strict policy: an absent signature is a hard failure — the update
+        // channel must not silently fall back to the unsigned data.
+        let m = fixture();
+        let err = verify_signature(&m).unwrap_err().to_string();
+        assert!(err.contains("not signed"), "unexpected error: {err}");
+    }
+
+    #[test]
+    fn verify_refuses_a_tampered_manifest() {
+        // Flip a single byte in any signed field → ed25519 verification fails.
+        let mut m = fixture();
+        m.signature = FIXTURE_SIGNATURE.into();
+        m.notes.push_str(" TAMPERED");
+        let err = verify_signature(&m).unwrap_err().to_string();
+        assert!(err.contains("signature") && err.contains("does NOT verify"),
+            "unexpected error: {err}");
+    }
+
+    #[test]
+    fn verify_refuses_garbage_base64() {
+        let mut m = fixture();
+        m.signature = "not-base-64-!@#$".into();
+        assert!(verify_signature(&m).is_err());
     }
 }

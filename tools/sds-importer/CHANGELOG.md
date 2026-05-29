@@ -11,6 +11,28 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.8.0] — Manifeste signé (ed25519) + retour du .dmg Intel macOS
+
+- **Manifeste de mise à jour signé.** Chaque manifeste servi par
+  `slicer.maisondrabiec.fr` porte désormais une **signature ed25519** ; l'app
+  embarque la clé publique correspondante et **refuse strictement** tout
+  manifeste sans signature ou dont la signature ne vérifie pas. Conséquence :
+  même si quelqu'un compromet le serveur, il ne peut pas pousser un binaire
+  malveillant aux clients ≥ 0.8.0 — la clé privée vit uniquement sur ma
+  machine, jamais sur le serveur, jamais dans le dépôt.
+  - Compat 0.7.x : le manifeste reste plat (`app_version`, `db_url`…) avec un
+    champ `signature` en plus ; les clients 0.7.x ignorent la signature, voient
+    `app_version: 0.8.0` et proposent la mise à jour normalement.
+  - Schéma signé (NUL-séparé, version `v1`) délibérément non-JSON, pour éviter
+    tous les pièges de canonicalisation entre Python et Rust.
+  - Champ `db_sha256` ajouté (signé), pas encore vérifié côté client en 0.8.0 ;
+    une version future pourra l'utiliser sans changer le format.
+- **Retour du .dmg Intel macOS (macos-13)** en *best-effort* — si le runner
+  GitHub macos-13 est disponible, on publie le DMG x86_64 natif ; s'il est
+  saturé (le problème historique qui avait coûté v0.6.0), il est silencieusement
+  abandonné et la release sort quand même pour les autres plateformes.
+  Les Mac Intel peuvent ainsi avoir un installeur natif sans Rosetta.
+
 ## [0.7.2] — Jerk réel par imprimante + Figurine plus légère
 
 - **Le jerk est plafonné au maximum RÉEL de chaque imprimante, pas à une valeur

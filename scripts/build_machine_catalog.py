@@ -372,6 +372,18 @@ def build_catalog() -> Catalog:
             printer_model = first_scalar(
                 machine_store.resolve(vname, "printer_model"))
 
+            # Cornering jerk ceiling. OrcaSlicer warns ("jerk exceeds machine
+            # maximum") and silently auto-caps when a process jerk exceeds the
+            # machine's machine_max_jerk. Resolve BOTH axes through the inherits
+            # chain and keep the binding (smaller) one, so a generated process
+            # can be clamped to never trip that warning on this printer. A value
+            # of 0 means a junction-deviation machine (classic jerk disabled) —
+            # left as 0, which the app reads as "no classic-jerk ceiling".
+            jerk_x = parse_float(machine_store.resolve(vname, "machine_max_jerk_x"))
+            jerk_y = parse_float(machine_store.resolve(vname, "machine_max_jerk_y"))
+            jerks = [j for j in (jerk_x, jerk_y) if j is not None]
+            max_jerk = min(jerks) if jerks else None
+
             # Link the variant to its model row (create one if the model list
             # omitted it, which happens for a few klipper/community bundles).
             model_key = printer_model or vname
@@ -407,6 +419,7 @@ def build_catalog() -> Catalog:
                 max_layer_height=max_lh,
                 default_process_name=default_proc,
                 machine_profile_path=rel_path,
+                max_jerk=max_jerk,
             )
 
     return cat
@@ -444,7 +457,8 @@ CREATE TABLE machine_variants (
     bed_size             TEXT,
     max_layer_height     REAL,
     default_process_name TEXT,
-    machine_profile_path TEXT
+    machine_profile_path TEXT,
+    max_jerk             REAL
 );
 CREATE TABLE base_processes (
     id           INTEGER PRIMARY KEY,
@@ -473,9 +487,10 @@ def write_sqlite(cat: Catalog, path: str) -> None:
         conn.executemany(
             "INSERT INTO machine_variants(id, machine_id, nozzle_diameter, "
             "bed_size, max_layer_height, default_process_name, "
-            "machine_profile_path) VALUES (:id, :machine_id, :nozzle_diameter, "
-            ":bed_size, :max_layer_height, :default_process_name, "
-            ":machine_profile_path)", cat.variants)
+            "machine_profile_path, max_jerk) VALUES (:id, :machine_id, "
+            ":nozzle_diameter, :bed_size, :max_layer_height, "
+            ":default_process_name, :machine_profile_path, :max_jerk)",
+            cat.variants)
         conn.executemany(
             "INSERT INTO base_processes(id, vendor_id, name, sub_path, "
             "layer_height) VALUES (:id, :vendor_id, :name, :sub_path, "
@@ -545,11 +560,13 @@ def print_summary(cat: Catalog) -> None:
     res_bed = sum(1 for v in cat.variants if v["bed_size"])
     res_lh = sum(1 for v in cat.variants if v["max_layer_height"] is not None)
     res_proc = sum(1 for v in cat.variants if v["default_process_name"])
+    res_jerk = sum(1 for v in cat.variants if v.get("max_jerk") is not None)
     print("\n=== Variant field resolution ===")
     print(f"  nozzle_diameter      : {res_nozzle}/{n} ({100*res_nozzle//n}%)")
     print(f"  bed_size             : {res_bed}/{n} ({100*res_bed//n}%)")
     print(f"  max_layer_height     : {res_lh}/{n} ({100*res_lh//n}%)")
     print(f"  default_process_name : {res_proc}/{n} ({100*res_proc//n}%)")
+    print(f"  max_jerk             : {res_jerk}/{n} ({100*res_jerk//n}%)")
     proc_lh = sum(1 for p in cat.processes if p["layer_height"] is not None)
     pn = len(cat.processes) or 1
     print(f"  process layer_height : {proc_lh}/{pn} ({100*proc_lh//pn}%)")

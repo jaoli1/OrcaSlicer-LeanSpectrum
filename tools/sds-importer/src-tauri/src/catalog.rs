@@ -41,6 +41,13 @@ struct Variant {
     max_layer_height: Option<f64>,
     #[serde(default)]
     default_process_name: Option<String>,
+    /// Effective `machine_max_jerk` (mm/s, binding/smaller axis), resolved
+    /// through the profile `inherits` chain by `build_machine_catalog.py`. Used
+    /// to clamp the emitted process jerk so the slicer never warns + auto-caps.
+    /// `0` = junction-deviation machine (no classic-jerk ceiling). `None` only
+    /// for the rare variant the script could not resolve.
+    #[serde(default)]
+    max_jerk: Option<f64>,
 }
 
 static CATALOG: Lazy<Catalog> =
@@ -138,10 +145,13 @@ pub fn resolve(vendor: &str, model: &str, nozzle: Option<f64>) -> Option<Printer
         // nozzle preset), so the process generator knows whether to emit the
         // purge-tower keys and the UI knows whether to show the AMS checkbox.
         architecture: crate::architecture::classify(model).0,
-        // The catalogue carries no per-machine jerk data, so use the
-        // conservative default (9 mm/s) to clamp emitted jerk. It never warns
-        // and never hurts quality (jerk drives cornering, not throughput).
-        max_jerk: crate::project_process::DEFAULT_MAX_JERK,
+        // The printer's REAL machine_max_jerk (resolved per-model from the
+        // profile tree by build_machine_catalog.py) — so the emitted process
+        // jerk is clamped to THIS machine's ceiling, not a blanket value. A
+        // Bambu/Snapmaker is 9, a Creality K1 is 12, a RatRig V-Core is 5,
+        // junction-deviation machines are 0 (→ unclamped). Falls back to the
+        // conservative default only for the rare variant the script left null.
+        max_jerk: v.max_jerk.unwrap_or(crate::project_process::DEFAULT_MAX_JERK),
     })
 }
 
@@ -158,7 +168,30 @@ mod tests {
         assert_eq!(spec.base_process, "0.20mm Standard @Afinia H+1(HS)");
         assert_eq!(spec.nozzle, 0.4);
         assert!(spec.max_layer_height > 0.0);
+        // Real per-machine jerk ceiling is resolved from the profile tree:
+        // Afinia H+1(HS) inherits fdm_afinia_common (9 mm/s), which shadows the
+        // vendor's fdm_machine_common (8) — nearest ancestor wins.
+        assert_eq!(spec.max_jerk, 9.0);
         // models + nozzles are populated for a known vendor.
         assert!(!models("Creality").is_empty());
+    }
+
+    #[test]
+    fn resolves_real_per_machine_jerk_ceiling() {
+        use crate::project_process::{build_one_for, ProjectType};
+        // A RatRig-class tool-changer caps jerk far below the U1's 9: the
+        // Raise3D Pro3 sits at 5 mm/s. The clamp must follow the MACHINE, so
+        // every emitted jerk on a generated process is ≤ 5 (no slicer warning).
+        let spec = resolve("Raise3D", "Raise3D Pro3", Some(0.4))
+            .expect("resolve Raise3D Pro3 0.4");
+        assert_eq!(spec.max_jerk, 5.0);
+        for pt in ProjectType::all() {
+            let (name, v) = build_one_for(pt, &spec, false);
+            for k in ["default_jerk", "outer_wall_jerk", "inner_wall_jerk",
+                      "top_surface_jerk", "travel_jerk"] {
+                let j: f64 = v[k].as_str().unwrap().parse().unwrap();
+                assert!(j <= 5.0, "{name}: {k} = {j} exceeds Raise3D Pro3 jerk 5");
+            }
+        }
     }
 }

@@ -11,6 +11,27 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.7.2] — Jerk réel par imprimante + Figurine plus légère
+
+- **Le jerk est plafonné au maximum RÉEL de chaque imprimante, pas à une valeur
+  unique.** La v0.7.1 plafonnait tout le monde à 9 mm/s (la valeur de la
+  Snapmaker U1). Or, en vérifiant **toutes** les imprimantes du catalogue, 9
+  n'est pas universel : beaucoup de machines sont **en dessous** (la base Bambu
+  est à 8, ~150 variantes sont à 5, des Artillery à 7…), d'autres bien
+  **au-dessus** (Creality K1 = 12, certaines CoreXY = 20+). Un plafond fixe à 9
+  laissait donc l'avertissement sur les machines < 9 et bridait inutilement les
+  rapides. Désormais le `machine_max_jerk` **réel** de chaque modèle est résolu
+  hors-ligne depuis l'arbre de profils (en suivant l'héritage, axe contraignant
+  retenu) et embarqué dans le catalogue : chaque profil généré est plafonné au
+  plafond exact de la machine choisie. Résultat : **aucun avertissement de jerk,
+  sur aucune imprimante**, sans rien sacrifier sur les machines rapides. Les
+  machines à *junction deviation* (jerk = 0) ne sont pas plafonnées.
+  - Exemples résolus : Snapmaker U1 = 9, Bambu X1C = 9, Creality K1 = 12,
+    Prusa MK4 = 9, RatRig V-Core / Raise3D Pro3 = 5.
+- **Figurine : remplissage 15 % → 10 %.** Pour une pièce décorative, 10 %
+  suffisent : figurine encore plus légère et plus rapide, sans perte visible de
+  tenue. (La Décoration et la Figurine articulée étaient déjà à 10 %.)
+
 ## [0.7.1] — Jerk plafonné au maximum de l'imprimante (fin de l'avertissement)
 
 - **Plus d'avertissement « le réglage du jerk dépasse le jerk maximum de

@@ -94,7 +94,7 @@ impl ProjectType {
         match self {
             PrototypeRapide  => Ref { layer: 0.28, walls: 1, infill: 8,  pattern: "grid",      spd: (150.0, 200.0, 250.0, 120.0), accel: 10000.0, jerk: 12.0, spiral: false, ironing: false, top: 3, bot: 3 },
             ObjetDuQuotidien => Ref { layer: 0.20, walls: 3, infill: 15, pattern: "grid",      spd: (120.0, 150.0, 200.0, 100.0), accel: 6000.0,  jerk: 9.0,  spiral: false, ironing: false, top: 4, bot: 4 },
-            Figurine         => Ref { layer: 0.12, walls: 3, infill: 15, pattern: "gyroid",    spd: (75.0,  80.0,  100.0, 40.0),  accel: 4500.0,  jerk: 8.0,  spiral: false, ironing: false, top: 4, bot: 4 },
+            Figurine         => Ref { layer: 0.12, walls: 3, infill: 10, pattern: "gyroid",    spd: (75.0,  80.0,  100.0, 40.0),  accel: 4500.0,  jerk: 8.0,  spiral: false, ironing: false, top: 4, bot: 4 },
             // Articulated / print-in-place: NO support (would fuse the joints),
             // NO brim. Moderate 0.16 layer for clean joint clearance, 2 walls,
             // light 10 % infill, moderate speed/accel for crisp small joints.

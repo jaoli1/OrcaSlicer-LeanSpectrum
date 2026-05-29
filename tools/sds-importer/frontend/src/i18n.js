@@ -24,7 +24,7 @@ const messages = {
     ams_label:           "I use an AMS / CFS / MMU (multi-colour)",
     ams_native_mm:       "Multi-nozzle printer (multi-colour native)",
 
-    filament_intro:      "Search the filament database (built from manufacturers' own TDS / SDS sheets), select one OR MORE materials, choose your printer above, then generate one filament profile per material PLUS the shared 7 process profiles in one click.",
+    filament_intro:      "Search the filament database (built from manufacturers' own TDS / SDS sheets), select one OR MORE materials, choose your printer above, then generate one filament profile per material PLUS the shared 8 process profiles in one click.",
     filament_all_brands: "All brands",
     filament_search_ph:  "Search a filament (brand, name, PLA / PETG…)",
     filament_generate:   "Generate filament + process",
@@ -38,7 +38,7 @@ const messages = {
     filament_result_for: "Generated for {printer}",
     filament_result_filament: "Filament profiles",
     filament_result_process:  "process profiles",
-    process_intro:       "Generate the 7 project-type process profiles for the printer selected above (use the \"all nozzles\" option for the full set). Filament-specific tuning stays on the filament profile.",
+    process_intro:       "Generate the 8 project-type process profiles for the printer selected above (use the \"all nozzles\" option for the full set). Filament-specific tuning stays on the filament profile.",
     process_generate_printer: "Generate process for the selected printer",
 
     library_intro:       "Generate ready-to-use process profiles by project type (Prototype, Everyday, Figurine, Vase, Decoration, Toy, Mechanical part) for YOUR printer — pick a brand, model and nozzle below. Each profile is tuned for cornering, resonance and the fork features (scarf seams, filament economy, color mixing); filament-specific tuning stays on the filament profile.",
@@ -129,7 +129,7 @@ const messages = {
     ams_label:           "J'utilise un AMS / CFS / MMU (multi-couleur)",
     ams_native_mm:       "Imprimante multi-buses (multi-couleur natif)",
 
-    filament_intro:      "Recherchez dans la base de filaments (construite depuis les fiches TDS / SDS officielles des fabricants), sélectionnez un OU PLUSIEURS matériaux, choisissez votre imprimante ci-dessus, puis générez un profil filament par matériau ET les 7 profils process partagés en un clic.",
+    filament_intro:      "Recherchez dans la base de filaments (construite depuis les fiches TDS / SDS officielles des fabricants), sélectionnez un OU PLUSIEURS matériaux, choisissez votre imprimante ci-dessus, puis générez un profil filament par matériau ET les 8 profils process partagés en un clic.",
     filament_all_brands: "Toutes les marques",
     filament_search_ph:  "Rechercher un filament (marque, nom, PLA / PETG…)",
     filament_generate:   "Générer filament + process",
@@ -143,7 +143,7 @@ const messages = {
     filament_result_for: "Généré pour {printer}",
     filament_result_filament: "Profils filament",
     filament_result_process:  "profils process",
-    process_intro:       "Génère les 7 profils process par type de projet pour l'imprimante choisie ci-dessus (utilisez l'option « toutes les buses » pour le jeu complet). Le réglage propre au filament reste sur le profil filament.",
+    process_intro:       "Génère les 8 profils process par type de projet pour l'imprimante choisie ci-dessus (utilisez l'option « toutes les buses » pour le jeu complet). Le réglage propre au filament reste sur le profil filament.",
     process_generate_printer: "Générer les process pour l'imprimante choisie",
 
     library_intro:       "Génère des profils process prêts à l'emploi par type de projet (Prototype, Quotidien, Figurine, Vase, Décoration, Jouet, Pièce mécanique) pour TON imprimante — choisis ci-dessous la marque, le modèle et la buse. Chaque profil est calibré pour le cornering, la résonance et les fonctions du fork (coutures scarf, économie de filament, mélange de couleurs) ; le réglage propre au filament reste sur le profil filament.",

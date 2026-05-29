@@ -29,6 +29,11 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
   porte donc plus de réglages de tour inutiles, et un utilisateur AMS obtient
   l'économie de purge adaptée à sa machine.
 
+- **Nouvelle intention « Figurine articulée »** (print-in-place / flexi) :
+  **sans support et sans brim** — les supports souderaient les articulations.
+  Couche 0,16 mm pour des jeux d'articulation nets, 2 parois, remplissage léger
+  (10 %), vitesses/accélération modérées pour des petites articulations propres.
+  La bibliothèque process passe ainsi de 7 à 8 intentions (× nozzles).
 - **Supports Figurine allégés** : seuil abaissé à **30°** (au lieu de 45°). Dans
   OrcaSlicer le réglage est inversé — un seuil plus BAS = MOINS de supports
   (auto-portance ≈59°, seuls les surplombs prononcés sont soutenus). Une figurine

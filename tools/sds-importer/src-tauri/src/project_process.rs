@@ -38,6 +38,7 @@ pub enum ProjectType {
     PrototypeRapide,
     ObjetDuQuotidien,
     Figurine,
+    FigurineArticulee,
     Vase,
     Decoration,
     Jouet,
@@ -45,9 +46,9 @@ pub enum ProjectType {
 }
 
 impl ProjectType {
-    pub fn all() -> [ProjectType; 7] {
+    pub fn all() -> [ProjectType; 8] {
         use ProjectType::*;
-        [PrototypeRapide, ObjetDuQuotidien, Figurine, Vase, Decoration, Jouet, PieceMecanique]
+        [PrototypeRapide, ObjetDuQuotidien, Figurine, FigurineArticulee, Vase, Decoration, Jouet, PieceMecanique]
     }
 
     /// Display label used in the profile name (FR, the product language).
@@ -57,6 +58,7 @@ impl ProjectType {
             PrototypeRapide => "Prototype rapide",
             ObjetDuQuotidien => "Objet du quotidien",
             Figurine => "Figurine",
+            FigurineArticulee => "Figurine articulée",
             Vase => "Vase",
             Decoration => "Décoration",
             Jouet => "Jouet",
@@ -93,6 +95,10 @@ impl ProjectType {
             PrototypeRapide  => Ref { layer: 0.28, walls: 1, infill: 8,  pattern: "grid",      spd: (150.0, 200.0, 250.0, 120.0), accel: 10000.0, jerk: 12.0, spiral: false, ironing: false, top: 3, bot: 3 },
             ObjetDuQuotidien => Ref { layer: 0.20, walls: 3, infill: 15, pattern: "grid",      spd: (120.0, 150.0, 200.0, 100.0), accel: 6000.0,  jerk: 9.0,  spiral: false, ironing: false, top: 4, bot: 4 },
             Figurine         => Ref { layer: 0.12, walls: 3, infill: 15, pattern: "gyroid",    spd: (75.0,  80.0,  100.0, 40.0),  accel: 4500.0,  jerk: 8.0,  spiral: false, ironing: false, top: 4, bot: 4 },
+            // Articulated / print-in-place: NO support (would fuse the joints),
+            // NO brim. Moderate 0.16 layer for clean joint clearance, 2 walls,
+            // light 10 % infill, moderate speed/accel for crisp small joints.
+            FigurineArticulee=> Ref { layer: 0.16, walls: 2, infill: 10, pattern: "grid",      spd: (60.0,  100.0, 150.0, 50.0),  accel: 3500.0,  jerk: 7.0,  spiral: false, ironing: false, top: 4, bot: 4 },
             Vase             => Ref { layer: 0.20, walls: 1, infill: 0,  pattern: "gyroid",    spd: (60.0,  60.0,  60.0,  50.0),  accel: 4000.0,  jerk: 7.0,  spiral: true,  ironing: false, top: 0, bot: 4 },
             Decoration       => Ref { layer: 0.16, walls: 2, infill: 10, pattern: "lightning", spd: (80.0,  120.0, 150.0, 60.0),  accel: 4000.0,  jerk: 7.0,  spiral: false, ironing: true,  top: 5, bot: 4 },
             Jouet            => Ref { layer: 0.20, walls: 4, infill: 30, pattern: "grid",      spd: (100.0, 140.0, 180.0, 80.0),  accel: 6000.0,  jerk: 9.0,  spiral: false, ironing: false, top: 5, bot: 5 },
@@ -315,7 +321,7 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
         // value (draft) or is incompatible (vase = single continuous wall).
         let scarf = matches!(
             pt,
-            ProjectType::ObjetDuQuotidien | ProjectType::Figurine
+            ProjectType::ObjetDuQuotidien | ProjectType::Figurine | ProjectType::FigurineArticulee
                 | ProjectType::Decoration | ProjectType::Jouet | ProjectType::PieceMecanique
         );
         if scarf {
@@ -363,6 +369,11 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
             obj.insert("support_type".into(), json!(s_type));
             obj.insert("support_style".into(), json!(s_style));
             obj.insert("support_threshold_angle".into(), json!(s_threshold));
+        } else if matches!(pt, ProjectType::FigurineArticulee) {
+            // Articulated / print-in-place figurines: support is FORBIDDEN — it
+            // would fuse the joints. Force it OFF explicitly so a base profile
+            // that defaults support on can't sneak it back in.
+            obj.insert("enable_support".into(), json!("0"));
         }
 
         // --- PURGE / wipe-tower economy — multi-material ONLY. These keys only
@@ -429,7 +440,7 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
 }
 
 /// The full shared library for the Snapmaker U1: every project type × every
-/// nozzle (7 × 4 = 28). The U1 is a tool-changer (`MultiNozzle`) so it is always
+/// nozzle (8 × 4 = 32). The U1 is a tool-changer (`MultiNozzle`) so it is always
 /// multi-material regardless of `ams_enabled`; the param is threaded for a
 /// uniform signature.
 pub fn build_library(ams_enabled: bool) -> Vec<(String, Value)> {
@@ -442,7 +453,7 @@ pub fn build_library(ams_enabled: bool) -> Vec<(String, Value)> {
     out
 }
 
-/// On-demand multi-printer path: the 7 project-type profiles for an arbitrary
+/// On-demand multi-printer path: the 8 project-type profiles for an arbitrary
 /// set of printer specs (one per chosen printer/nozzle variant resolved from the
 /// machine catalogue). Same engine as the U1 library — this is what makes the
 /// optimiser cover every OrcaSlicer-family printer, not just the U1.
@@ -477,8 +488,8 @@ mod tests {
         assert_eq!(v["inherits"], "0.20mm Standard @Creality K1");
         assert_eq!(v["compatible_printers"][0], "Creality K1 (0.4 nozzle)");
         assert_eq!(v["filament_economy_enable"], "1");
-        // One spec yields the 7 project types.
-        assert_eq!(build_library_for(&[k1.clone()], true).len(), 7);
+        // One spec yields the 8 project types.
+        assert_eq!(build_library_for(&[k1.clone()], true).len(), 8);
         // A printer whose max layer height is 0.20 caps the thick draft layer.
         let capped = PrinterSpec { max_layer_height: 0.20, ..k1 };
         let (_, vp) = build_one_for(ProjectType::PrototypeRapide, &capped, true);
@@ -545,8 +556,8 @@ mod tests {
         let (_, fig) = build_one(Figurine, 0.4, true);
         assert_eq!(fig["brim_type"], "outer_only");
         assert_eq!(fig["brim_width"], "3");
-        // …Vase / Décoration / quick Prototype: none.
-        for pt in [Vase, Decoration, PrototypeRapide] {
+        // …Vase / Décoration / Prototype / Figurine articulée: none.
+        for pt in [Vase, Decoration, PrototypeRapide, FigurineArticulee] {
             let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["brim_type"], "no_brim", "{pt:?} should NOT brim");
             assert!(v.get("brim_width").is_none(), "{pt:?} has no brim_width");
@@ -575,16 +586,20 @@ mod tests {
             let (_, v) = build_one(pt, 0.4, true);
             assert!(v.get("enable_support").is_none(), "{pt:?} no auto-support");
         }
+        // Articulated figurines: support EXPLICITLY off (would fuse joints) + no brim.
+        let (_, art) = build_one(FigurineArticulee, 0.4, true);
+        assert_eq!(art["enable_support"], "0", "articulée: support forced off");
+        assert_eq!(art["brim_type"], "no_brim", "articulée: no brim");
     }
 
     #[test]
-    fn library_has_28_unique_named_profiles() {
+    fn library_has_32_unique_named_profiles() {
         let lib = build_library(true);
-        assert_eq!(lib.len(), 28);
+        assert_eq!(lib.len(), 32);
         let mut names: Vec<&str> = lib.iter().map(|(n, _)| n.as_str()).collect();
         names.sort();
         names.dedup();
-        assert_eq!(names.len(), 28, "profile names must be unique");
+        assert_eq!(names.len(), 32, "profile names must be unique");
     }
 
     #[test]

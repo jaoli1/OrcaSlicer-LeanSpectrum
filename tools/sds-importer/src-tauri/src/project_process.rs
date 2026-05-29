@@ -62,6 +62,17 @@ impl ProjectType {
         }
     }
 
+    /// v0.3.1 — bed adhesion / anti-warp by intent. A shared process can't be
+    /// per-material, so a modest outer brim is added to the FUNCTIONAL, larger-
+    /// footprint intents (Objet du quotidien, Jouet, Pièce mécanique) to limit
+    /// warping and plate detachment, and explicitly suppressed on the aesthetic
+    /// intents (Figurine / Vase / Décoration) and the quick Prototype, where a
+    /// brim would mar the base for no benefit.
+    fn wants_brim(self) -> bool {
+        use ProjectType::*;
+        matches!(self, ObjetDuQuotidien | Jouet | PieceMecanique)
+    }
+
     /// Reference parameters at the 0.4 mm nozzle. Per-nozzle values are derived
     /// in [`Self::params_at`].
     fn reference(self) -> Ref {
@@ -288,6 +299,18 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
             obj.insert("seam_slope_min_length".into(), json!("10"));
             obj.insert("seam_slope_steps".into(), json!("10"));
         }
+        // v0.3.1 — project-type bed adhesion / anti-warp. A modest outer brim on
+        // the functional, larger-footprint intents limits warping and plate
+        // detachment; explicitly no brim on the aesthetic intents and the quick
+        // Prototype. draft_shield is left to the slicer default (off): it costs
+        // material/time and only niche ABS-in-a-draught cases need it.
+        if pt.wants_brim() {
+            obj.insert("brim_type".into(), json!("outer_only"));
+            obj.insert("brim_width".into(), json!("5"));
+            obj.insert("brim_object_gap".into(), json!("0.1"));
+        } else {
+            obj.insert("brim_type".into(), json!("no_brim"));
+        }
     }
     (name, v)
 }
@@ -342,6 +365,27 @@ mod tests {
         let capped = PrinterSpec { max_layer_height: 0.20, ..k1 };
         let (_, vp) = build_one_for(ProjectType::PrototypeRapide, &capped);
         assert_eq!(vp["layer_height"], "0.2");
+    }
+
+    #[test]
+    fn brim_keys_follow_project_type() {
+        // Functional, larger-footprint intents get a modest outer brim…
+        for pt in [ProjectType::ObjetDuQuotidien, ProjectType::Jouet, ProjectType::PieceMecanique] {
+            let (_, v) = build_one(pt, 0.4);
+            assert_eq!(v["brim_type"], "outer_only", "{pt:?} should brim");
+            assert_eq!(v["brim_width"], "5", "{pt:?} brim width");
+        }
+        // …aesthetic intents + the quick Prototype get none.
+        for pt in [
+            ProjectType::Figurine,
+            ProjectType::Vase,
+            ProjectType::Decoration,
+            ProjectType::PrototypeRapide,
+        ] {
+            let (_, v) = build_one(pt, 0.4);
+            assert_eq!(v["brim_type"], "no_brim", "{pt:?} should NOT brim");
+            assert!(v.get("brim_width").is_none(), "{pt:?} has no brim_width");
+        }
     }
 
     #[test]

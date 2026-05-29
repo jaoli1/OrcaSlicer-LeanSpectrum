@@ -11,6 +11,16 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.3.1] — Anti-warping par type de projet
+
+- **Adhérence / anti-warping** : brim externe modéré (≈ 5 mm) ajouté aux profils
+  process des types fonctionnels à grande empreinte (Objet du quotidien, Jouet,
+  Pièce mécanique) pour limiter le warping et le décollement du plateau ; aucun
+  brim sur les types esthétiques (Figurine, Vase, Décoration) ni sur le Prototype
+  rapide (où il abîmerait la base). Le détachement propre des supports reste
+  actif. Un process partagé ne pouvant pas être par-matière, l'adhérence suit le
+  type de projet.
+
 ## [0.3.0] — Multi-sélection, choix du slicer, nommage propre
 
 - **Choix du slicer** : sélecteur en haut (OrcaSlicer · Bambu Studio · Creality

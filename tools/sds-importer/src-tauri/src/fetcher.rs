@@ -132,23 +132,45 @@ fn assert_public_url(raw: &str) -> Result<()> {
 
 fn is_blocked_ip(ip: &IpAddr) -> bool {
     match ip {
-        IpAddr::V4(v4) => {
-            v4.is_loopback()
-                || v4.is_private()
-                || v4.is_link_local()   // 169.254/16 — incl. the cloud metadata IP
-                || v4.is_unspecified()
-                || v4.is_broadcast()
-                || v4.is_documentation()
-                // CGNAT 100.64.0.0/10
-                || (v4.octets()[0] == 100 && (v4.octets()[1] & 0xc0) == 64)
-        }
+        IpAddr::V4(v4) => is_blocked_v4(v4),
         IpAddr::V6(v6) => {
+            // First: if the IPv6 address is an IPv4-mapped form (::ffff:a.b.c.d),
+            // route the v4 portion through the IPv4 check. Without this an
+            // attacker-controlled DNS AAAA record returning ::ffff:127.0.0.1
+            // on a dual-stack host would slip past the v6-only checks.
+            if let Some(v4) = v6.to_ipv4_mapped() {
+                return is_blocked_v4(&v4);
+            }
+            let s = v6.segments();
             v6.is_loopback()
                 || v6.is_unspecified()
-                || (v6.segments()[0] & 0xfe00) == 0xfc00 // unique-local fc00::/7
-                || (v6.segments()[0] & 0xffc0) == 0xfe80 // link-local fe80::/10
+                || (s[0] & 0xfe00) == 0xfc00 // unique-local fc00::/7
+                || (s[0] & 0xffc0) == 0xfe80 // link-local fe80::/10
+                // 2001:db8::/32 documentation
+                || (s[0] == 0x2001 && s[1] == 0x0db8)
+                // 64:ff9b::/96 NAT64 well-known prefix
+                || (s[0] == 0x0064 && s[1] == 0xff9b
+                    && s[2] == 0 && s[3] == 0 && s[4] == 0 && s[5] == 0)
+                // ff00::/8 multicast (covers ff02:: link-local mcast incl. routers)
+                || (s[0] & 0xff00) == 0xff00
         }
     }
+}
+
+/// IPv4 ranges we never let an outbound fetch reach. Pulled out so it can be
+/// called both directly and from the IPv4-mapped-in-IPv6 path.
+fn is_blocked_v4(v4: &std::net::Ipv4Addr) -> bool {
+    let o = v4.octets();
+    v4.is_loopback()
+        || v4.is_private()
+        || v4.is_link_local()   // 169.254/16 — incl. the cloud metadata IP
+        || v4.is_unspecified()
+        || v4.is_broadcast()
+        || v4.is_documentation() // 192.0.2/24, 198.51.100/24, 203.0.113/24
+        // CGNAT 100.64.0.0/10
+        || (o[0] == 100 && (o[1] & 0xc0) == 64)
+        // Benchmarking 198.18.0.0/15
+        || (o[0] == 198 && (o[1] & 0xfe) == 18)
 }
 
 #[cfg(test)]

@@ -6,7 +6,9 @@
 //! installs the system Tesseract binary plus its trained-data files via
 //! their package manager (brew / winget / apt).
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(feature = "ocr")]
+use std::path::PathBuf;
 
 use crate::{Error, Result};
 

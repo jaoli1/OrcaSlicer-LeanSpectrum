@@ -11,6 +11,96 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
 > adaptés*). Tag pattern: `profile-creator-v*` (legacy `sds-importer-v*`
 > still triggers the workflow for backward compatibility).
 
+## [0.8.1] — Armada P0 print-quality + sécurité + audit wiki
+
+Issue d'un audit "armada" senior 5-agents (sécurité, Rust, FDM domaine,
+frontend UX, CI/CD) avec règle dure "0 hallucination, source URL ou file:line
+obligatoire".
+
+### Print-quality (impact direct sur l'impression)
+
+- **Supports activés sur 6/8 profils** (Prototype rapide, Objet du quotidien,
+  Figurine, Décoration, Jouet, Pièce mécanique) — décoratifs/général au seuil
+  30°, porteurs (Jouet, Pièce méca) au seuil 45°. Tree(auto)/organic partout
+  sauf Pièce méca en normal(auto)/snug. Pas de supports sur Vase (mode spirale
+  incompatible) ni Figurine articulée (souderait les articulations).
+- **Figurine : 3 → 2 walls** (objet décoratif, économie ~3-4 g sans perte de
+  résistance, conforme à la HQ générique).
+- **Décoration : Lightning → Grid.** Le wiki OS-Patterns recommande Lightning
+  pour les prototypes non-structurels — mais Décoration active l'ironing, qui
+  EXIGE une surface du haut solide. Grid à 10 % donne aux couches supérieures
+  un substrat plat à survoler.
+- **Figurine articulée : Grid → Gyroid** ("strong and flexible at low density",
+  wiki OS-Patterns).
+- **Vase : Gyroid → Concentric** (le wiki nomme Concentric pour la spirale ;
+  cosmétique car spiral + 0 % infill ignore le pattern).
+- **Première couche cap : 0.75×buse → 0.65×buse** (= 0,26 mm sur 0,4 ; OS-LH
+  wiki publie 0,26 mm comme plafond first-layer).
+- **Scarf seam retiré de Pièce mécanique.** Le scarf crée une zone
+  sous-extrudée de 10 mm à chaque colonne Z — point faible mesurable sous
+  charge hoop/radial. Strength wins over aesthetics.
+- **`prime_volume` scalé à 113 × buse** (= 45 mm³ sur 0,4) pour matcher la
+  valeur du profil stock Snapmaker U1. Inchangé sur l'U1 (la branche slicer
+  qui l'utilise est skippée), mais important sur les autres tool-changers
+  (Prusa XL, Raise3D Pro3) où la branche prime-only fire.
+- **Machines à junction deviation (`max_jerk == 0`)** émettent désormais
+  `jerk = 0` partout (per OS-Jerk wiki : 0 = fallback to junction deviation).
+  Auparavant elles recevaient le jerk de référence, ignorant la JD.
+- **Commentaire `flush_multiplier`/`prime_volume` corrigé** : sur la
+  Snapmaker U1 (SEMM=1 + purge_in_prime_tower=1 hérités du stock), le slicer
+  applique BIEN `flush_multiplier` (Print.cpp ~3214). Le commentaire qui
+  affirmait l'inverse était faux.
+
+### Sécurité (audit armada)
+
+- **`pk.verify_strict(...)`** au lieu de `pk.verify(...)` — rejette les
+  signatures sur clés publiques low-order ou valeurs R non-canoniques
+  (defense-in-depth ed25519).
+- **`is_trusted`** : parse de l'URL + comparaison de **host** (`host_str() ==
+  "slicer.maisondrabiec.fr"`) + scheme HTTPS + pas de port, au lieu d'un
+  préfixe `starts_with` qui n'attrapait pas `slicer.maisondrabiec.fr@evil/`.
+- **Anti-SSRF élargi** : IPv4-mapped en IPv6 (`::ffff:127.0.0.1`) routées vers
+  les checks IPv4, plus ajout des plages 2001:db8::/32 (doc), 64:ff9b::/96
+  (NAT64), ff00::/8 (multicast), 198.18.0.0/15 (benchmarking).
+- **Commandes Tauri `crawl_catalog` et `import_from_urls` retirées de
+  `invoke_handler`** — inutilisées par le frontend, mais exposées au surface
+  XSS sans passer par `assert_public_url`. Désormais inaccessibles depuis le
+  WebView.
+- **`r.colors` et `r.density` échappés via `escapeHtml`** dans la bibliothèque
+  filaments (DB acceptant les contributions crowdsourcées = surface XSS).
+
+### CI / robustesse
+
+- **`cargo --locked` partout** (test, check, release build) — le pin de
+  `Cargo.lock` est désormais appliqué, pas seulement consultatif.
+- **Notes de release extraites par section** (`awk '/^## \[/{ if (n++) exit } n'`)
+  — avant on collait les 800+ lignes du CHANGELOG sur chaque page release.
+- **`sign_manifest.py` cross-check** `app_version` vs `tauri.conf.json` — évite
+  le foot-gun "manifeste 0.7.2 signé pour binaire 0.8.0" qu'on a frôlé.
+- **`download_db` : nom temp unique** (PID + nanos) — empêche deux invokes
+  concurrents de clobber le même `.sqlite.part` (ERROR_SHARING_VIOLATION sur
+  Windows).
+- **`ocr.rs` warning** "unused PathBuf" depuis longtemps : `PathBuf` est
+  désormais sous `#[cfg(feature = "ocr")]`.
+
+### Frontend UX
+
+- **Drag-drop scopé à l'onglet Single PDF.** Avant : un drop sur l'onglet
+  Bibliothèque filament écrivait silencieusement le path dans `chosenPath`.
+- **`AMS_KEY` per-modèle** au lieu de globale — un Bambu A1 avec AMS coché ne
+  contamine plus l'état d'un Snapmaker U1 sélectionné après.
+- **`refreshArchitecture()` race-tokené.** Deux changements rapides de modèle
+  ne laissent plus la réponse plus ancienne écraser la plus fraîche.
+- **Erreurs visibles dans `amsHint`** au lieu de `console.error` (que
+  `devtools:false` rend invisible à l'utilisateur).
+
+### Bloc doc transparence (`reference()`)
+
+Sépare désormais explicitement ce qui est **wiki-backed** (patterns, layer
+height window, top/bot ≥ 3, spiral) de ce qui est **house-tuned/empirique**
+(walls, infill %, vitesses, accélérations, jerk numériques, seuils support —
+le wiki OrcaSlicer ne publie aucun défaut numérique pour ces réglages).
+
 ## [0.8.0] — Manifeste signé (ed25519)
 
 - **Manifeste de mise à jour signé.** Chaque manifeste servi par

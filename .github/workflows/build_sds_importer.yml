@@ -58,11 +58,14 @@ jobs:
 
       - name: cargo check
         working-directory: tools/sds-importer/src-tauri
-        run: cargo check --all-targets
+        # --locked enforces the committed Cargo.lock (bitflags 2.11.1 etc.).
+        # Without it, ^ ranges in Cargo.toml could resolve to a newer minor
+        # than what was tested locally and silently pull in a regression.
+        run: cargo check --locked --all-targets
 
       - name: cargo test
         working-directory: tools/sds-importer/src-tauri
-        run: cargo test --verbose -- --nocapture
+        run: cargo test --locked --verbose -- --nocapture
 
   build-release:
     name: Build release (${{ matrix.os }})
@@ -138,7 +141,9 @@ jobs:
 
       - name: Build release bundle
         working-directory: tools/sds-importer
-        run: cargo tauri build
+        # `--` forwards to the underlying `cargo build`; `--locked` makes the
+        # release respect Cargo.lock exactly (same reason as the test job).
+        run: cargo tauri build -- --locked
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -190,11 +195,21 @@ jobs:
           zip -r "release-assets/${base}.zip" "$base"
           ls -la release-assets
 
+      - name: Extract this release's CHANGELOG section
+        # Without this we'd paste the entire 800+ line CHANGELOG into every
+        # release body. The action does no section parsing, so we cut between
+        # the first two `^## [` headings and keep only the leading section.
+        run: |
+          awk '/^## \[/{ if (n++) exit } n' tools/sds-importer/CHANGELOG.md > release-notes.md
+          echo "--- release-notes.md head ---"
+          head -20 release-notes.md
+          echo "--- (truncated) ---"
+
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Optimisateur MD ${{ github.ref_name }}
-          body_path: tools/sds-importer/CHANGELOG.md
+          body_path: release-notes.md
           generate_release_notes: true
           append_body: true
           draft: false

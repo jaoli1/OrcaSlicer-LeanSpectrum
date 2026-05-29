@@ -76,31 +76,52 @@ impl ProjectType {
         matches!(self, ObjetDuQuotidien | Jouet | PieceMecanique | Figurine)
     }
 
-    /// v0.4.1 — auto-support (by overhang threshold) on the intents that commonly
-    /// have steep overhangs. Never on Vase (spiral mode forbids `enable_support`)
-    /// or the quick Prototype. Threshold-based: support is generated only where
-    /// the model actually overhangs, not everywhere.
+    /// Auto-support is on for every intent EXCEPT the two where it would be
+    /// actively harmful: Vase (spiral mode forbids `enable_support` outright)
+    /// and Figurine articulée (print-in-place — supports would fuse the joints
+    /// and kill the articulation). Threshold-based on overhang angle, so a part
+    /// with no overhangs costs nothing; the strength-bearing intents (Jouet /
+    /// Pièce mécanique) get a more aggressive threshold + a normal/snug type
+    /// for proper backing under functional loads.
     fn wants_support(self) -> bool {
         use ProjectType::*;
-        matches!(self, Figurine | Jouet | PieceMecanique)
+        !matches!(self, Vase | FigurineArticulee)
     }
 
     /// Reference parameters at the 0.4 mm nozzle. Per-nozzle values are derived
     /// in [`Self::params_at`].
+    ///
+    /// What's wiki-backed vs. house-tuned (verified against the OrcaSlicer wiki):
+    ///
+    /// * `pattern` — wiki-backed. Lightning for non-structural prototypes,
+    ///   Grid/Gyroid for high-strength, Concentric for vase mode, Gyroid for
+    ///   "strong and flexible at low densities" (figurines articulées).
+    ///   See https://github.com/OrcaSlicer/OrcaSlicer/wiki/strength_settings_patterns
+    /// * `layer` — wiki-backed window. Clamped to 25–75 % of nozzle, inside the
+    ///   wiki's 20–80 % envelope (quality_settings_layer_height).
+    /// * `top` / `bot` ≥ 3 — wiki minimum. The differentiation 3 vs 6 is
+    ///   house-tuned (heavier shells for load-bearing intents).
+    /// * `spiral` — wiki-backed (Vase only).
+    ///
+    /// * `walls`, `infill` %, `(outer,inner,infill,top)` speeds, `accel`,
+    ///   `jerk` numerics, support thresholds — **house-tuned / empirical**.
+    ///   The OrcaSlicer wiki defines these settings but publishes no numeric
+    ///   defaults; values here come from internal calibration prints. Treat
+    ///   any future tweak as a calibration question, not a wiki-rule question.
     fn reference(self) -> Ref {
         use ProjectType::*;
         // layer@0.4, walls, infill%, pattern, (outer,inner,infill,top) mm/s,
         // accel, jerk, spiral, ironing, top_shells, bottom_shells
         match self {
-            PrototypeRapide  => Ref { layer: 0.28, walls: 1, infill: 8,  pattern: "grid",      spd: (150.0, 200.0, 250.0, 120.0), accel: 10000.0, jerk: 12.0, spiral: false, ironing: false, top: 3, bot: 3 },
+            PrototypeRapide  => Ref { layer: 0.28, walls: 1, infill: 8,  pattern: "lightning", spd: (150.0, 200.0, 250.0, 120.0), accel: 10000.0, jerk: 12.0, spiral: false, ironing: false, top: 3, bot: 3 },
             ObjetDuQuotidien => Ref { layer: 0.20, walls: 3, infill: 15, pattern: "grid",      spd: (120.0, 150.0, 200.0, 100.0), accel: 6000.0,  jerk: 9.0,  spiral: false, ironing: false, top: 4, bot: 4 },
-            Figurine         => Ref { layer: 0.12, walls: 3, infill: 10, pattern: "gyroid",    spd: (75.0,  80.0,  100.0, 40.0),  accel: 4500.0,  jerk: 8.0,  spiral: false, ironing: false, top: 4, bot: 4 },
+            Figurine         => Ref { layer: 0.12, walls: 2, infill: 10, pattern: "gyroid",    spd: (75.0,  80.0,  100.0, 40.0),  accel: 4500.0,  jerk: 8.0,  spiral: false, ironing: false, top: 4, bot: 4 },
             // Articulated / print-in-place: NO support (would fuse the joints),
             // NO brim. Moderate 0.16 layer for clean joint clearance, 2 walls,
             // light 10 % infill, moderate speed/accel for crisp small joints.
-            FigurineArticulee=> Ref { layer: 0.16, walls: 2, infill: 10, pattern: "grid",      spd: (60.0,  100.0, 150.0, 50.0),  accel: 3500.0,  jerk: 7.0,  spiral: false, ironing: false, top: 4, bot: 4 },
-            Vase             => Ref { layer: 0.20, walls: 1, infill: 0,  pattern: "gyroid",    spd: (60.0,  60.0,  60.0,  50.0),  accel: 4000.0,  jerk: 7.0,  spiral: true,  ironing: false, top: 0, bot: 4 },
-            Decoration       => Ref { layer: 0.16, walls: 2, infill: 10, pattern: "lightning", spd: (80.0,  120.0, 150.0, 60.0),  accel: 4000.0,  jerk: 7.0,  spiral: false, ironing: true,  top: 5, bot: 4 },
+            FigurineArticulee=> Ref { layer: 0.16, walls: 2, infill: 10, pattern: "gyroid",    spd: (60.0,  100.0, 150.0, 50.0),  accel: 3500.0,  jerk: 7.0,  spiral: false, ironing: false, top: 4, bot: 4 },
+            Vase             => Ref { layer: 0.20, walls: 1, infill: 0,  pattern: "concentric",spd: (60.0,  60.0,  60.0,  50.0),  accel: 4000.0,  jerk: 7.0,  spiral: true,  ironing: false, top: 0, bot: 4 },
+            Decoration       => Ref { layer: 0.16, walls: 2, infill: 10, pattern: "grid",      spd: (80.0,  120.0, 150.0, 60.0),  accel: 4000.0,  jerk: 7.0,  spiral: false, ironing: true,  top: 5, bot: 4 },
             Jouet            => Ref { layer: 0.20, walls: 4, infill: 30, pattern: "grid",      spd: (100.0, 140.0, 180.0, 80.0),  accel: 6000.0,  jerk: 9.0,  spiral: false, ironing: false, top: 5, bot: 5 },
             PieceMecanique   => Ref { layer: 0.24, walls: 5, infill: 45, pattern: "grid",      spd: (60.0,  100.0, 130.0, 50.0),  accel: 4000.0,  jerk: 7.0,  spiral: false, ironing: false, top: 6, bot: 6 },
         }
@@ -109,13 +130,19 @@ impl ProjectType {
     /// Concrete process parameters for this project type at `nozzle` mm.
     pub fn params_at(self, nozzle: f64) -> Params {
         let r = self.reference();
-        // Layer height tracks the nozzle (ref is for 0.4) and is clamped to the
-        // printable 25–75 % of nozzle-diameter window.
+        // Layer height tracks the nozzle (ref is for 0.4) and is clamped to a
+        // conservative 25–75 % of nozzle window (inside the OrcaSlicer wiki's
+        // recommended 20–80 % envelope:
+        // https://github.com/OrcaSlicer/OrcaSlicer/wiki/quality_settings_layer_height).
         let scaled = r.layer * (nozzle / 0.4);
         let layer = scaled.clamp(0.25 * nozzle, 0.75 * nozzle);
         let layer = (layer * 100.0).round() / 100.0; // 2 dp
-        // First layer a touch thicker for adhesion, never above 75 % nozzle.
-        let first = (layer * 1.25).min(0.75 * nozzle);
+        // First layer a touch thicker for adhesion, capped at 65 % of nozzle
+        // (= 0.26 mm on a 0.4 mm nozzle) — that's the OrcaSlicer wiki's stated
+        // first-layer ceiling. Beyond it the first layer over-extrudes at the
+        // bed (poor adhesion + visible squish artefacts). Previously 0.75 ×
+        // nozzle (= 0.30 mm on 0.4) and audit-flagged as wiki-divergent.
+        let first = (layer * 1.25).min(0.65 * nozzle);
         let first = (first * 100.0).round() / 100.0;
         Params {
             layer_height: layer,
@@ -270,10 +297,21 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
     // its higher values as relative *cornering intent* (Prototype loose →
     // Figurine tight); we only ever lower them to fit the real machine. Travel
     // jerk (normally 1.5× print jerk) is clamped to the same ceiling too —
-    // non-extruding moves gain nothing from extra jerk but ring more. A
-    // max_jerk of 0 disables clamping (treat the machine as unbounded).
-    let jmax = if spec.max_jerk > 0.0 { spec.max_jerk } else { f64::INFINITY };
-    let jclamp = |x: f64| fmt(x.min(jmax).max(1.0));
+    // non-extruding moves gain nothing from extra jerk but ring more.
+    //
+    // `max_jerk == 0` is the catalogue convention for a junction-deviation
+    // machine (classic jerk disabled). OrcaSlicer's wiki says emit jerk = 0
+    // so the planner falls back to JD:
+    // https://github.com/OrcaSlicer/OrcaSlicer/wiki/quality_settings_jerk
+    // Sending the reference (e.g. 12) on a JD machine would be applied by
+    // firmwares that still honour the field — counter to the user's calibration.
+    let jclamp = |x: f64| -> String {
+        if spec.max_jerk <= 0.0 {
+            "0".into()
+        } else {
+            fmt(x.min(spec.max_jerk).max(1.0))
+        }
+    };
 
     let mut v = json!({
         "name": name,
@@ -347,11 +385,14 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
             obj.insert("ironing_speed".into(), json!(fmt(p.top_speed.min(30.0))));
         }
         // Scarf seams: on for the surface-quality intents, off where it adds no
-        // value (draft) or is incompatible (vase = single continuous wall).
+        // value (draft) or is incompatible (vase = single continuous wall) or
+        // is actively harmful (Pièce mécanique — the slanted seam introduces a
+        // 10 mm under-extruded zone at every Z column, a measurable weak point
+        // under hoop / radial loads). Strength wins over aesthetics there.
         let scarf = matches!(
             pt,
             ProjectType::ObjetDuQuotidien | ProjectType::Figurine | ProjectType::FigurineArticulee
-                | ProjectType::Decoration | ProjectType::Jouet | ProjectType::PieceMecanique
+                | ProjectType::Decoration | ProjectType::Jouet
         );
         if scarf {
             obj.insert("seam_slope_type".into(), json!("external"));
@@ -382,18 +423,25 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
         //     and more predictable on large flat overhangs than tree.
         // support_threshold_angle is INVERTED from intuition in OrcaSlicer: the
         // self-support angle = 90° − (threshold+1) (Support/TreeSupportCommon.hpp),
-        // so a HIGHER threshold supports MILDER overhangs → MORE support. Figurine
-        // therefore uses a LOW 30° (self-support ≈59° → only pronounced overhangs
-        // get support — far lighter; a display piece tolerates a little underside
-        // droop). Jouet / Pièce mécanique keep 45° for reliable support on real
-        // overhangs (kids' toys, dimensional parts).
+        // so a HIGHER threshold supports MILDER overhangs → MORE support.
+        //   • The strength-bearing intents (Jouet / Pièce mécanique) get 45°
+        //     (self-support ≈44° → moderate overhangs supported, proper backing
+        //     under functional loads).
+        //   • Every other supported intent (Prototype, Objet du quotidien,
+        //     Figurine, Décoration) sits at 30° (self-support ≈59° → ONLY the
+        //     pronounced overhangs get support — lighter, faster, and matches
+        //     what a decorative or quick print actually needs).
         if pt.wants_support() {
             let (s_type, s_style) = if matches!(pt, ProjectType::PieceMecanique) {
                 ("normal(auto)", "snug")
             } else {
                 ("tree(auto)", "organic")
             };
-            let s_threshold = if matches!(pt, ProjectType::Figurine) { "30" } else { "45" };
+            let s_threshold = if matches!(pt, ProjectType::Jouet | ProjectType::PieceMecanique) {
+                "45"
+            } else {
+                "30"
+            };
             obj.insert("enable_support".into(), json!("1"));
             obj.insert("support_type".into(), json!(s_type));
             obj.insert("support_style".into(), json!(s_style));
@@ -428,27 +476,30 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec, ams_enabled: bool) -> 
             obj.insert("flush_into_support".into(), json!("1"));
             obj.insert("wipe_tower_no_sparse_layers".into(), json!("1"));
 
-            // prime_volume scales with nozzle bore: a coarser nozzle holds more
-            // ooze to clear at each tool change, so a flat value either over-
-            // primes fine nozzles or UNDER-primes coarse ones (colour bleed on
-            // the first segment after a change). ≈38×nozzle anchors the validated
-            // 0.4 mm → 15 mm³ (0.2→8, 0.6→23, 0.8→30); floor 4 mm³.
-            let prime_volume = ((spec.nozzle * 38.0).round().max(4.0) as i64).to_string();
-            // Two purge levers, because they govern DIFFERENT printer families:
-            //   • prime_volume — THE lever on tool-changer printers like the
-            //     Snapmaker U1 (4 independent nozzles). There OrcaSlicer discards
-            //     flush_multiplier/flush_volumes and lays exactly `prime_volume`
-            //     per tool, per tool-change layer (Print.cpp ~3125 / ~3347). Each
-            //     nozzle keeps its own colour, so the prime only clears ooze.
-            //     ALSO fires on single-nozzle MM printers whose tower isn't a
-            //     purge tower (Creality CFS, Flashforge AD5X, Prusa MMU3 with
-            //     single_extruder_multi_material + purge_in_prime_tower=0).
-            //   • flush_multiplier — the lever on single-nozzle AMS / purge-in-
-            //     tower printers (Bambu — hard-gated to this path — Qidi, etc.):
-            //     scales each colour-change purge. 0.2 (vs 0.3 default) trims ~⅓,
-            //     above the ~0.15 colour-bleed floor. Inert on tool-changers, so
-            //     we set both.
+            // prime_volume scales with nozzle bore. Anchor: the stock Snapmaker
+            // `0.20 Standard @Snapmaker U1 (0.4 nozzle).json` ships
+            // `prime_volume = 45` (mm³). ≈113 × nozzle reproduces that on 0.4
+            // and scales linearly (0.2 → 23, 0.6 → 68, 0.8 → 90). Floor 4 mm³.
+            let prime_volume = ((spec.nozzle * 113.0).round().max(4.0) as i64).to_string();
+            // Two purge levers, because they govern DIFFERENT slicer code paths:
+            //   • prime_volume — fires ONLY in Print.cpp's override branch:
+            //         (!purge_in_prime_tower || !single_extruder_multi_material)
+            //              && !is_BBL_printer()
+            //     i.e. on tool-changers / IDEX whose stock profile sets SEMM=0,
+            //     OR when the user disables purge_in_prime_tower. In that branch
+            //     wipe_volumes[i][j] is REPLACED by prime_volume (Print.cpp ~3125
+            //     / ~3347 in this fork).
+            //   • flush_multiplier — fires on EVERY other path, including the
+            //     Snapmaker U1: the stock `fdm_toolchanger.json` sets SEMM=1
+            //     AND purge_in_prime_tower defaults true, so the override is
+            //     SKIPPED and OrcaSlicer applies `volume_to_purge *= flush_multiplier`
+            //     against the matrix (Print.cpp ~3214). 0.2 trims ~⅘ off the
+            //     full matrix; combined with `flush_into_infill=1` the bleed
+            //     lands inside the model's infill, invisible from the surface.
             //   • prime_tower_width caps the tower footprint (30 mm).
+            // We emit BOTH, so whichever branch the user's machine takes gets a
+            // sane lever. (Setting one when the other is in force is harmless —
+            // the unused field is simply ignored on that path.)
             obj.insert("prime_volume".into(), json!(prime_volume));
             obj.insert("flush_multiplier".into(), json!("0.2"));
             obj.insert("prime_tower_width".into(), json!("30"));
@@ -569,8 +620,8 @@ mod tests {
             for k in ECONOMY_KEYS {
                 assert!(v.get(*k).is_some(), "{label} MUST carry {k}");
             }
-            // prime_volume scaled ≈38×nozzle (0.4 → 15).
-            assert_eq!(v["prime_volume"], "15", "{label} prime_volume");
+            // prime_volume scaled ≈113×nozzle to match the stock U1 0.4 value (45 mm³).
+            assert_eq!(v["prime_volume"], "45", "{label} prime_volume");
         }
     }
 
@@ -593,18 +644,26 @@ mod tests {
             assert_eq!(v["brim_type"], "no_brim", "{pt:?} should NOT brim");
             assert!(v.get("brim_width").is_none(), "{pt:?} has no brim_width");
         }
-        // Auto-support on overhang-prone intents only, with the TYPE matched to
-        // the geometry: organic tree for the curvy intents, normal(snug) for the
-        // flat mechanical one. Figurine uses a LOW 30° threshold (fewer supports,
-        // only pronounced overhangs); Jouet / Pièce mécanique keep 45°.
-        for pt in [Figurine, Jouet, PieceMecanique] {
+        // Auto-support on every intent EXCEPT Vase (spiral mode forbids it) and
+        // Figurine articulée (would fuse the print-in-place joints).
+        // - Décoratifs / général : tree(auto) + organic, low 30° (fewer supports).
+        // - Strength-bearing (Jouet, Pièce méca) : 45° (more overhangs supported).
+        // - Pièce méca specifically : normal(auto) + snug (functional backing).
+        for pt in [PrototypeRapide, ObjetDuQuotidien, Figurine, Decoration, Jouet, PieceMecanique] {
             let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["enable_support"], "1", "{pt:?} should auto-support");
         }
-        assert_eq!(build_one(Figurine, 0.4, true).1["support_threshold_angle"], "30");
-        assert_eq!(build_one(Jouet, 0.4, true).1["support_threshold_angle"], "45");
-        assert_eq!(build_one(PieceMecanique, 0.4, true).1["support_threshold_angle"], "45");
-        for pt in [Figurine, Jouet] {
+        for pt in [PrototypeRapide, ObjetDuQuotidien, Figurine, Decoration] {
+            assert_eq!(build_one(pt, 0.4, true).1["support_threshold_angle"], "30",
+                "{pt:?} should use the conservative 30° threshold");
+        }
+        for pt in [Jouet, PieceMecanique] {
+            assert_eq!(build_one(pt, 0.4, true).1["support_threshold_angle"], "45",
+                "{pt:?} should use the strength-bearing 45° threshold");
+        }
+        // Tree(organic) for every supported intent EXCEPT Pièce mécanique
+        // (which gets normal/snug — better backing for functional flat overhangs).
+        for pt in [PrototypeRapide, ObjetDuQuotidien, Figurine, Decoration, Jouet] {
             let (_, v) = build_one(pt, 0.4, true);
             assert_eq!(v["support_type"], "tree(auto)", "{pt:?} organic tree");
             assert_eq!(v["support_style"], "organic", "{pt:?} organic style");
@@ -612,11 +671,10 @@ mod tests {
         let (_, mech) = build_one(PieceMecanique, 0.4, true);
         assert_eq!(mech["support_type"], "normal(auto)");
         assert_eq!(mech["support_style"], "snug");
-        // …never on Vase (spiral forbids it), Prototype, or flat intents.
-        for pt in [Vase, PrototypeRapide, ObjetDuQuotidien, Decoration] {
-            let (_, v) = build_one(pt, 0.4, true);
-            assert!(v.get("enable_support").is_none(), "{pt:?} no auto-support");
-        }
+        // Vase: spiral mode is mechanically incompatible with `enable_support`,
+        // so we leave the key absent (the slicer would ignore it anyway).
+        let (_, vase) = build_one(Vase, 0.4, true);
+        assert!(vase.get("enable_support").is_none(), "Vase: spiral, no support key");
         // Articulated figurines: support EXPLICITLY off (would fuse joints) + no brim.
         let (_, art) = build_one(FigurineArticulee, 0.4, true);
         assert_eq!(art["enable_support"], "0", "articulée: support forced off");
@@ -705,19 +763,24 @@ mod tests {
         let (_, proto) = build_one(PrototypeRapide, 0.4, true);
         assert_eq!(proto["default_jerk"], "9");
         assert_eq!(proto["travel_jerk"], "9");
-        // The clamp is a CEILING, not a rewrite: a printer with no jerk limit
-        // (max_jerk == 0) keeps the richer reference-derived values.
-        let unbounded = PrinterSpec {
-            printer_name: "Unbounded (0.4 nozzle)".into(),
+        // A printer with `max_jerk == 0` is the catalogue sentinel for a
+        // junction-deviation machine (classic jerk disabled). Per OrcaSlicer's
+        // jerk wiki we must emit 0 so the planner falls back to JD — NOT the
+        // (now-misleading) reference values.
+        // https://github.com/OrcaSlicer/OrcaSlicer/wiki/quality_settings_jerk
+        let jd = PrinterSpec {
+            printer_name: "JD machine (0.4 nozzle)".into(),
             base_process: "base".into(),
             nozzle: 0.4,
             max_layer_height: 0.30,
             architecture: Architecture::Single,
             max_jerk: 0.0,
         };
-        let (_, vp) = build_one_for(PrototypeRapide, &unbounded, false);
-        assert_eq!(vp["default_jerk"], "12");
-        assert_eq!(vp["travel_jerk"], "18");
+        let (_, vp) = build_one_for(PrototypeRapide, &jd, false);
+        for k in ["default_jerk", "outer_wall_jerk", "inner_wall_jerk",
+                  "top_surface_jerk", "travel_jerk"] {
+            assert_eq!(vp[k], "0", "JD machine: {k} must be 0 (fall back to JD)");
+        }
     }
 
     #[test]
@@ -737,11 +800,15 @@ mod tests {
             assert_eq!(v["flush_into_infill"], "1", "{name}");
             assert_eq!(v["flush_into_support"], "1", "{name}");
             assert_eq!(v["wipe_tower_no_sparse_layers"], "1", "{name}");
-            // prime_volume is THE tower lever on tool-changer / non-purge-in-
-            // tower printers; flush_multiplier is the AMS lever. We set both.
-            // prime_volume now scales with nozzle (~38×), so assert a sane range.
+            // prime_volume fires in the Print.cpp override branch
+            // (tool-changer SEMM=0 or purge_in_prime_tower=0); flush_multiplier
+            // is the lever for every other path (incl. the U1's SEMM=1 +
+            // purge_in_prime_tower=1 combo). We set both — the unused field on
+            // a given path is ignored. prime_volume scales ~113×nozzle so the
+            // 0.4 stock 45 mm³ is reproduced; expect 0.2→23, 0.4→45, 0.6→68,
+            // 0.8→90 (all generated, so range covers the whole nozzle ladder).
             let pv: i64 = v["prime_volume"].as_str().unwrap().parse().unwrap();
-            assert!((4..=40).contains(&pv), "{name}: prime_volume {pv} out of range");
+            assert!((20..=100).contains(&pv), "{name}: prime_volume {pv} out of range");
             assert_eq!(v["flush_multiplier"], "0.2", "{name}");
             assert_eq!(v["prime_tower_width"], "30", "{name}");
             assert!(

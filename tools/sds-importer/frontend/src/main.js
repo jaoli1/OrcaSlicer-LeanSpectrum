@@ -118,13 +118,21 @@ const amsRow        = document.getElementById("amsRow");
 const amsCheckLabel = document.getElementById("amsCheckLabel");
 const amsEnabledEl  = document.getElementById("amsEnabled");
 const amsHint       = document.getElementById("amsHint");
-const AMS_KEY = "leanspectrum_ams";
+// UX (v0.8.1): AMS checkbox state is persisted PER PRINTER MODEL, not globally.
+// Otherwise a user who toggles AMS on a Bambu A1 and then picks a Snapmaker U1
+// would carry the wrong flag into the Snapmaker generate call. The key is the
+// model name; "_" is the empty-model fallback.
+const AMS_KEY = (model) => `leanspectrum_ams::${model || "_"}`;
 let currentArch = "single";
+// Monotonic token to discard stale `refreshArchitecture` responses when the
+// user changes vendor/model faster than the IPC round-trip.
+let archToken = 0;
 
 if (amsEnabledEl) {
-  if (localStorage.getItem(AMS_KEY) === "1") amsEnabledEl.checked = true;
-  amsEnabledEl.addEventListener("change", () =>
-    localStorage.setItem(AMS_KEY, amsEnabledEl.checked ? "1" : "0"));
+  amsEnabledEl.addEventListener("change", () => {
+    const m = (gModel && gModel.value) || "";
+    if (m) localStorage.setItem(AMS_KEY(m), amsEnabledEl.checked ? "1" : "0");
+  });
 }
 
 /// Tool-changers are always multi-material; AMS-capable printers follow the
@@ -136,14 +144,25 @@ function amsArg() {
 }
 
 /// Look up the selected model's architecture and show/label the checkbox.
+/// Race-tokened: rapid vendor/model switches discard stale responses so the
+/// older response can't overwrite the fresher UI state. Errors surface in the
+/// `amsHint` element since `devtools:false` makes console.error invisible to
+/// the user.
 async function refreshArchitecture() {
+  const my = ++archToken;
   currentArch = "single";
   if (amsRow) amsRow.style.display = "none";
   if (amsHint) amsHint.textContent = "";
   const model = gModel && gModel.value;
   if (!model || !invoke) return;
+  // Restore the per-model saved AMS state immediately so the UI doesn't flicker
+  // while the IPC round-trip is in flight.
+  if (amsEnabledEl) {
+    amsEnabledEl.checked = localStorage.getItem(AMS_KEY(model)) === "1";
+  }
   try {
     const info = await invoke("get_printer_architecture", { model });
+    if (my !== archToken) return;  // a newer call has already raced past us
     currentArch = (info && info.architecture) || "single";
     if (currentArch === "ams_capable") {
       if (amsRow) amsRow.style.display = "";
@@ -154,7 +173,11 @@ async function refreshArchitecture() {
       if (amsCheckLabel) amsCheckLabel.style.display = "none";
       if (amsHint) amsHint.textContent = tr("ams_native_mm");
     }
-  } catch (e) { console.error("architecture lookup failed", e); }
+  } catch (e) {
+    if (my !== archToken) return;
+    if (amsRow) amsRow.style.display = "";
+    if (amsHint) amsHint.textContent = "⚠ " + (e && e.toString ? e.toString() : "error");
+  }
 }
 
 /// {vendor, model, nozzle:number|null, all:bool} or null when incomplete.
@@ -293,8 +316,10 @@ function renderFilaments(rows) {
   filamentList.innerHTML = rows.map(r => {
     const fam    = escapeHtml(r.base_type || "?") + (r.filled_type ? " " + escapeHtml(r.filled_type) : "");
     const params = r.has_params ? `<span class="badge params" title="manufacturer temps">°C</span>` : "";
-    const colors = r.colors ? `<span class="sub">${r.colors} ◐</span>` : "";
-    const dens   = r.density ? `<span class="sub">${r.density} g/cm³</span>` : "";
+    // SECURITY: r.colors and r.density come from the filament DB, which now
+    // accepts crowdsourced contributions — escape before splicing into HTML.
+    const colors = r.colors ? `<span class="sub">${escapeHtml(r.colors)} ◐</span>` : "";
+    const dens   = r.density ? `<span class="sub">${escapeHtml(r.density)} g/cm³</span>` : "";
     const checked = selectedFilamentIds.has(r.id) ? " checked" : "";
     const sel     = selectedFilamentIds.has(r.id) ? " selected" : "";
     return `<li data-id="${r.id}" class="${sel.trim()}">
@@ -476,6 +501,11 @@ if (drop) {
       ev.listen("tauri://drag-leave", () => drop.classList.remove("hover"));
       ev.listen("tauri://drag-drop", (e) => {
         drop.classList.remove("hover");
+        // UX: only handle drops while the Single PDF tab is active. Otherwise
+        // a drop on the Filament library / Process library tab silently sets
+        // `chosenPath`, surprising the user next time they switch back.
+        const activeTab = document.querySelector(".tab.active");
+        if (!activeTab || activeTab.dataset.tab !== "single") return;
         const paths = e && e.payload && e.payload.paths;
         if (paths && paths.length) {
           setChosen(paths.find(p => /\.pdf$/i.test(p)) || paths[0]);

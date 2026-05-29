@@ -1,3 +1,10 @@
+// v0.8.1 — the Tauri commands that drove this module (`crawl_catalog`,
+// `import_from_urls` in lib.rs) were removed from `invoke_handler!` because
+// they were unused by the frontend AND reachable from any XSS in the WebView
+// without going through `fetcher::assert_public_url`. Module retained for
+// future reintroduction — re-route through `assert_public_url` first if you do.
+#![allow(dead_code)]
+
 //! Catalog crawler: vendor URL -> list of SDS / TDS PDF candidates.
 //!
 //! Given a single HTML page URL, the crawler downloads it, extracts every

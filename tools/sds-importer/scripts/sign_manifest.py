@@ -131,6 +131,30 @@ def main(argv: list[str]) -> int:
         print(f"ERROR: manifest is missing required fields: {missing}", file=sys.stderr)
         return 2
 
+    # Cross-check `app_version` against tauri.conf.json — the v0.8.0 retag
+    # taught us exactly this foot-gun: the manifest says one version, the
+    # binary another. Soft fail (warn) instead of hard fail so manual
+    # re-signing of an older manifest is still possible.
+    tauri_conf = Path(__file__).resolve().parent.parent / "src-tauri" / "tauri.conf.json"
+    if tauri_conf.exists():
+        try:
+            with open(tauri_conf, "rb") as fh:
+                tc = json.load(fh)
+            expected = tc.get("version")
+            if expected and expected != m["app_version"]:
+                print(
+                    f"WARNING: manifest app_version={m['app_version']!r} does not match "
+                    f"tauri.conf.json version={expected!r}. Sign anyway? "
+                    "(Ctrl+C to abort, Enter to continue)",
+                    file=sys.stderr,
+                )
+                try:
+                    input()
+                except (KeyboardInterrupt, EOFError):
+                    return 2
+        except (OSError, ValueError) as exc:
+            print(f"warning: could not cross-check tauri.conf.json: {exc}", file=sys.stderr)
+
     # Compute + record the DB checksum if requested. It's signed but the v0.8.0
     # client does NOT yet verify the DB bytes against it (per the agreed
     # "strict-signature only" policy) — a future client can add that check

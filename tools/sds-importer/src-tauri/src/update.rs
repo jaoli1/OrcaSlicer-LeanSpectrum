@@ -41,7 +41,7 @@ use std::time::Duration;
 
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::Engine as _;
-use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+use ed25519_dalek::{Signature, VerifyingKey};
 use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
@@ -49,11 +49,18 @@ use crate::{Error, Result};
 const MANIFEST_URL: &str =
     "https://slicer.maisondrabiec.fr/o-8e1ff3fc4498/manifest.json";
 
-/// Update artefacts must live on the Maison Drabiec HTTPS server — guards
+/// Update artefacts must live on the Maison Drabiec HTTPS host — guards
 /// against a tampered manifest redirecting the DB download / app link elsewhere.
-const TRUSTED_PREFIX: &str = "https://slicer.maisondrabiec.fr/";
+/// The host MUST be parsed and compared by equality (not `starts_with`), so
+/// `https://slicer.maisondrabiec.fr.evil.com/` and `https://slicer.maisondrabiec.fr@evil.com/`
+/// are both rejected. The scheme must be HTTPS (the manifest itself is signed,
+/// but the trust check protects the URLs it carries).
+const TRUSTED_HOST: &str = "slicer.maisondrabiec.fr";
 pub fn is_trusted(url: &str) -> bool {
-    url.starts_with(TRUSTED_PREFIX)
+    let Ok(u) = reqwest::Url::parse(url) else { return false; };
+    u.scheme() == "https"
+        && u.host_str() == Some(TRUSTED_HOST)
+        && u.port().is_none()
 }
 
 /// Maison Drabiec's manifest-signing ed25519 public key (32 bytes, raw).
@@ -159,7 +166,10 @@ fn verify_signature(m: &Manifest) -> Result<()> {
         Error::Fetch(format!("embedded public key is not a valid ed25519 point: {e}"))
     })?;
     let payload = build_signed_payload(m);
-    pk.verify(&payload, &sig)
+    // `verify_strict` (rather than `verify`) rejects signatures over low-order /
+    // non-canonical R values — defense-in-depth against ed25519 malleability.
+    // Cite: https://docs.rs/ed25519-dalek/2/ed25519_dalek/struct.VerifyingKey.html#method.verify_strict
+    pk.verify_strict(&payload, &sig)
         .map_err(|_| Error::Fetch("manifest signature does NOT verify against the embedded public key".into()))
 }
 
@@ -271,10 +281,17 @@ fn download_db(url: &str, version: &str) -> Result<()> {
         ));
     }
     // Write to a temp sibling then rename, so a crash mid-write never leaves a
-    // half-written DB behind.
+    // half-written DB behind. PID + nanos in the temp name so two concurrent
+    // update-checks (Tauri commands run on a thread-pool) don't clobber each
+    // other's `.part` and end up renaming a partial file on Windows
+    // (ERROR_SHARING_VIOLATION) or, worse, silently writing junk.
     let final_db = db_path().ok_or_else(|| Error::Other("no app-data directory".into()))?;
     let vpath = db_version_path().ok_or_else(|| Error::Other("no app-data directory".into()))?;
-    let tmp = final_db.with_extension("sqlite.part");
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let tmp = final_db.with_extension(format!("sqlite.{}.{nanos}.part", std::process::id()));
     std::fs::write(&tmp, &bytes)?;
     std::fs::rename(&tmp, &final_db)?;
     std::fs::write(vpath, version)?;

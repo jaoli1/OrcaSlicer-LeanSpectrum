@@ -366,6 +366,7 @@ fn import_pdf_impl(req: ImportRequest) -> std::result::Result<ImportResult, Erro
 }
 
 #[tauri::command]
+#[allow(dead_code)] // removed from invoke_handler in v0.8.1 — see note above
 fn crawl_catalog(url: String) -> std::result::Result<CrawlResult, Error> {
     run_command(|| crawler::crawl_vendor_page(&url))
 }
@@ -488,10 +489,12 @@ pub struct BatchImportResult {
 }
 
 #[tauri::command]
+#[allow(dead_code)] // removed from invoke_handler in v0.8.1 — see crawler.rs
 fn import_from_urls(req: BatchImportRequest) -> std::result::Result<BatchImportResult, Error> {
     run_command(|| import_from_urls_impl(req))
 }
 
+#[allow(dead_code)]
 fn import_from_urls_impl(req: BatchImportRequest) -> std::result::Result<BatchImportResult, Error> {
     let mut succeeded = Vec::with_capacity(req.urls.len());
     let mut failed    = Vec::new();
@@ -925,7 +928,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
-            import_pdf, pick_pdf, pick_folder, crawl_catalog, import_from_urls,
+            // SECURITY: `crawl_catalog` and `import_from_urls` were removed from
+            // the IPC surface in v0.8.1 — neither was used by the frontend, and
+            // both made arbitrary outbound URL fetches reachable from any XSS in
+            // the WebView without going through `fetcher::assert_public_url`.
+            // The implementations are kept in this module for now (still used
+            // internally by tests / future flows) but they are no longer Tauri
+            // commands. If you re-expose them, route them through
+            // `fetcher::assert_public_url` first.
+            import_pdf, pick_pdf, pick_folder,
             corpus_default_path, scan_corpus, generate_process_library,
             check_updates, open_external, reveal_in_folder,
             list_printer_vendors, list_printer_models, list_printer_nozzles,

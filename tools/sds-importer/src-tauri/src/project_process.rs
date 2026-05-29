@@ -267,6 +267,15 @@ pub fn build_one_for(pt: ProjectType, spec: &PrinterSpec) -> (String, Value) {
         "flush_into_infill":          "1",
         "flush_into_support":         "1",
         "wipe_tower_no_sparse_layers":"1",
+        //   • flush_multiplier: the dominant lever on multi-colour waste — it
+        //     scales EVERY colour-change purge volume. 0.2 (down from the 0.3
+        //     default) trims ~⅓ of the purge while staying safely above the
+        //     ~0.15 floor where the next colour can start to bleed.
+        //   • prime_tower_width: cap the tower footprint at the value the stock
+        //     "0.20 Standard" preset uses (30 mm) instead of the wider inherited
+        //     default — less material per tower layer.
+        "flush_multiplier":           "0.2",
+        "prime_tower_width":          "30",
 
         // --- fork features (PROCESS-domain; same set the per-import companion emits).
         //     These add a further post-export pass on our fork only; harmless
@@ -509,6 +518,10 @@ mod tests {
             assert_eq!(v["flush_into_infill"], "1", "{name}");
             assert_eq!(v["flush_into_support"], "1", "{name}");
             assert_eq!(v["wipe_tower_no_sparse_layers"], "1", "{name}");
+            // The dominant multi-colour purge lever: trimmed below the 0.3
+            // default but kept safely above the ~0.15 colour-bleed floor.
+            assert_eq!(v["flush_multiplier"], "0.2", "{name}");
+            assert_eq!(v["prime_tower_width"], "30", "{name}");
             assert!(
                 v.get("flush_into_objects").is_none(),
                 "{name}: flush_into_objects must stay unset (colour-bleed risk)"

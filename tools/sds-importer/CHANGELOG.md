@@ -24,10 +24,19 @@ All notable changes to the **Custom Filament Profile Creator** (formerly
     le **remplissage** du modèle au lieu d'être jetée sur la tour de purge ;
   - `flush_into_support` — la purge est aussi réutilisée dans les **supports** ;
   - `wipe_tower_no_sparse_layers` — suppression des couches « creuses » de la tour
-    de purge, ce qui **réduit la tour elle-même** (la principale source de gâchis).
+    de purge, ce qui **réduit la tour elle-même** (déterminant sur les impressions
+    fines, où la tour est imprimée sur beaucoup plus de couches).
+  - `flush_multiplier` ramené à **0,2** (au lieu de 0,3) — c'est le levier principal
+    sur le gâchis multi-couleur : il réduit d'environ un tiers le volume de purge à
+    chaque changement de couleur, tout en restant au-dessus du seuil (~0,15) où la
+    couleur suivante risquerait de baver. Réglable si besoin.
+  - `prime_tower_width` plafonné à **30 mm** (valeur du préréglage « 0.20 Standard »
+    d'origine) — moins de matière par couche de tour.
   - `flush_into_objects` est **volontairement laissé désactivé** : router la purge
     dans le corps de l'objet ferait baver la couleur précédente sur la surface
     visible.
+  Note : tout ceci n'agit que sur les impressions **multi-couleur** (là où une tour
+  de purge existe). Une impression mono-couleur n'a pas de tour et n'est pas affectée.
   Ces réglages s'ajoutent (sans les remplacer) à la passe d'économie du fork, qui
   reste active sur OptimusOrca et est simplement ignorée ailleurs.
 - **« Tout sélectionner »** dans la Bibliothèque Filament : une case au-dessus de

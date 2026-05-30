@@ -1,8 +1,0 @@
-{
-  "name": "optimisateur-filament-profils-md",
-  "version": "0.7.0",
-  "description": "Optimisateur de filament et de profils d'impression by Maison Drabiec — profils filament + process Snapmaker_Orca optimisés depuis une fiche SDS/TDS",
-  "private": true,
-  "license": "UNLICENSED",
-  "_note": "No build step needed — the frontend uses window.__TAURI__ globals (withGlobalTauri: true). To develop locally, install tauri-cli via `cargo install tauri-cli` then run `cargo tauri dev` from this directory."
-}

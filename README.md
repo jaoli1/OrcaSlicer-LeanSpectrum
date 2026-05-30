@@ -43,14 +43,18 @@ seam settings.
 
 **File → Auto-generate profile...** No surveyed OrcaSlicer fork ships an equivalent.
 
-## Companion app — SDS / TDS Importer
+## Companion app — Optimisateur de filament et de profils d'impression
 
-A separate Tauri desktop app under [`tools/sds-importer/`](tools/sds-importer/)
-turns a filament Safety Data Sheet or Technical Data Sheet PDF into a
-Snapmaker_Orca filament profile JSON ready for import. Validated against
-1600+ real vendor PDFs across 50+ brands. Three input modes (single PDF /
-vendor catalog crawler / local corpus browser), bilingual FR / EN, optional
-OCR. Cross-platform releases on the Releases page.
+The Tauri 2 desktop companion that turns filament SDS / TDS PDFs into ready-to-
+import filament + per-project process profiles for OrcaSlicer / Bambu Studio
+families has moved out of this repository — it is now a **paid product**
+distributed and updated through its own signed-manifest channel at
+**[slicer.maisondrabiec.fr](https://slicer.maisondrabiec.fr/)**. Cross-platform
+installers (Windows / macOS arm64 / Linux AppImage·deb·rpm) are served from
+that channel; client updates are gated by ed25519 signature verification.
+
+The slicer fork below (OptimusOrca by Maison Drabiec, AGPL-3.0) is unaffected
+and continues to live in this repository.
 
 ---
 
